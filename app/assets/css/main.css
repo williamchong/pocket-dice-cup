@@ -1,0 +1,22 @@
+html,
+body,
+#__nuxt {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  /* The page is one fixed canvas that gets shaken: nothing should scroll,
+     bounce, select or zoom under a stray palm. */
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  background: #12241b;
+  color: #f4efe3;
+  font-family: system-ui, -apple-system, sans-serif;
+}

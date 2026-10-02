@@ -57,7 +57,7 @@ Stack
 - Rapier (`@dimforge/rapier3d-compat`) for physics
 - Vue components for UI
 - Vitest for unit tests
-- pnpm
+- npm, as in the other side projects
 - Static PWA over HTTPS (sensors require a secure context), via `@vite-pwa/nuxt`
 
 Hosting: GitHub Pages, deployed by a GitHub Actions workflow using Nitro's
@@ -74,18 +74,27 @@ Architecture
 ------------
 
 ```
-engine/
-  core/      state machine, dice-pool model, notation parser ("3d6+1d20"), history store
-  physics/   Rapier world, fixed 120 Hz step + CCD, convex-hull colliders, contact events
-  dice/      per-die geometry and face-normal -> value tables
-  input/     MotionSource interface: DeviceMotionSource | PointerSource
-  feedback/  HapticsBackend interface: NativeBackend | VibrateBackend | NullBackend
-             AudioEngine: Web Audio clack samples, pitch and gain per impact
-  render/    three.js scene, skins
-composables/ useDiceCup: creates the engine, exposes reactive state to the UI
-components/  settings sheet, result popup, history drawer, permission/start gate
-pages/       index.vue: canvas plus overlay UI
+app/
+  engine/
+    core/      state machine, dice-pool model, notation parser ("3d6+1d20"), history store
+    physics/   Rapier world, fixed 480 Hz step + CCD, convex-hull colliders, contact events
+    dice/      per-die geometry and face-normal -> value tables
+    input/     MotionSource interface: DeviceMotionSource | PointerSource
+    feedback/  HapticsBackend interface: NativeBackend | VibrateBackend | NullBackend
+               AudioEngine: Web Audio clack samples, pitch and gain per impact
+    render/    three.js scene, skins
+    simulation.ts  physics + motion analysis + state machine, no DOM (runs in Node tests)
+    diceCup.ts     the simulation on a canvas, driven by a MotionSource every frame
+  composables/ useDiceCup: creates the engine, exposes reactive state to the UI
+  components/  settings sheet, result popup, history drawer, permission/start gate
+  pages/       index.vue: canvas plus overlay UI
+tests/engine/  Vitest, in Node, against the real Rapier WASM
 ```
+
+World units are centimetres and accelerations are applied at full scale, so the
+dice move in step with the hand. Real-size dice cross their own width in a few
+milliseconds under a hard shake, which is why the physics steps at 480 Hz: at
+120 Hz a die sank up to 9 mm into a wall, at 480 Hz about 2 mm.
 
 Two interfaces carry most of the extras:
 
@@ -113,10 +122,13 @@ Phases
 
 1. **Scaffold and core loop.** Nuxt project, Rapier box, one d6,
    `DeviceMotionSource` (iOS permission gate, iOS/Android sign normalisation),
-   state machine, Wake Lock. Dev loop: `nuxi dev --https` on the LAN
+   state machine, Wake Lock. Dev loop: `npm run dev:https` on the LAN
    (self-signed certificate), opened in Safari on the iPhone; motion sensors
-   need a secure context.
+   need a secure context. `?debug` shows the sensor reading and the state.
    Done when: shaking the iPhone and putting it down shows the correct face.
+   Status: built and passing in Node tests and in desktop Chrome with
+   synthetic motion events. Not yet tried on the iPhone; the iOS sensor sign
+   flip and the shake thresholds are the two things to confirm there.
 2. **Feedback and iOS shell.** Contact events feed a rate-limited haptic
    scheduler (about one transient per 30-40 ms, intensity by impact) and the
    audio engine. Add the Capacitor iOS shell and a custom Core Haptics plugin

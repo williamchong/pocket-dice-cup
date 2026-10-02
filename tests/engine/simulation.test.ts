@@ -1,0 +1,121 @@
+import RAPIER from '@dimforge/rapier3d-compat'
+import { beforeAll, describe, expect, it } from 'vitest'
+import { boxForViewport } from '../../app/engine/box'
+import type { CupState } from '../../app/engine/core/stateMachine'
+import { D6_SIZE } from '../../app/engine/dice/d6'
+import { REST_ACCELERATION } from '../../app/engine/input/motionSource'
+import type { Vec3 } from '../../app/engine/math'
+import { CupSimulation } from '../../app/engine/simulation'
+
+beforeAll(() => RAPIER.init())
+
+const FRAME = 1 / 60
+const box = boxForViewport(390, 844)
+
+/**
+ * A vigorous shake: several g on every axis at different frequencies, on top
+ * of the phone being held roughly upright. `seed` shifts the phases so each
+ * roll tumbles differently.
+ */
+function shake(t: number, seed: number): Vec3 {
+  return {
+    x: 30 * Math.sin(2 * Math.PI * 4.1 * t + seed),
+    y: 9.8 + 45 * Math.sin(2 * Math.PI * 5.3 * t + 2 * seed),
+    z: 25 * Math.sin(2 * Math.PI * 3.7 * t + 3 * seed),
+  }
+}
+
+interface Roll {
+  simulation: CupSimulation
+  states: CupState[]
+  /** Seconds between putting the phone down and the result. */
+  settleSeconds: number
+}
+
+function roll(seed: number, shakeSeconds = 2): Roll {
+  const simulation = new CupSimulation(RAPIER, box)
+  const states: CupState[] = [simulation.state]
+  let time = 0
+  const run = (seconds: number, sample: (t: number) => Vec3, until?: () => boolean) => {
+    const start = time
+    while (time - start < seconds && !until?.()) {
+      time += FRAME
+      if (simulation.tick(FRAME, sample(time - start), time * 1000)) states.push(simulation.state)
+      assertInsideBox(simulation)
+    }
+    return time - start
+  }
+  run(0.5, () => REST_ACCELERATION)
+  run(shakeSeconds, t => shake(t, seed))
+  const settleSeconds = run(10, () => REST_ACCELERATION, () => simulation.state === 'result')
+  return { simulation, states, settleSeconds }
+}
+
+function assertInsideBox(simulation: CupSimulation): void {
+  // A die lying flat against a wall has its centre half a die away. Hard
+  // impacts sink in briefly; more than this would start to show.
+  const margin = D6_SIZE / 2 - 0.35
+  const p = simulation.physics.diePosition(0)
+  expect(Math.abs(p.x)).toBeLessThan(box.width / 2 - margin)
+  expect(Math.abs(p.y)).toBeLessThan(box.height / 2 - margin)
+  expect(p.z).toBeGreaterThan(margin)
+  expect(p.z).toBeLessThan(box.depth - margin)
+}
+
+describe('CupSimulation', () => {
+  it('stays idle with no result while the phone lies still', () => {
+    const simulation = new CupSimulation(RAPIER, box)
+    for (let i = 1; i <= 120; i++) simulation.tick(FRAME, REST_ACCELERATION, i * FRAME * 1000)
+    expect(simulation.state).toBe('idle')
+    expect(simulation.result).toBeNull()
+  })
+
+  it('goes through shaking and settling to a result when shaken and put down', () => {
+    const { simulation, states, settleSeconds } = roll(1)
+    expect(states).toEqual(['idle', 'shaking', 'settling', 'result'])
+    expect(simulation.result).toHaveLength(1)
+    expect(simulation.result![0]).toBeGreaterThanOrEqual(1)
+    expect(simulation.result![0]).toBeLessThanOrEqual(6)
+    expect(settleSeconds).toBeLessThan(5)
+    simulation.dispose()
+  })
+
+  it('leaves the die lying flat on the floor', () => {
+    const { simulation } = roll(2)
+    expect(simulation.physics.diePosition(0).z).toBeCloseTo(D6_SIZE / 2, 1)
+    simulation.dispose()
+  })
+
+  it('keeps the die inside the cup through hard shakes and lands on varied faces', () => {
+    const seen = new Set<number>()
+    for (let seed = 0; seed < 24; seed++) {
+      const { simulation, states } = roll(seed * 0.37, 1.5)
+      expect(states.at(-1)).toBe('result')
+      seen.add(simulation.result![0]!)
+      simulation.dispose()
+    }
+    expect(seen.size).toBeGreaterThanOrEqual(4)
+  })
+
+  it('clears the result and rolls again on a second shake', () => {
+    const { simulation } = roll(3)
+    let time = 100
+    for (let i = 0; i < 30; i++) {
+      time += FRAME
+      simulation.tick(FRAME, shake(i * FRAME, 5), time * 1000)
+    }
+    expect(simulation.state).toBe('shaking')
+    expect(simulation.result).toBeNull()
+    simulation.dispose()
+  })
+
+  it('pulls the die back inside when the cup shrinks around it', () => {
+    const simulation = new CupSimulation(RAPIER, boxForViewport(844, 390))
+    // Slide the die to the right-hand wall of a landscape cup.
+    for (let i = 1; i <= 120; i++) simulation.tick(FRAME, { x: -9.8, y: 0, z: 2 }, i * FRAME * 1000)
+    expect(simulation.physics.diePosition(0).x).toBeGreaterThan(box.width / 2)
+    simulation.physics.resize(box)
+    expect(simulation.physics.diePosition(0).x).toBeCloseTo(box.width / 2 - D6_SIZE / 2)
+    simulation.dispose()
+  })
+})
