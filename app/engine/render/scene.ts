@@ -1,13 +1,16 @@
 import {
   BackSide,
   BoxGeometry,
-  DirectionalLight,
+  CanvasTexture,
   Mesh,
   MeshStandardMaterial,
   NeutralToneMapping,
   PerspectiveCamera,
   PMREMGenerator,
+  RepeatWrapping,
   Scene,
+  SpotLight,
+  SRGBColorSpace,
   WebGLRenderer,
   type Material,
   type WebGLRenderTarget,
@@ -22,8 +25,29 @@ const CAMERA_DISTANCE = 2
 /** Phones report 3; the extra pixels cost more than they show at this scale. */
 const MAX_PIXEL_RATIO = 2
 
-const FELT_COLOUR = 0x1f6b45
-const WALL_COLOUR = 0x3b2416
+const FELT_COLOUR = 0x0d6b3c
+const WALL_COLOUR = 0x2a160c
+/** World units covered by one tile of the felt's speckle. */
+const FELT_TILE = 1
+
+/** Fine random speckle, tiled across the floor, so the felt reads as cloth rather than flat paint. */
+function feltTexture(): CanvasTexture {
+  const size = 128
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = size
+  const context = canvas.getContext('2d')!
+  const image = context.createImageData(size, size)
+  for (let i = 0; i < image.data.length; i += 4) {
+    const shade = 190 + Math.random() * 65
+    image.data[i] = image.data[i + 1] = image.data[i + 2] = shade
+    image.data[i + 3] = 255
+  }
+  context.putImageData(image, 0, 0)
+  const texture = new CanvasTexture(canvas)
+  texture.colorSpace = SRGBColorSpace
+  texture.wrapS = texture.wrapT = RepeatWrapping
+  return texture
+}
 
 /**
  * Draws the cup from straight above, so the screen is a window into it. Scene
@@ -34,7 +58,9 @@ export class DiceScene {
   private readonly scene = new Scene()
   private readonly camera = new PerspectiveCamera()
   private readonly tray: Mesh
-  private readonly sun = new DirectionalLight(0xffffff, 2.4)
+  /** A warm lamp hung over the table: bright in the middle, falling off towards the rail. */
+  private readonly lamp = new SpotLight(0xfff1dc, 5)
+  private readonly feltMap = feltTexture()
   private readonly environment: WebGLRenderTarget
   private readonly dice: Mesh[] = []
 
@@ -50,30 +76,34 @@ export class DiceScene {
     // so there is no image to download. It is built y-up, and up here is +z.
     const pmrem = new PMREMGenerator(this.renderer)
     const room = new RoomEnvironment()
-    // Half the default resolution: a quarter of the GPU memory, and nothing
-    // here is glossy enough to show the difference.
+    // Half the default resolution, for a quarter of the GPU memory. Raise it
+    // if a mirror-like skin ever shows the reflections as blurry.
     this.environment = pmrem.fromScene(room, 0.04, 0.1, 100, { size: 128 })
     room.dispose()
     pmrem.dispose()
     this.scene.environment = this.environment.texture
     this.scene.environmentRotation.x = Math.PI / 2
-    // The room fills in for an ambient light. At full strength it washes out
-    // the sun's shadows and greys the pips with its reflection.
-    this.scene.environmentIntensity = 0.5
+    // The room is there for reflections and a little fill. The lamp does the
+    // lighting, so the table stays dark outside its pool.
+    this.scene.environmentIntensity = 0.3
 
     // A unit box seen from inside: BoxGeometry's groups are +x, -x, +y, -y,
     // +z, -z, so the last one is the floor. The +z face is the glass, which
     // BackSide leaves undrawn from above.
-    const wall = new MeshStandardMaterial({ color: WALL_COLOUR, roughness: 0.8, side: BackSide })
-    const felt = new MeshStandardMaterial({ color: FELT_COLOUR, roughness: 1, side: BackSide })
+    const wall = new MeshStandardMaterial({ color: WALL_COLOUR, roughness: 0.45, side: BackSide })
+    const felt = new MeshStandardMaterial({ color: FELT_COLOUR, map: this.feltMap, roughness: 1, side: BackSide })
     this.tray = new Mesh(new BoxGeometry(1, 1, 1), [wall, wall, wall, wall, wall, felt])
     this.tray.receiveShadow = true
     this.scene.add(this.tray)
 
-    this.sun.castShadow = true
-    this.sun.shadow.mapSize.set(1024, 1024)
-    this.sun.shadow.normalBias = 0.03
-    this.scene.add(this.sun, this.sun.target)
+    // The pool of light comes from the soft edge of the cone, not from
+    // distance, so the brightness does not change with the size of the table.
+    this.lamp.penumbra = 0.9
+    this.lamp.decay = 0
+    this.lamp.castShadow = true
+    this.lamp.shadow.mapSize.set(1024, 1024)
+    this.lamp.shadow.normalBias = 0.03
+    this.scene.add(this.lamp, this.lamp.target)
   }
 
   addD6(): void {
@@ -98,16 +128,21 @@ export class DiceScene {
     this.camera.lookAt(0, 0, 0)
     this.camera.updateProjectionMatrix()
 
-    // From over the viewer's left shoulder, so shadows fall down and right.
+    this.feltMap.repeat.set(box.width / FELT_TILE, box.height / FELT_TILE)
+
+    // Hung a little up and to the left of centre, so shadows fall down and
+    // right. The cone reaches just past the far ends of the table, and its
+    // wide penumbra is what dims them.
     const reach = Math.max(box.width, box.height)
-    this.sun.position.set(-reach * 0.35, reach * 0.45, reach * 1.5)
-    this.sun.target.position.set(0, 0, 0)
-    const shadow = this.sun.shadow.camera
-    shadow.left = shadow.bottom = -reach * 0.75
-    shadow.right = shadow.top = reach * 0.75
-    shadow.near = reach * 0.5
-    shadow.far = reach * 2.5
-    shadow.updateProjectionMatrix()
+    const height = reach * 1.1
+    this.lamp.position.set(-reach * 0.12, reach * 0.15, height)
+    this.lamp.target.position.set(0, 0, 0)
+    this.lamp.angle = Math.atan(reach * 0.6 / height)
+    this.lamp.shadow.camera.near = height * 0.5
+    this.lamp.shadow.camera.far = height * 1.5
+    // three.js only rebuilds the shadow projection when the cone angle
+    // changes, and the angle is the same for every table size.
+    this.lamp.shadow.camera.updateProjectionMatrix()
   }
 
   setDieTransform(index: number, position: Vec3, rotation: Quat): void {
@@ -124,11 +159,14 @@ export class DiceScene {
     for (const mesh of [this.tray, ...this.dice]) {
       mesh.geometry.dispose()
       for (const material of new Set(mesh.material as Material[])) {
-        if (material instanceof MeshStandardMaterial) material.map?.dispose()
+        if (material instanceof MeshStandardMaterial) {
+          material.map?.dispose()
+          material.bumpMap?.dispose()
+        }
         material.dispose()
       }
     }
-    this.sun.dispose()
+    this.lamp.dispose()
     this.environment.dispose()
     this.renderer.dispose()
     // Browsers cap live WebGL contexts, and a remount would otherwise leave this one behind.
