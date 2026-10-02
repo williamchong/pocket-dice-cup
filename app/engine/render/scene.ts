@@ -1,15 +1,18 @@
 import {
-  AmbientLight,
   BackSide,
   BoxGeometry,
   DirectionalLight,
   Mesh,
   MeshStandardMaterial,
+  NeutralToneMapping,
   PerspectiveCamera,
+  PMREMGenerator,
   Scene,
   WebGLRenderer,
   type Material,
+  type WebGLRenderTarget,
 } from 'three'
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import type { BoxSize } from '../box'
 import type { Quat, Vec3 } from '../math'
 import { createD6Mesh } from './d6Mesh'
@@ -32,12 +35,31 @@ export class DiceScene {
   private readonly camera = new PerspectiveCamera()
   private readonly tray: Mesh
   private readonly sun = new DirectionalLight(0xffffff, 2.4)
+  private readonly environment: WebGLRenderTarget
   private readonly dice: Mesh[] = []
 
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new WebGLRenderer({ canvas, antialias: true })
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO))
     this.renderer.shadowMap.enabled = true
+    // Rolls bright highlights off instead of clipping them, without shifting
+    // the hue of the felt the way the filmic curves do.
+    this.renderer.toneMapping = NeutralToneMapping
+
+    // Glossy surfaces need surroundings to reflect. This room is generated,
+    // so there is no image to download. It is built y-up, and up here is +z.
+    const pmrem = new PMREMGenerator(this.renderer)
+    const room = new RoomEnvironment()
+    // Half the default resolution: a quarter of the GPU memory, and nothing
+    // here is glossy enough to show the difference.
+    this.environment = pmrem.fromScene(room, 0.04, 0.1, 100, { size: 128 })
+    room.dispose()
+    pmrem.dispose()
+    this.scene.environment = this.environment.texture
+    this.scene.environmentRotation.x = Math.PI / 2
+    // The room fills in for an ambient light. At full strength it washes out
+    // the sun's shadows and greys the pips with its reflection.
+    this.scene.environmentIntensity = 0.5
 
     // A unit box seen from inside: BoxGeometry's groups are +x, -x, +y, -y,
     // +z, -z, so the last one is the floor. The +z face is the glass, which
@@ -51,7 +73,7 @@ export class DiceScene {
     this.sun.castShadow = true
     this.sun.shadow.mapSize.set(1024, 1024)
     this.sun.shadow.normalBias = 0.03
-    this.scene.add(new AmbientLight(0xffffff, 1.1), this.sun, this.sun.target)
+    this.scene.add(this.sun, this.sun.target)
   }
 
   addD6(): void {
@@ -107,6 +129,7 @@ export class DiceScene {
       }
     }
     this.sun.dispose()
+    this.environment.dispose()
     this.renderer.dispose()
     // Browsers cap live WebGL contexts, and a remount would otherwise leave this one behind.
     this.renderer.forceContextLoss()
