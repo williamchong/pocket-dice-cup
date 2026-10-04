@@ -16,6 +16,8 @@ Motion sensors only work over HTTPS, so a phone needs `dev:https`. Open the
 `https://<your-computer's-address>:3000` URL it prints in Safari, accept the
 self-signed certificate warning, tap Start and allow motion access.
 
+With no motion sensor, as on a desktop, click or tap the cup to shake it.
+
 Add `?debug` to the URL to see the sensor reading, the shake level and the
 current state on screen.
 

@@ -3,7 +3,8 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { boxForViewport } from '../../app/engine/box'
 import type { CupState } from '../../app/engine/core/stateMachine'
 import { D6_SIZE } from '../../app/engine/dice/d6'
-import { REST_ACCELERATION } from '../../app/engine/input/motionSource'
+import { REST_ACCELERATION, type MotionSource } from '../../app/engine/input/motionSource'
+import { PointerSource, shakeBurst } from '../../app/engine/input/pointerSource'
 import type { Vec3 } from '../../app/engine/math'
 import { CupSimulation } from '../../app/engine/simulation'
 
@@ -12,17 +13,10 @@ beforeAll(() => RAPIER.init())
 const FRAME = 1 / 60
 const box = boxForViewport(390, 844)
 
-/**
- * A vigorous shake: several g on every axis at different frequencies, on top
- * of the phone being held roughly upright. `seed` shifts the phases so each
- * roll tumbles differently.
- */
+/** A vigorous shake on top of the phone being held roughly upright. */
 function shake(t: number, seed: number): Vec3 {
-  return {
-    x: 30 * Math.sin(2 * Math.PI * 4.1 * t + seed),
-    y: 9.8 + 45 * Math.sin(2 * Math.PI * 5.3 * t + 2 * seed),
-    z: 25 * Math.sin(2 * Math.PI * 3.7 * t + 3 * seed),
-  }
+  const burst = shakeBurst(t, seed)
+  return { ...burst, y: 9.8 + burst.y }
 }
 
 interface Roll {
@@ -116,6 +110,26 @@ describe('CupSimulation', () => {
     expect(simulation.physics.diePosition(0).x).toBeGreaterThan(box.width / 2)
     simulation.physics.resize(box)
     expect(simulation.physics.diePosition(0).x).toBeCloseTo(box.width / 2 - D6_SIZE / 2)
+    simulation.dispose()
+  })
+
+  it('rolls to a result from a click on a desktop with no sensor', () => {
+    const desktop: MotionSource = {
+      acceleration: REST_ACCELERATION,
+      active: false,
+      start: async () => 'unsupported',
+      stop: () => {},
+    }
+    let timeMs = 0
+    const source = new PointerSource(desktop, () => timeMs)
+    const simulation = new CupSimulation(RAPIER, box)
+    const states: CupState[] = [simulation.state]
+    for (let i = 0; i < 10 * 60 && simulation.state !== 'result'; i++) {
+      timeMs += FRAME * 1000
+      if (i === 30) source.shake()
+      if (simulation.tick(FRAME, source.acceleration, timeMs)) states.push(simulation.state)
+    }
+    expect(states).toEqual(['idle', 'shaking', 'settling', 'result'])
     simulation.dispose()
   })
 })

@@ -1,19 +1,22 @@
 <template>
   <main class="cup">
+    <!-- Tap to shake stays on with a working sensor too: desktop Chrome
+         reports one but never sends a reading, and a tap is a quick re-roll. -->
     <canvas
       ref="canvas"
       class="cup__canvas"
+      @pointerdown="shake"
     />
 
     <div
-      v-if="permission !== 'granted'"
+      v-if="failed || permission === null"
       class="cup__gate"
     >
       <h1>Pocket Dice Cup</h1>
       <p v-if="failed">
         3D graphics could not start in this browser.
       </p>
-      <template v-else-if="permission === null">
+      <template v-else>
         <p>Shake your phone like a dice cup, then put it down screen-up.</p>
         <button
           type="button"
@@ -23,13 +26,20 @@
           {{ ready ? 'Start' : 'Loading…' }}
         </button>
       </template>
-      <p v-else-if="permission === 'denied'">
-        Motion access was refused, so shaking cannot be detected. Close this tab, open the page again and allow motion access.
-      </p>
-      <p v-else>
-        This browser has no motion sensor. Open the page on a phone.
-      </p>
     </div>
+
+    <p
+      v-else-if="permission === 'denied'"
+      class="cup__hint"
+    >
+      Motion access was refused, so tap to shake. To shake the phone instead, open the page again and allow motion access.
+    </p>
+    <p
+      v-else-if="permission === 'unsupported'"
+      class="cup__hint"
+    >
+      This browser has no motion sensor, so click or tap to shake.
+    </p>
 
     <pre
       v-if="debug"
@@ -40,7 +50,7 @@
 
 <script setup lang="ts">
 const canvas = useTemplateRef('canvas')
-const { ready, failed, state, result, permission, start, debugInfo } = useDiceCup(canvas)
+const { ready, failed, state, result, permission, start, shake, debugInfo } = useDiceCup(canvas)
 
 // `?debug` shows what the sensor and the state machine are doing, for tuning
 // on a real phone where there is no console.
@@ -106,6 +116,17 @@ if (debug) {
 
 .cup__gate button:disabled {
   opacity: 0.5;
+}
+
+.cup__hint {
+  position: absolute;
+  right: 0;
+  bottom: env(safe-area-inset-bottom, 0);
+  left: 0;
+  margin: 0;
+  padding: 1rem 2rem;
+  text-align: center;
+  pointer-events: none;
 }
 
 .cup__debug {
