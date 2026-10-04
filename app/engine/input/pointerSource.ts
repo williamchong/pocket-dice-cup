@@ -2,18 +2,34 @@ import type { Vec3 } from '../math'
 import type { MotionPermission, MotionSource } from './motionSource'
 
 /** Long enough for the dice to tumble, short enough to feel like a flick. */
-export const BURST_SECONDS = 0.8
+export const BURST_SECONDS = 0.9
+
+/** Sideways acceleration of the swirl, about 1 g. */
+const SWIRL_ACCELERATION = 10
+const SWIRL_HZ = 2
+/** Upward acceleration at the top of each hop: enough to lift the dice off the floor. */
+const HOP_ACCELERATION = 22
+const HOPS = 3
 
 /**
- * What a hard shake adds to the reading `t` seconds into a burst: several g on
- * every axis at different frequencies. `seed` shifts the phases so each burst
- * tumbles the dice differently.
+ * What a gentle toss adds to the reading `t` seconds into a burst: the cup
+ * swirls sideways while it hops a few times, so the dice tumble without
+ * slamming into the walls. Unlike a phone, a desktop shows the dice the whole
+ * time, so the motion has to be one a hand could make while watching. `seed`
+ * sets the swirl's starting direction so each burst tumbles the dice
+ * differently.
  */
-export function shakeBurst(t: number, seed: number): Vec3 {
+export function tossBurst(t: number, seed: number): Vec3 {
+  // So the toss starts and ends at rest rather than with a jolt.
+  const envelope = Math.sin(Math.PI * t / BURST_SECONDS) ** 2
+  const swirl = 2 * Math.PI * SWIRL_HZ * t + seed
+  const hop = Math.max(0, Math.sin(Math.PI * HOPS * t / BURST_SECONDS)) ** 2
   return {
-    x: 30 * Math.sin(2 * Math.PI * 4.1 * t + seed),
-    y: 45 * Math.sin(2 * Math.PI * 5.3 * t + 2 * seed),
-    z: 25 * Math.sin(2 * Math.PI * 3.7 * t + 3 * seed),
+    x: SWIRL_ACCELERATION * envelope * Math.cos(swirl),
+    y: SWIRL_ACCELERATION * envelope * Math.sin(swirl),
+    // A lower z is the cup dropping away under the dice: past 1 g they lift
+    // off the floor towards the glass.
+    z: -HOP_ACCELERATION * hop,
   }
 }
 
@@ -36,7 +52,7 @@ export class PointerSource implements MotionSource {
     const base = this.inner.acceleration
     const t = (this.now() - this.burstStartMs) / 1000
     if (t >= BURST_SECONDS) return base
-    const burst = shakeBurst(t, this.seed)
+    const burst = tossBurst(t, this.seed)
     return { x: base.x + burst.x, y: base.y + burst.y, z: base.z + burst.z }
   }
 
@@ -52,8 +68,9 @@ export class PointerSource implements MotionSource {
     this.inner.stop()
   }
 
-  shake(): void {
+  /** `seed` picks the toss; tests pass one to make it repeatable. */
+  shake(seed = Math.random() * 2 * Math.PI): void {
     this.burstStartMs = this.now()
-    this.seed = Math.random() * 2 * Math.PI
+    this.seed = seed
   }
 }

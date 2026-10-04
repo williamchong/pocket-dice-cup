@@ -4,8 +4,8 @@ import { boxForViewport } from '../../app/engine/box'
 import type { CupState } from '../../app/engine/core/stateMachine'
 import { D6_SIZE } from '../../app/engine/dice/d6'
 import { REST_ACCELERATION, type MotionSource } from '../../app/engine/input/motionSource'
-import { PointerSource, shakeBurst } from '../../app/engine/input/pointerSource'
-import type { Vec3 } from '../../app/engine/math'
+import { PointerSource } from '../../app/engine/input/pointerSource'
+import { distance, type Vec3 } from '../../app/engine/math'
 import { CupSimulation } from '../../app/engine/simulation'
 
 beforeAll(() => RAPIER.init())
@@ -13,10 +13,23 @@ beforeAll(() => RAPIER.init())
 const FRAME = 1 / 60
 const box = boxForViewport(390, 844)
 
-/** A vigorous shake on top of the phone being held roughly upright. */
+/**
+ * A vigorous shake on top of the phone being held roughly upright: several g
+ * on every axis at different frequencies, with `seed` shifting the phases.
+ */
 function shake(t: number, seed: number): Vec3 {
-  const burst = shakeBurst(t, seed)
-  return { ...burst, y: 9.8 + burst.y }
+  return {
+    x: 30 * Math.sin(2 * Math.PI * 4.1 * t + seed),
+    y: 9.8 + 45 * Math.sin(2 * Math.PI * 5.3 * t + 2 * seed),
+    z: 25 * Math.sin(2 * Math.PI * 3.7 * t + 3 * seed),
+  }
+}
+
+const desktop: MotionSource = {
+  acceleration: REST_ACCELERATION,
+  active: false,
+  start: async () => 'unsupported',
+  stop: () => {},
 }
 
 interface Roll {
@@ -43,6 +56,26 @@ function roll(seed: number, shakeSeconds = 2): Roll {
   run(shakeSeconds, t => shake(t, seed))
   const settleSeconds = run(10, () => REST_ACCELERATION, () => simulation.state === 'result')
   return { simulation, states, settleSeconds }
+}
+
+/** Clicks once on a desktop with no sensor and runs until the die settles. */
+function toss(index: number) {
+  let timeMs = 0
+  const source = new PointerSource(desktop, () => timeMs)
+  const simulation = new CupSimulation(RAPIER, box)
+  const states: CupState[] = [simulation.state]
+  let peakSpeed = 0
+  let last = simulation.physics.diePosition(0)
+  for (let i = 0; i < 10 * 60 && simulation.state !== 'result'; i++) {
+    timeMs += FRAME * 1000
+    if (i === 30) source.shake(index * 0.73)
+    if (simulation.tick(FRAME, source.acceleration, timeMs)) states.push(simulation.state)
+    const position = simulation.physics.diePosition(0)
+    peakSpeed = Math.max(peakSpeed, distance(position, last) / FRAME)
+    last = position
+    assertInsideBox(simulation)
+  }
+  return { simulation, states, peakSpeed }
 }
 
 function assertInsideBox(simulation: CupSimulation): void {
@@ -114,22 +147,23 @@ describe('CupSimulation', () => {
   })
 
   it('rolls to a result from a click on a desktop with no sensor', () => {
-    const desktop: MotionSource = {
-      acceleration: REST_ACCELERATION,
-      active: false,
-      start: async () => 'unsupported',
-      stop: () => {},
-    }
-    let timeMs = 0
-    const source = new PointerSource(desktop, () => timeMs)
-    const simulation = new CupSimulation(RAPIER, box)
-    const states: CupState[] = [simulation.state]
-    for (let i = 0; i < 10 * 60 && simulation.state !== 'result'; i++) {
-      timeMs += FRAME * 1000
-      if (i === 30) source.shake()
-      if (simulation.tick(FRAME, source.acceleration, timeMs)) states.push(simulation.state)
-    }
+    const { states, simulation } = toss(0)
     expect(states).toEqual(['idle', 'shaking', 'settling', 'result'])
     simulation.dispose()
+  })
+
+  it('tumbles the die gently on a click, without the speed of a hard shake', () => {
+    const seen = new Set<number>()
+    let peakSpeed = 0
+    for (let i = 0; i < 12; i++) {
+      const { simulation, peakSpeed: speed } = toss(i)
+      seen.add(simulation.result![0]!)
+      peakSpeed = Math.max(peakSpeed, speed)
+      simulation.dispose()
+    }
+    // A hard shake peaks at about 360 cm/s, the toss at about 120.
+    expect(peakSpeed).toBeLessThan(200)
+    // From the same starting face every time, so the die really turned over.
+    expect(seen.size).toBeGreaterThanOrEqual(4)
   })
 })
