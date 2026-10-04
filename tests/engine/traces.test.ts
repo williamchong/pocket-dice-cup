@@ -35,7 +35,7 @@ function analyse(trace: MotionTrace): Frame[] {
   })
 }
 
-const SHAKES = ['shake-horizontal', 'shake-vertical', 'shake-face-down']
+const SHAKES = ['shake-horizontal', 'shake-vertical', 'shake-face-down', 'shake-gentle']
 /** When the phone in shake-face-down is turned screen-up to reach the copy button. */
 const FACE_DOWN_TURNED_UP_MS = 7600
 /** When the phone in shake-horizontal stops shaking, before it is put down. */
@@ -65,6 +65,10 @@ describe('recorded iPhone traces', () => {
     for (const name of SHAKES) {
       expect(analyse(load(name)).some(frame => frame.shaking), name).toBe(true)
     }
+  })
+
+  it('do not count picking the phone up and putting it back as a shake', () => {
+    expect(analyse(load('pickup')).filter(frame => frame.shaking).map(frame => frame.timeMs)).toEqual([])
   })
 
   it('do not count a phone shaken screen-down as put down', () => {
