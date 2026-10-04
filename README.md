@@ -20,7 +20,8 @@ With no motion sensor, as on a desktop, click or tap the cup to shake it.
 
 Add `?debug` to the URL to see the sensor reading, the shake level and the
 current state on screen. It also starts the die in the middle with the same
-face up every time, instead of at a random place and face.
+face up every time, instead of at a random place and face. "Copy trace" copies
+the last 30 seconds of readings as JSON, for replaying in tests.
 
 ## Check
 

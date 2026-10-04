@@ -3,13 +3,19 @@ import type { CupState } from '~/engine/core/stateMachine'
 import type { CupDebugInfo, DiceCup } from '~/engine/diceCup'
 import type { CupOptions } from '~/engine/simulation'
 import { DeviceMotionSource, type MotionPermission } from '~/engine/input/motionSource'
+import { TraceRecorder, type MotionTrace } from '~/engine/input/motionTrace'
+
+export interface DiceCupOptions extends CupOptions {
+  /** Keep the last 30 seconds of sensor readings for `exportTrace`. */
+  recordTrace?: boolean
+}
 
 /**
  * Runs the dice cup on a canvas and exposes the little of its state the UI
  * needs. The engine itself is never made reactive: Vue's proxies would wrap
  * three.js and Rapier objects that are read thousands of times a frame.
  */
-export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>>, options: CupOptions = {}) {
+export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>>, { recordTrace = false, ...options }: DiceCupOptions = {}) {
   const ready = ref(false)
   /** The engine could not start, for example because WebGL is unavailable. */
   const failed = ref(false)
@@ -19,6 +25,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
   const permission = ref<MotionPermission | null>(null)
 
   const source = new DeviceMotionSource()
+  const recorder = recordTrace ? new TraceRecorder() : null
   let cup: DiceCup | null = null
   let releaseWakeLock = () => {}
   let starting = false
@@ -41,7 +48,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
       cup = engine.DiceCup.create(element, rapier, source, (snapshot) => {
         state.value = snapshot.state
         result.value = snapshot.result
-      }, options)
+      }, options, recorder)
       ready.value = true
     }
     catch (error) {
@@ -73,10 +80,15 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     return cup?.debugInfo ?? null
   }
 
+  /** The recent sensor readings, or null when not recording. */
+  function exportTrace(note: string): MotionTrace | null {
+    return recorder?.toTrace(navigator.userAgent, note) ?? null
+  }
+
   /** Rolls from a click or tap, with or without a motion sensor. */
   function toss() {
     cup?.toss()
   }
 
-  return { ready, failed, state, result, permission, start, toss, debugInfo }
+  return { ready, failed, state, result, permission, start, toss, debugInfo, exportTrace }
 }

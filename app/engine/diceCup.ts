@@ -1,6 +1,7 @@
 import { boxForViewport } from './box'
 import type { CupState } from './core/stateMachine'
 import type { MotionSource } from './input/motionSource'
+import type { TraceRecorder } from './input/motionTrace'
 import type { Vec3 } from './math'
 import type { Rapier } from './physics/world'
 import { DiceScene } from './render/scene'
@@ -39,6 +40,7 @@ export class DiceCup {
     private readonly simulation: CupSimulation,
     private readonly scene: DiceScene,
     private readonly onChange: (snapshot: CupSnapshot) => void,
+    private readonly recorder: TraceRecorder | null,
   ) {
     this.resizeObserver = new ResizeObserver(() => this.resize())
     this.resizeObserver.observe(canvas)
@@ -46,20 +48,21 @@ export class DiceCup {
     this.frame = requestAnimationFrame(this.tick)
   }
 
-  /** `rapier` must already be initialised. */
+  /** `rapier` must already be initialised. A `recorder` gets every reading the simulation is given. */
   static create(
     canvas: HTMLCanvasElement,
     rapier: Rapier,
     source: MotionSource,
     onChange: (snapshot: CupSnapshot) => void,
     options: CupOptions = {},
+    recorder: TraceRecorder | null = null,
   ): DiceCup {
     // A canvas that is not laid out yet has no size; the first resize corrects the box.
     const simulation = new CupSimulation(rapier, boxForViewport(canvas.clientWidth || 1, canvas.clientHeight || 1), options)
     try {
       const scene = new DiceScene(canvas)
       for (let index = 0; index < simulation.physics.dieCount; index++) scene.addD6()
-      return new DiceCup(canvas, source, simulation, scene, onChange)
+      return new DiceCup(canvas, source, simulation, scene, onChange, recorder)
     }
     catch (error) {
       // WebGL can be unavailable; do not leave the WASM world behind.
@@ -106,6 +109,7 @@ export class DiceCup {
     this.lastTimeMs = timeMs
 
     const { simulation, scene } = this
+    this.recorder?.push(this.source.acceleration, timeMs)
     if (simulation.tick(dt, this.source.acceleration, timeMs)) {
       this.onChange({ state: simulation.state, result: simulation.result })
     }

@@ -44,10 +44,25 @@
       This browser has no motion sensor, so click or tap to shake.
     </p>
 
-    <pre
+    <div
       v-if="debug"
       class="cup__debug"
-    >{{ debugText }}</pre>
+    >
+      <pre>{{ debugText }}</pre>
+      <!-- For turning a real shake into a test fixture (tests/fixtures/traces). -->
+      <form
+        class="cup__trace"
+        @submit.prevent="copyTrace"
+      >
+        <input
+          v-model="traceNote"
+          placeholder="What you did"
+        >
+        <button type="submit">
+          {{ traceStatus }}
+        </button>
+      </form>
+    </div>
   </main>
 </template>
 
@@ -61,8 +76,37 @@ const canvas = useTemplateRef('canvas')
 // Shaking tips the phone far enough for the browser to rotate the page; the
 // cup stays put in the phone's own frame instead.
 const counterRotationStyle = useCounterRotation()
-const { ready, failed, state, result, permission, start, toss, debugInfo } = useDiceCup(canvas, { randomStart: !debug })
+const { ready, failed, state, result, permission, start, toss, debugInfo, exportTrace } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug })
 const debugText = ref('')
+const traceNote = ref('')
+const COPY_LABEL = 'Copy trace'
+const traceStatus = ref(COPY_LABEL)
+let traceStatusTimer: ReturnType<typeof setTimeout> | undefined
+
+/**
+ * Copies the trace for pasting on the computer through Universal Clipboard,
+ * or saves it as a file where the clipboard is refused.
+ */
+async function copyTrace() {
+  const trace = exportTrace(traceNote.value)
+  if (!trace) return
+  const json = JSON.stringify(trace)
+  try {
+    await navigator.clipboard.writeText(json)
+    traceStatus.value = `Copied ${trace.samples.length}`
+  }
+  catch {
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
+    link.download = 'trace.json'
+    link.click()
+    // Safari can drop the download if the URL goes away in the same task.
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000)
+    traceStatus.value = `Saved ${trace.samples.length}`
+  }
+  clearTimeout(traceStatusTimer)
+  traceStatusTimer = setTimeout(() => traceStatus.value = COPY_LABEL, 2000)
+}
 
 if (debug) {
   const format = (value: number) => value.toFixed(1).padStart(6)
@@ -147,10 +191,31 @@ if (debug) {
   position: absolute;
   top: var(--safe-inset);
   left: 0;
-  margin: 0;
   padding: 0.5rem;
   font: 12px/1.4 ui-monospace, monospace;
   background: rgb(0 0 0 / 55%);
   pointer-events: none;
+}
+
+.cup__debug pre {
+  margin: 0;
+  font: inherit;
+}
+
+.cup__trace {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  pointer-events: auto;
+}
+
+/* 16px stops iOS Safari zooming in on focus. */
+.cup__trace input,
+.cup__trace button {
+  font: 16px/1.2 system-ui, sans-serif;
+}
+
+.cup__trace input {
+  width: 10rem;
 }
 </style>
