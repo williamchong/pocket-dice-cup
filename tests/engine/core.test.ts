@@ -4,7 +4,7 @@ import { nextState } from '../../app/engine/core/stateMachine'
 import { D6_FACES } from '../../app/engine/dice/d6'
 import { readTopFace } from '../../app/engine/dice/faces'
 import { REST_ACCELERATION, toScreenFrame } from '../../app/engine/input/motionSource'
-import type { Quat, Vec3 } from '../../app/engine/math'
+import { axisAngle, type Vec3 } from '../../app/engine/math'
 
 const quiet = { shaking: false, restingFaceUp: false, diceAtRest: false }
 
@@ -83,12 +83,7 @@ describe('MotionAnalyser', () => {
   })
 })
 
-/** Quaternion for a rotation of `degrees` about a unit axis. */
-function axisAngle(axis: Vec3, degrees: number): Quat {
-  const half = degrees * Math.PI / 360
-  const s = Math.sin(half)
-  return { x: axis.x * s, y: axis.y * s, z: axis.z * s, w: Math.cos(half) }
-}
+const degrees = (value: number) => value * Math.PI / 180
 
 describe('readTopFace', () => {
   it('reads the +z face of an unrotated die', () => {
@@ -97,17 +92,17 @@ describe('readTopFace', () => {
 
   it('reads each face when it is turned towards the viewer', () => {
     // Rotating about y by -90° brings the +x face (1) to +z; by +90° the -x face (6).
-    expect(readTopFace(D6_FACES, axisAngle({ x: 0, y: 1, z: 0 }, -90))).toBe(1)
-    expect(readTopFace(D6_FACES, axisAngle({ x: 0, y: 1, z: 0 }, 90))).toBe(6)
+    expect(readTopFace(D6_FACES, axisAngle({ x: 0, y: 1, z: 0 }, degrees(-90)))).toBe(1)
+    expect(readTopFace(D6_FACES, axisAngle({ x: 0, y: 1, z: 0 }, degrees(90)))).toBe(6)
     // Rotating about x by +90° brings the +y face (2) to +z; by -90° the -y face (5).
-    expect(readTopFace(D6_FACES, axisAngle({ x: 1, y: 0, z: 0 }, 90))).toBe(2)
-    expect(readTopFace(D6_FACES, axisAngle({ x: 1, y: 0, z: 0 }, -90))).toBe(5)
-    expect(readTopFace(D6_FACES, axisAngle({ x: 1, y: 0, z: 0 }, 180))).toBe(4)
+    expect(readTopFace(D6_FACES, axisAngle({ x: 1, y: 0, z: 0 }, degrees(90)))).toBe(2)
+    expect(readTopFace(D6_FACES, axisAngle({ x: 1, y: 0, z: 0 }, degrees(-90)))).toBe(5)
+    expect(readTopFace(D6_FACES, axisAngle({ x: 1, y: 0, z: 0 }, degrees(180)))).toBe(4)
   })
 
   it('is unaffected by a spin about the vertical axis or a slight tilt', () => {
-    expect(readTopFace(D6_FACES, axisAngle({ x: 0, y: 0, z: 1 }, 37))).toBe(3)
-    expect(readTopFace(D6_FACES, axisAngle({ x: 1, y: 0, z: 0 }, 20))).toBe(3)
+    expect(readTopFace(D6_FACES, axisAngle({ x: 0, y: 0, z: 1 }, degrees(37)))).toBe(3)
+    expect(readTopFace(D6_FACES, axisAngle({ x: 1, y: 0, z: 0 }, degrees(20)))).toBe(3)
   })
 
   it('has opposite faces that sum to 7', () => {

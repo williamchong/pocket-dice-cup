@@ -4,7 +4,7 @@ import type { MotionSource } from './input/motionSource'
 import type { Vec3 } from './math'
 import type { Rapier } from './physics/world'
 import { DiceScene } from './render/scene'
-import { CupSimulation } from './simulation'
+import { CupSimulation, type CupOptions } from './simulation'
 
 export interface CupSnapshot {
   state: CupState
@@ -52,9 +52,10 @@ export class DiceCup {
     rapier: Rapier,
     source: MotionSource,
     onChange: (snapshot: CupSnapshot) => void,
+    options: CupOptions = {},
   ): DiceCup {
     // A canvas that is not laid out yet has no size; the first resize corrects the box.
-    const simulation = new CupSimulation(rapier, boxForViewport(canvas.clientWidth || 1, canvas.clientHeight || 1))
+    const simulation = new CupSimulation(rapier, boxForViewport(canvas.clientWidth || 1, canvas.clientHeight || 1), options)
     try {
       const scene = new DiceScene(canvas)
       for (let index = 0; index < simulation.physics.dieCount; index++) scene.addD6()

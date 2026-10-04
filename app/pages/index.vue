@@ -49,12 +49,13 @@
 </template>
 
 <script setup lang="ts">
-const canvas = useTemplateRef('canvas')
-const { ready, failed, state, result, permission, start, shake, debugInfo } = useDiceCup(canvas)
-
 // `?debug` shows what the sensor and the state machine are doing, for tuning
-// on a real phone where there is no console.
+// on a real phone where there is no console. It also starts the die in the
+// same place every time, so runs can be compared.
 const debug = 'debug' in useRoute().query
+
+const canvas = useTemplateRef('canvas')
+const { ready, failed, state, result, permission, start, shake, debugInfo } = useDiceCup(canvas, { randomStart: !debug })
 const debugText = ref('')
 
 if (debug) {

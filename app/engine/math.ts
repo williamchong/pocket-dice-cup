@@ -25,3 +25,19 @@ export function rotate(v: Vec3, q: Quat): Vec3 {
     z: v.z + 2 * (q.w * cz + q.x * cy - q.y * cx),
   }
 }
+
+/** The unit quaternion for a turn of `angle` radians about the unit vector `axis`. */
+export function axisAngle(axis: Vec3, angle: number): Quat {
+  const s = Math.sin(angle / 2)
+  return { x: axis.x * s, y: axis.y * s, z: axis.z * s, w: Math.cos(angle / 2) }
+}
+
+/** The rotation `b` followed by the rotation `a`. */
+export function multiply(a: Quat, b: Quat): Quat {
+  return {
+    x: a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
+    y: a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
+    z: a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w,
+    w: a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
+  }
+}

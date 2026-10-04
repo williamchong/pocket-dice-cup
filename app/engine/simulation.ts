@@ -6,6 +6,15 @@ import { readTopFace } from './dice/faces'
 import type { Vec3 } from './math'
 import { PhysicsWorld, type Rapier } from './physics/world'
 
+export interface CupOptions {
+  /**
+   * Whether the dice start at a random place and face, as if left from the
+   * last roll. Off, they start in the middle with the same face up every time,
+   * for tests and debugging. On by default.
+   */
+  randomStart?: boolean
+}
+
 /**
  * The dice cup without a screen: physics, motion analysis and the state
  * machine. It has no DOM dependency, so tests drive it in Node with recorded
@@ -19,9 +28,9 @@ export class CupSimulation {
   readonly analyser = new MotionAnalyser()
   readonly physics: PhysicsWorld
 
-  constructor(rapier: Rapier, box: BoxSize) {
+  constructor(rapier: Rapier, box: BoxSize, { randomStart = true }: CupOptions = {}) {
     this.physics = new PhysicsWorld(rapier, box)
-    this.physics.addD6()
+    this.physics.addD6(randomStart ? Math.random : undefined)
   }
 
   /**

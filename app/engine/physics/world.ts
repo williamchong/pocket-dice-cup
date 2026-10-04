@@ -1,7 +1,7 @@
 import type { Collider, RigidBody, World } from '@dimforge/rapier3d-compat'
 import type { BoxSize } from '../box'
 import { D6_EDGE_RADIUS, D6_SIZE } from '../dice/d6'
-import { distance, length, type Quat, type Vec3 } from '../math'
+import { axisAngle, distance, length, multiply, type Quat, type Vec3 } from '../math'
 
 /** The Rapier module, passed in so that only the caller decides when its WASM is loaded. */
 export type Rapier = typeof import('@dimforge/rapier3d-compat').default
@@ -35,6 +35,19 @@ const REST_LINEAR_SPEED = 1
 const REST_ANGULAR_SPEED = 0.5
 const REST_DURATION_S = 0.25
 
+const X_AXIS: Vec3 = { x: 1, y: 0, z: 0 }
+const Y_AXIS: Vec3 = { x: 0, y: 1, z: 0 }
+const Z_AXIS: Vec3 = { x: 0, y: 0, z: 1 }
+/** One rotation per face of a cube that leaves that face pointing up (+z). */
+const FACE_UP_ROTATIONS: readonly Quat[] = [
+  { x: 0, y: 0, z: 0, w: 1 },
+  axisAngle(X_AXIS, Math.PI / 2),
+  axisAngle(X_AXIS, -Math.PI / 2),
+  axisAngle(X_AXIS, Math.PI),
+  axisAngle(Y_AXIS, Math.PI / 2),
+  axisAngle(Y_AXIS, -Math.PI / 2),
+]
+
 export class PhysicsWorld {
   private readonly world: World
   private walls: Collider[] = []
@@ -62,12 +75,31 @@ export class PhysicsWorld {
     return this.restTime >= REST_DURATION_S
   }
 
-  addD6(): void {
+  /**
+   * Adds a d6 lying flat on the floor. With `random`, it lies at a random
+   * place with a random face up and a random turn, as if left from the last
+   * roll; without, it lies in the middle with the 3 up, for repeatable tests
+   * and debugging.
+   */
+  addD6(random?: () => number): void {
     const { RigidBodyDesc, ColliderDesc } = this.rapier
     const half = D6_SIZE / 2
+    let position: Vec3 = { x: 0, y: 0, z: half }
+    let rotation: Quat = FACE_UP_ROTATIONS[0]!
+    if (random) {
+      // Clear of the walls at any turn, which takes half the diagonal; a box
+      // too small for that keeps it in the middle.
+      const reach = half * Math.SQRT2
+      const rangeX = Math.max(0, this.box.width / 2 - reach)
+      const rangeY = Math.max(0, this.box.height / 2 - reach)
+      position = { x: (2 * random() - 1) * rangeX, y: (2 * random() - 1) * rangeY, z: half }
+      const faceUp = FACE_UP_ROTATIONS[Math.floor(random() * FACE_UP_ROTATIONS.length)]!
+      rotation = multiply(axisAngle(Z_AXIS, random() * 2 * Math.PI), faceUp)
+    }
     const body = this.world.createRigidBody(
       RigidBodyDesc.dynamic()
-        .setTranslation(0, 0, half)
+        .setTranslation(position.x, position.y, position.z)
+        .setRotation(rotation)
         // A hard shake moves a die further than its own size in one step.
         .setCcdEnabled(true),
     )

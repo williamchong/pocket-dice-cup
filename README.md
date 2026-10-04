@@ -19,7 +19,8 @@ self-signed certificate warning, tap Start and allow motion access.
 With no motion sensor, as on a desktop, click or tap the cup to shake it.
 
 Add `?debug` to the URL to see the sensor reading, the shake level and the
-current state on screen.
+current state on screen. It also starts the die in the middle with the same
+face up every time, instead of at a random place and face.
 
 ## Check
 

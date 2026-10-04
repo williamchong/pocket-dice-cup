@@ -1,6 +1,7 @@
 import type { ShallowRef } from 'vue'
 import type { CupState } from '~/engine/core/stateMachine'
 import type { CupDebugInfo, DiceCup } from '~/engine/diceCup'
+import type { CupOptions } from '~/engine/simulation'
 import { DeviceMotionSource, type MotionPermission } from '~/engine/input/motionSource'
 import { PointerSource } from '~/engine/input/pointerSource'
 
@@ -9,7 +10,7 @@ import { PointerSource } from '~/engine/input/pointerSource'
  * needs. The engine itself is never made reactive: Vue's proxies would wrap
  * three.js and Rapier objects that are read thousands of times a frame.
  */
-export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>>) {
+export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>>, options: CupOptions = {}) {
   const ready = ref(false)
   /** The engine could not start, for example because WebGL is unavailable. */
   const failed = ref(false)
@@ -41,7 +42,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
       cup = engine.DiceCup.create(element, rapier, source, (snapshot) => {
         state.value = snapshot.state
         result.value = snapshot.result
-      })
+      }, options)
       ready.value = true
     }
     catch (error) {

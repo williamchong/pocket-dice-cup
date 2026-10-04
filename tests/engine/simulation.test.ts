@@ -2,7 +2,8 @@ import RAPIER from '@dimforge/rapier3d-compat'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { boxForViewport } from '../../app/engine/box'
 import type { CupState } from '../../app/engine/core/stateMachine'
-import { D6_SIZE } from '../../app/engine/dice/d6'
+import { D6_FACES, D6_SIZE } from '../../app/engine/dice/d6'
+import { readTopFace } from '../../app/engine/dice/faces'
 import { REST_ACCELERATION, type MotionSource } from '../../app/engine/input/motionSource'
 import { PointerSource } from '../../app/engine/input/pointerSource'
 import { distance, type Vec3 } from '../../app/engine/math'
@@ -25,6 +26,11 @@ function shake(t: number, seed: number): Vec3 {
   }
 }
 
+/** The dice start in the same place every time, so each roll is repeatable. */
+function fixedCup(size = box): CupSimulation {
+  return new CupSimulation(RAPIER, size, { randomStart: false })
+}
+
 const desktop: MotionSource = {
   acceleration: REST_ACCELERATION,
   active: false,
@@ -40,7 +46,7 @@ interface Roll {
 }
 
 function roll(seed: number, shakeSeconds = 2): Roll {
-  const simulation = new CupSimulation(RAPIER, box)
+  const simulation = fixedCup()
   const states: CupState[] = [simulation.state]
   let time = 0
   const run = (seconds: number, sample: (t: number) => Vec3, until?: () => boolean) => {
@@ -62,7 +68,7 @@ function roll(seed: number, shakeSeconds = 2): Roll {
 function toss(index: number) {
   let timeMs = 0
   const source = new PointerSource(desktop, () => timeMs)
-  const simulation = new CupSimulation(RAPIER, box)
+  const simulation = fixedCup()
   const states: CupState[] = [simulation.state]
   let peakSpeed = 0
   let last = simulation.physics.diePosition(0)
@@ -91,7 +97,7 @@ function assertInsideBox(simulation: CupSimulation): void {
 
 describe('CupSimulation', () => {
   it('stays idle with no result while the phone lies still', () => {
-    const simulation = new CupSimulation(RAPIER, box)
+    const simulation = fixedCup()
     for (let i = 1; i <= 120; i++) simulation.tick(FRAME, REST_ACCELERATION, i * FRAME * 1000)
     expect(simulation.state).toBe('idle')
     expect(simulation.result).toBeNull()
@@ -137,7 +143,7 @@ describe('CupSimulation', () => {
   })
 
   it('pulls the die back inside when the cup shrinks around it', () => {
-    const simulation = new CupSimulation(RAPIER, boxForViewport(844, 390))
+    const simulation = fixedCup(boxForViewport(844, 390))
     // Slide the die to the right-hand wall of a landscape cup.
     for (let i = 1; i <= 120; i++) simulation.tick(FRAME, { x: -9.8, y: 0, z: 2 }, i * FRAME * 1000)
     expect(simulation.physics.diePosition(0).x).toBeGreaterThan(box.width / 2)
@@ -165,5 +171,37 @@ describe('CupSimulation', () => {
     expect(peakSpeed).toBeLessThan(200)
     // From the same starting face every time, so the die really turned over.
     expect(seen.size).toBeGreaterThanOrEqual(4)
+  })
+})
+
+describe('starting position', () => {
+  it('puts the die in the middle with the 3 up when the start is fixed', () => {
+    const simulation = fixedCup()
+    const p = simulation.physics.diePosition(0)
+    expect(p.x).toBe(0)
+    expect(p.y).toBe(0)
+    expect(p.z).toBeCloseTo(D6_SIZE / 2)
+    expect(readTopFace(D6_FACES, simulation.physics.dieRotation(0))).toBe(3)
+    simulation.dispose()
+  })
+
+  it('lays the die flat at a random place and face by default', () => {
+    const faces = new Set<number>()
+    for (let i = 0; i < 100; i++) {
+      const simulation = new CupSimulation(RAPIER, box)
+      const p = simulation.physics.diePosition(0)
+      expect(Math.abs(p.x)).toBeLessThanOrEqual(box.width / 2 - D6_SIZE / Math.SQRT2)
+      expect(Math.abs(p.y)).toBeLessThanOrEqual(box.height / 2 - D6_SIZE / Math.SQRT2)
+      expect(p.z).toBeCloseTo(D6_SIZE / 2)
+      const face = readTopFace(D6_FACES, simulation.physics.dieRotation(0))
+      faces.add(face)
+      // Lying flat already, so it only settles into the floor rather than
+      // falling into place.
+      for (let j = 1; j <= 30; j++) simulation.tick(FRAME, REST_ACCELERATION, j * FRAME * 1000)
+      expect(distance(simulation.physics.diePosition(0), p)).toBeLessThan(0.1)
+      expect(readTopFace(D6_FACES, simulation.physics.dieRotation(0))).toBe(face)
+      simulation.dispose()
+    }
+    expect(faces.size).toBe(6)
   })
 })
