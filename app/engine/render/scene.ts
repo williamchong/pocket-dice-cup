@@ -16,12 +16,10 @@ import {
   type WebGLRenderTarget,
 } from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
-import type { BoxSize } from '../box'
+import { CAMERA_DISTANCE, type BoxSize } from '../box'
 import type { Quat, Vec3 } from '../math'
 import { createD6Mesh } from './d6Mesh'
 
-/** Camera distance above the glass, as a multiple of the cup's height. Larger is flatter. */
-const CAMERA_DISTANCE = 2
 /** Phones report 3; the extra pixels cost more than they show at this scale. */
 const MAX_PIXEL_RATIO = 2
 
