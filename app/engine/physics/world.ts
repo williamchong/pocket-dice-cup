@@ -20,9 +20,20 @@ const FIXED_DT = 1 / 480
 const MAX_STEPS_PER_FRAME = 24
 
 const WALL_THICKNESS = 4
-/** Shared by the dice and the walls: Rapier combines the two sides of a contact. */
-const RESTITUTION = 0.35
-const FRICTION = 0.5
+/**
+ * Bounce of the dice, the floor and the glass; Rapier averages the two sides
+ * of a contact. At 0.35 a die tipping over an edge slapped flat and stopped
+ * within a frame, as if pulled by a magnet; at 0.8 it rocks to a stop.
+ */
+const RESTITUTION = 0.8
+/**
+ * Bounce against the side walls, which win a contact with a die (the Min
+ * rule). A hard shake hits them far faster than a die ever hits the floor, and
+ * at the dice's bounce it sank a die visibly into a wall.
+ */
+const SIDE_WALL_RESTITUTION = 0.35
+/** Tuned with the bounce, so a die rolls on a little before it stops. */
+const FRICTION = 0.4
 
 /**
  * Rapier does not wake sleeping bodies when gravity changes, so the dice are
@@ -188,22 +199,25 @@ export class PhysicsWorld {
     const hx = width / 2
     const hy = height / 2
     const hz = depth / 2
-    // Half extents and centre of each slab. The side walls overlap the floor
-    // and the glass so no corner is left open.
-    const slabs: [Vec3, Vec3][] = [
-      [{ x: hx + 2 * t, y: hy + 2 * t, z: t }, { x: 0, y: 0, z: -t }],
-      [{ x: hx + 2 * t, y: hy + 2 * t, z: t }, { x: 0, y: 0, z: depth + t }],
-      [{ x: t, y: hy + 2 * t, z: hz + 2 * t }, { x: -hx - t, y: 0, z: hz }],
-      [{ x: t, y: hy + 2 * t, z: hz + 2 * t }, { x: hx + t, y: 0, z: hz }],
-      [{ x: hx + 2 * t, y: t, z: hz + 2 * t }, { x: 0, y: -hy - t, z: hz }],
-      [{ x: hx + 2 * t, y: t, z: hz + 2 * t }, { x: 0, y: hy + t, z: hz }],
+    // Half extents, centre and whether it is a side wall, for each slab. The
+    // side walls overlap the floor and the glass so no corner is left open.
+    const slabs: [Vec3, Vec3, boolean][] = [
+      [{ x: hx + 2 * t, y: hy + 2 * t, z: t }, { x: 0, y: 0, z: -t }, false],
+      [{ x: hx + 2 * t, y: hy + 2 * t, z: t }, { x: 0, y: 0, z: depth + t }, false],
+      [{ x: t, y: hy + 2 * t, z: hz + 2 * t }, { x: -hx - t, y: 0, z: hz }, true],
+      [{ x: t, y: hy + 2 * t, z: hz + 2 * t }, { x: hx + t, y: 0, z: hz }, true],
+      [{ x: hx + 2 * t, y: t, z: hz + 2 * t }, { x: 0, y: -hy - t, z: hz }, true],
+      [{ x: hx + 2 * t, y: t, z: hz + 2 * t }, { x: 0, y: hy + t, z: hz }, true],
     ]
-    this.walls = slabs.map(([half, centre]) => this.world.createCollider(
-      this.rapier.ColliderDesc.cuboid(half.x, half.y, half.z)
+    const { ColliderDesc, CoefficientCombineRule } = this.rapier
+    this.walls = slabs.map(([half, centre, side]) => {
+      const desc = ColliderDesc.cuboid(half.x, half.y, half.z)
         .setTranslation(centre.x, centre.y, centre.z)
-        .setRestitution(RESTITUTION)
-        .setFriction(FRICTION),
-    ))
+        .setFriction(FRICTION)
+        .setRestitution(side ? SIDE_WALL_RESTITUTION : RESTITUTION)
+      if (side) desc.setRestitutionCombineRule(CoefficientCombineRule.Min)
+      return this.world.createCollider(desc)
+    })
   }
 }
 
