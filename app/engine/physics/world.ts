@@ -42,6 +42,16 @@ const FRICTION = 0.4
  */
 const WAKE_ACCELERATION_DELTA = 0.5
 
+/**
+ * Width (cm) of the 45° bevel where the glass meets the side walls, like the
+ * rounded inside of a real cup. A cube only tips over from a push when
+ * friction is at least 1, so a die shaken side to side with the phone screen
+ * down slid flat on the glass and hit the walls face on; the bevel catches its
+ * leading edge and turns it. The floor has none: a die at rest would lean on
+ * it, cocked against a wall that is drawn square.
+ */
+const BEVEL = 0.6
+
 const REST_LINEAR_SPEED = 1
 const REST_ANGULAR_SPEED = 0.5
 const REST_DURATION_S = 0.25
@@ -199,26 +209,43 @@ export class PhysicsWorld {
     const hx = width / 2
     const hy = height / 2
     const hz = depth / 2
-    // Half extents, centre and whether it is a side wall, for each slab. The
-    // side walls overlap the floor and the glass so no corner is left open.
-    const slabs: [Vec3, Vec3, boolean][] = [
-      [{ x: hx + 2 * t, y: hy + 2 * t, z: t }, { x: 0, y: 0, z: -t }, false],
-      [{ x: hx + 2 * t, y: hy + 2 * t, z: t }, { x: 0, y: 0, z: depth + t }, false],
-      [{ x: t, y: hy + 2 * t, z: hz + 2 * t }, { x: -hx - t, y: 0, z: hz }, true],
-      [{ x: t, y: hy + 2 * t, z: hz + 2 * t }, { x: hx + t, y: 0, z: hz }, true],
-      [{ x: hx + 2 * t, y: t, z: hz + 2 * t }, { x: 0, y: -hy - t, z: hz }, true],
-      [{ x: hx + 2 * t, y: t, z: hz + 2 * t }, { x: 0, y: hy + t, z: hz }, true],
+    // The side walls overlap the floor and the glass so no corner is left open.
+    const slabs: Slab[] = [
+      { half: { x: hx + 2 * t, y: hy + 2 * t, z: t }, centre: { x: 0, y: 0, z: -t }, side: false },
+      { half: { x: hx + 2 * t, y: hy + 2 * t, z: t }, centre: { x: 0, y: 0, z: depth + t }, side: false },
+      { half: { x: t, y: hy + 2 * t, z: hz + 2 * t }, centre: { x: -hx - t, y: 0, z: hz }, side: true },
+      { half: { x: t, y: hy + 2 * t, z: hz + 2 * t }, centre: { x: hx + t, y: 0, z: hz }, side: true },
+      { half: { x: hx + 2 * t, y: t, z: hz + 2 * t }, centre: { x: 0, y: -hy - t, z: hz }, side: true },
+      { half: { x: hx + 2 * t, y: t, z: hz + 2 * t }, centre: { x: 0, y: hy + t, z: hz }, side: true },
     ]
+    // A square bar turned 45° along each edge of the glass leaves a bevel
+    // BEVEL wide on both faces.
+    const b = BEVEL / Math.SQRT2
+    const alongX = axisAngle(X_AXIS, Math.PI / 4)
+    const alongY = axisAngle(Y_AXIS, Math.PI / 4)
+    for (const sign of [-1, 1]) {
+      slabs.push({ half: { x: hx, y: b, z: b }, centre: { x: 0, y: sign * hy, z: depth }, side: true, rotation: alongX })
+      slabs.push({ half: { x: b, y: hy, z: b }, centre: { x: sign * hx, y: 0, z: depth }, side: true, rotation: alongY })
+    }
     const { ColliderDesc, CoefficientCombineRule } = this.rapier
-    this.walls = slabs.map(([half, centre, side]) => {
+    this.walls = slabs.map(({ half, centre, side, rotation }) => {
       const desc = ColliderDesc.cuboid(half.x, half.y, half.z)
         .setTranslation(centre.x, centre.y, centre.z)
         .setFriction(FRICTION)
         .setRestitution(side ? SIDE_WALL_RESTITUTION : RESTITUTION)
+      if (rotation) desc.setRotation(rotation)
       if (side) desc.setRestitutionCombineRule(CoefficientCombineRule.Min)
       return this.world.createCollider(desc)
     })
   }
+}
+
+/** A fixed box of the cup: half extents and centre, and whether it is a side wall. */
+interface Slab {
+  half: Vec3
+  centre: Vec3
+  side: boolean
+  rotation?: Quat
 }
 
 /** A uniformly random unit vector: z uniform in [-1, 1], longitude uniform. */
