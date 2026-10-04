@@ -109,7 +109,8 @@ export class DiceCup {
     this.lastTimeMs = timeMs
 
     const { simulation, scene } = this
-    this.recorder?.push(this.source.acceleration, timeMs)
+    // Before the first reading the source holds a placeholder, not a measurement.
+    if (this.source.active) this.recorder?.push(this.source.acceleration, timeMs)
     if (simulation.tick(dt, this.source.acceleration, timeMs)) {
       this.onChange({ state: simulation.state, result: simulation.result })
     }
