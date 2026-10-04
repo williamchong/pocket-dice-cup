@@ -79,7 +79,7 @@ app/
     core/      state machine, dice-pool model, notation parser ("3d6+1d20"), history store
     physics/   Rapier world, fixed 480 Hz step + CCD, convex-hull colliders, contact events
     dice/      per-die geometry and face-normal -> value tables
-    input/     MotionSource interface: DeviceMotionSource | PointerSource
+    input/     MotionSource interface: DeviceMotionSource
     feedback/  HapticsBackend interface: NativeBackend | VibrateBackend | NullBackend
                AudioEngine: Web Audio clack samples, pitch and gain per impact
     render/    three.js scene, skins
@@ -99,8 +99,10 @@ milliseconds under a hard shake, which is why the physics steps at 480 Hz: at
 Two interfaces carry most of the extras:
 
 - `MotionSource` supplies an acceleration vector per frame. `DeviceMotionSource`
-  reads the sensor; `PointerSource` synthesises a burst from a click or drag.
-  Desktop support uses the same physics path as mobile.
+  reads the sensor. A click or tap instead hits the dice up into the air with a
+  random push and spin: a synthetic shake gentle enough to watch on a desktop
+  slid the dice without turning them, so they mostly landed on the face they
+  started on.
 - `HapticsBackend` plays a transient of a given intensity. `NativeBackend` calls
   Core Haptics through the iOS shell, `VibrateBackend` maps it to
   `navigator.vibrate`, and `NullBackend` covers browsers with neither.

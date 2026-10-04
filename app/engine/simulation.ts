@@ -6,9 +6,8 @@ import { readTopFace } from './dice/faces'
 import type { Vec3 } from './math'
 import { PhysicsWorld, type Rapier } from './physics/world'
 
-/** How fast a click throws the dice up (cm/s) and spins them (rad/s). */
-const TOSS_LIFT = 60
-const TOSS_SPIN = 40
+/** How hard a click hits the dice: up and sideways in cm/s, spin in rad/s. */
+const TOSS = { lift: 100, push: 80, spin: 50 }
 
 export interface CupOptions {
   /**
@@ -31,6 +30,8 @@ export class CupSimulation {
 
   readonly analyser = new MotionAnalyser()
   readonly physics: PhysicsWorld
+  /** A click since the last tick, which starts a roll like a shake does. */
+  private tossed = false
 
   constructor(rapier: Rapier, box: BoxSize, { randomStart = true }: CupOptions = {}) {
     this.physics = new PhysicsWorld(rapier, box)
@@ -47,10 +48,11 @@ export class CupSimulation {
     this.physics.step(dtSeconds)
 
     const next = nextState(this.state, {
-      shaking: this.analyser.shaking,
+      shaking: this.analyser.shaking || this.tossed,
       restingFaceUp: this.analyser.restingFaceUp,
       diceAtRest: this.physics.diceAtRest,
     })
+    this.tossed = false
     if (next === this.state) return false
 
     this.state = next
@@ -60,12 +62,12 @@ export class CupSimulation {
   }
 
   /**
-   * Throws the dice up with a random spin, as a click does on a desktop. A
-   * synthetic shake gentle enough to watch slides the dice more than it turns
-   * them, so without this they would mostly land on the face they started on.
+   * Rolls from a click or tap: hits the dice up into the air with a
+   * random push and spin, and starts a roll on the next tick.
    */
   toss(random: () => number = Math.random): void {
-    this.physics.tossDice(TOSS_LIFT, TOSS_SPIN, random)
+    this.physics.launchDice(TOSS, random)
+    this.tossed = true
   }
 
   dispose(): void {

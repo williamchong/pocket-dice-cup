@@ -5,7 +5,7 @@
     <canvas
       ref="canvas"
       class="cup__canvas"
-      @pointerdown="shake"
+      @pointerdown="toss"
     />
 
     <div
@@ -55,7 +55,7 @@
 const debug = 'debug' in useRoute().query
 
 const canvas = useTemplateRef('canvas')
-const { ready, failed, state, result, permission, start, shake, debugInfo } = useDiceCup(canvas, { randomStart: !debug })
+const { ready, failed, state, result, permission, start, toss, debugInfo } = useDiceCup(canvas, { randomStart: !debug })
 const debugText = ref('')
 
 if (debug) {

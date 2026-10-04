@@ -3,7 +3,6 @@ import type { CupState } from '~/engine/core/stateMachine'
 import type { CupDebugInfo, DiceCup } from '~/engine/diceCup'
 import type { CupOptions } from '~/engine/simulation'
 import { DeviceMotionSource, type MotionPermission } from '~/engine/input/motionSource'
-import { PointerSource } from '~/engine/input/pointerSource'
 
 /**
  * Runs the dice cup on a canvas and exposes the little of its state the UI
@@ -19,7 +18,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
   /** Null until the user has pressed start. */
   const permission = ref<MotionPermission | null>(null)
 
-  const source = new PointerSource(new DeviceMotionSource())
+  const source = new DeviceMotionSource()
   let cup: DiceCup | null = null
   let releaseWakeLock = () => {}
   let starting = false
@@ -74,11 +73,10 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     return cup?.debugInfo ?? null
   }
 
-  /** Rolls without a motion sensor, from a click or tap. */
-  function shake() {
-    source.shake()
+  /** Rolls from a click or tap, with or without a motion sensor. */
+  function toss() {
     cup?.toss()
   }
 
-  return { ready, failed, state, result, permission, start, shake, debugInfo }
+  return { ready, failed, state, result, permission, start, toss, debugInfo }
 }

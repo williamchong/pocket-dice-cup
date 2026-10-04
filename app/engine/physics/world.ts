@@ -140,20 +140,16 @@ export class PhysicsWorld {
   }
 
   /**
-   * Throws every die up off the floor at `lift` (cm/s), spinning at `spin`
-   * (rad/s) about a random axis, so it tumbles whatever face it starts on.
-   * A spin alone does nothing to a die lying on the floor: the contact stops
-   * it within a step.
+   * Launches every die up at `lift` and sideways at `push` (cm/s) in a random
+   * direction, spinning at `spin` (rad/s) about a random axis, so it tumbles
+   * whatever face it starts on.
    */
-  tossDice(lift: number, spin: number, random: () => number): void {
+  launchDice({ lift, push, spin }: { lift: number, push: number, spin: number }, random: () => number): void {
     for (const die of this.dice) {
-      // A uniformly random direction: z uniform in [-1, 1], longitude uniform.
-      const z = 2 * random() - 1
-      const longitude = 2 * Math.PI * random()
-      const r = Math.sqrt(1 - z * z)
-      const v = die.linvel()
-      die.setLinvel({ x: v.x, y: v.y, z: v.z + lift }, true)
-      die.setAngvel({ x: spin * r * Math.cos(longitude), y: spin * r * Math.sin(longitude), z: spin * z }, true)
+      const heading = 2 * Math.PI * random()
+      die.setLinvel({ x: push * Math.cos(heading), y: push * Math.sin(heading), z: lift }, true)
+      const axis = randomDirection(random)
+      die.setAngvel({ x: spin * axis.x, y: spin * axis.y, z: spin * axis.z }, true)
     }
   }
 
@@ -209,6 +205,14 @@ export class PhysicsWorld {
         .setFriction(FRICTION),
     ))
   }
+}
+
+/** A uniformly random unit vector: z uniform in [-1, 1], longitude uniform. */
+function randomDirection(random: () => number): Vec3 {
+  const z = 2 * random() - 1
+  const longitude = 2 * Math.PI * random()
+  const r = Math.sqrt(1 - z * z)
+  return { x: r * Math.cos(longitude), y: r * Math.sin(longitude), z }
 }
 
 function isSlow(die: RigidBody): boolean {

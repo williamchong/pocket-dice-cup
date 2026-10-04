@@ -4,8 +4,7 @@ import { boxForViewport } from '../../app/engine/box'
 import type { CupState } from '../../app/engine/core/stateMachine'
 import { D6_FACES, D6_SIZE } from '../../app/engine/dice/d6'
 import { readTopFace } from '../../app/engine/dice/faces'
-import { REST_ACCELERATION, type MotionSource } from '../../app/engine/input/motionSource'
-import { PointerSource } from '../../app/engine/input/pointerSource'
+import { REST_ACCELERATION } from '../../app/engine/input/motionSource'
 import { distance, type Vec3 } from '../../app/engine/math'
 import { CupSimulation } from '../../app/engine/simulation'
 
@@ -29,13 +28,6 @@ function shake(t: number, seed: number): Vec3 {
 /** The dice start in the same place every time, so each roll is repeatable. */
 function fixedCup(size = box): CupSimulation {
   return new CupSimulation(RAPIER, size, { randomStart: false })
-}
-
-const desktop: MotionSource = {
-  acceleration: REST_ACCELERATION,
-  active: false,
-  start: async () => 'unsupported',
-  stop: () => {},
 }
 
 interface Roll {
@@ -74,27 +66,18 @@ function seededRandom(seed: number): () => number {
   }
 }
 
-/** Clicks once on a desktop with no sensor and runs until the die settles. */
+/** Clicks once on a desktop with no sensor, lying still, and runs until the die settles. */
 function toss(index: number) {
-  let timeMs = 0
-  const source = new PointerSource(desktop, () => timeMs)
   const simulation = fixedCup()
   const states: CupState[] = [simulation.state]
-  let peakSpeed = 0
-  let last = simulation.physics.diePosition(0)
+  let peakHeight = 0
   for (let i = 0; i < 10 * 60 && simulation.state !== 'result'; i++) {
-    timeMs += FRAME * 1000
-    if (i === 30) {
-      source.shake(index * 0.73)
-      simulation.toss(seededRandom(index + 1))
-    }
-    if (simulation.tick(FRAME, source.acceleration, timeMs)) states.push(simulation.state)
-    const position = simulation.physics.diePosition(0)
-    peakSpeed = Math.max(peakSpeed, distance(position, last) / FRAME)
-    last = position
+    if (i === 30) simulation.toss(seededRandom(index + 1))
+    if (simulation.tick(FRAME, REST_ACCELERATION, (i + 1) * FRAME * 1000)) states.push(simulation.state)
+    peakHeight = Math.max(peakHeight, simulation.physics.diePosition(0).z)
     assertInsideBox(simulation)
   }
-  return { simulation, states, peakSpeed }
+  return { simulation, states, peakHeight }
 }
 
 function assertInsideBox(simulation: CupSimulation): void {
@@ -165,22 +148,30 @@ describe('CupSimulation', () => {
     simulation.dispose()
   })
 
-  it('rolls the die fairly and gently from a click on a desktop with no sensor', () => {
+  it('launches the die off the floor and rolls it fairly from a click on a desktop with no sensor', () => {
     const counts = [0, 0, 0, 0, 0, 0]
-    let peakSpeed = 0
     const tosses = 60
     for (let i = 0; i < tosses; i++) {
-      const { simulation, states, peakSpeed: speed } = toss(i)
+      const { simulation, states, peakHeight } = toss(i)
       expect(states).toEqual(['idle', 'shaking', 'settling', 'result'])
+      // Its centre at least a die's width up, so it is in the air, not sliding.
+      expect(peakHeight).toBeGreaterThan(D6_SIZE)
       counts[simulation.result![0]! - 1]!++
-      peakSpeed = Math.max(peakSpeed, speed)
       simulation.dispose()
     }
-    // A hard shake peaks at about 360 cm/s.
-    expect(peakSpeed).toBeLessThan(100)
     // Every toss starts with the 3 up; a fair roll leaves it there one time in six.
     expect(counts[2]! / tosses).toBeLessThan(0.3)
     expect(counts.every(count => count > 0)).toBe(true)
+  })
+  it('restarts a shown result on a click, and rests there once the die settles', () => {
+    const { simulation } = toss(0)
+    simulation.toss(seededRandom(99))
+    const states: CupState[] = []
+    for (let i = 1; i <= 5 * 60; i++) {
+      if (simulation.tick(FRAME, REST_ACCELERATION, 100_000 + i * FRAME * 1000)) states.push(simulation.state)
+    }
+    expect(states).toEqual(['shaking', 'settling', 'result'])
+    simulation.dispose()
   })
 })
 
