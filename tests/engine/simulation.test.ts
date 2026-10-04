@@ -64,6 +64,16 @@ function roll(seed: number, shakeSeconds = 2): Roll {
   return { simulation, states, settleSeconds }
 }
 
+/** A repeatable stand-in for Math.random (mulberry32). */
+function seededRandom(seed: number): () => number {
+  return () => {
+    seed = (seed + 0x6D2B79F5) | 0
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
 /** Clicks once on a desktop with no sensor and runs until the die settles. */
 function toss(index: number) {
   let timeMs = 0
@@ -74,7 +84,10 @@ function toss(index: number) {
   let last = simulation.physics.diePosition(0)
   for (let i = 0; i < 10 * 60 && simulation.state !== 'result'; i++) {
     timeMs += FRAME * 1000
-    if (i === 30) source.shake(index * 0.73)
+    if (i === 30) {
+      source.shake(index * 0.73)
+      simulation.toss(seededRandom(index + 1))
+    }
     if (simulation.tick(FRAME, source.acceleration, timeMs)) states.push(simulation.state)
     const position = simulation.physics.diePosition(0)
     peakSpeed = Math.max(peakSpeed, distance(position, last) / FRAME)
@@ -152,25 +165,22 @@ describe('CupSimulation', () => {
     simulation.dispose()
   })
 
-  it('rolls to a result from a click on a desktop with no sensor', () => {
-    const { states, simulation } = toss(0)
-    expect(states).toEqual(['idle', 'shaking', 'settling', 'result'])
-    simulation.dispose()
-  })
-
-  it('tumbles the die gently on a click, without the speed of a hard shake', () => {
-    const seen = new Set<number>()
+  it('rolls the die fairly and gently from a click on a desktop with no sensor', () => {
+    const counts = [0, 0, 0, 0, 0, 0]
     let peakSpeed = 0
-    for (let i = 0; i < 12; i++) {
-      const { simulation, peakSpeed: speed } = toss(i)
-      seen.add(simulation.result![0]!)
+    const tosses = 60
+    for (let i = 0; i < tosses; i++) {
+      const { simulation, states, peakSpeed: speed } = toss(i)
+      expect(states).toEqual(['idle', 'shaking', 'settling', 'result'])
+      counts[simulation.result![0]! - 1]!++
       peakSpeed = Math.max(peakSpeed, speed)
       simulation.dispose()
     }
-    // A hard shake peaks at about 360 cm/s, the toss at about 120.
-    expect(peakSpeed).toBeLessThan(200)
-    // From the same starting face every time, so the die really turned over.
-    expect(seen.size).toBeGreaterThanOrEqual(4)
+    // A hard shake peaks at about 360 cm/s.
+    expect(peakSpeed).toBeLessThan(100)
+    // Every toss starts with the 3 up; a fair roll leaves it there one time in six.
+    expect(counts[2]! / tosses).toBeLessThan(0.3)
+    expect(counts.every(count => count > 0)).toBe(true)
   })
 })
 

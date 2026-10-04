@@ -76,6 +76,11 @@ export class DiceCup {
     }
   }
 
+  /** Throws the dice for a click; see CupSimulation.toss. */
+  toss(): void {
+    this.simulation.toss()
+  }
+
   dispose(): void {
     cancelAnimationFrame(this.frame)
     this.resizeObserver.disconnect()

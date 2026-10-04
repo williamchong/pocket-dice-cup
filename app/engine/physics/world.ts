@@ -139,6 +139,24 @@ export class PhysicsWorld {
     }
   }
 
+  /**
+   * Throws every die up off the floor at `lift` (cm/s), spinning at `spin`
+   * (rad/s) about a random axis, so it tumbles whatever face it starts on.
+   * A spin alone does nothing to a die lying on the floor: the contact stops
+   * it within a step.
+   */
+  tossDice(lift: number, spin: number, random: () => number): void {
+    for (const die of this.dice) {
+      // A uniformly random direction: z uniform in [-1, 1], longitude uniform.
+      const z = 2 * random() - 1
+      const longitude = 2 * Math.PI * random()
+      const r = Math.sqrt(1 - z * z)
+      const v = die.linvel()
+      die.setLinvel({ x: v.x, y: v.y, z: v.z + lift }, true)
+      die.setAngvel({ x: spin * r * Math.cos(longitude), y: spin * r * Math.sin(longitude), z: spin * z }, true)
+    }
+  }
+
   diePosition(index: number): Vec3 {
     return this.dice[index]!.translation()
   }

@@ -6,6 +6,10 @@ import { readTopFace } from './dice/faces'
 import type { Vec3 } from './math'
 import { PhysicsWorld, type Rapier } from './physics/world'
 
+/** How fast a click throws the dice up (cm/s) and spins them (rad/s). */
+const TOSS_LIFT = 60
+const TOSS_SPIN = 40
+
 export interface CupOptions {
   /**
    * Whether the dice start at a random place and face, as if left from the
@@ -53,6 +57,15 @@ export class CupSimulation {
     if (next === 'shaking') this.result = null
     if (next === 'result') this.result = this.readDice()
     return true
+  }
+
+  /**
+   * Throws the dice up with a random spin, as a click does on a desktop. A
+   * synthetic shake gentle enough to watch slides the dice more than it turns
+   * them, so without this they would mostly land on the face they started on.
+   */
+  toss(random: () => number = Math.random): void {
+    this.physics.tossDice(TOSS_LIFT, TOSS_SPIN, random)
   }
 
   dispose(): void {

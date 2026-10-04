@@ -77,6 +77,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
   /** Rolls without a motion sensor, from a click or tap. */
   function shake() {
     source.shake()
+    cup?.toss()
   }
 
   return { ready, failed, state, result, permission, start, shake, debugInfo }

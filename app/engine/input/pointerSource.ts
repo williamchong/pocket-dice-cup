@@ -4,20 +4,22 @@ import type { MotionPermission, MotionSource } from './motionSource'
 /** Long enough for the dice to tumble, short enough to feel like a flick. */
 export const BURST_SECONDS = 0.9
 
-/** Sideways acceleration of the swirl, about 1 g. */
-const SWIRL_ACCELERATION = 10
+/** Sideways acceleration of the swirl. Much more and the dice cross a desktop-sized table. */
+const SWIRL_ACCELERATION = 3
 const SWIRL_HZ = 2
-/** Upward acceleration at the top of each hop: enough to lift the dice off the floor. */
+/**
+ * Upward acceleration at the top of each hop: enough to lift the dice off the
+ * floor, and to read as a shake to the motion analysis.
+ */
 const HOP_ACCELERATION = 22
 const HOPS = 3
 
 /**
  * What a gentle toss adds to the reading `t` seconds into a burst: the cup
- * swirls sideways while it hops a few times, so the dice tumble without
- * slamming into the walls. Unlike a phone, a desktop shows the dice the whole
+ * swirls sideways while it hops a few times, rattling the dice without sending
+ * them across the table. Unlike a phone, a desktop shows the dice the whole
  * time, so the motion has to be one a hand could make while watching. `seed`
- * sets the swirl's starting direction so each burst tumbles the dice
- * differently.
+ * sets the swirl's starting direction.
  */
 export function tossBurst(t: number, seed: number): Vec3 {
   // So the toss starts and ends at rest rather than with a jolt.
