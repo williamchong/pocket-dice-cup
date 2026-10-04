@@ -7,6 +7,7 @@ import { readTopFace } from '../../app/engine/dice/faces'
 import { REST_ACCELERATION } from '../../app/engine/input/motionSource'
 import { distance, type Vec3 } from '../../app/engine/math'
 import { CupSimulation } from '../../app/engine/simulation'
+import { seededRandom } from './seededRandom'
 
 beforeAll(() => RAPIER.init())
 
@@ -54,16 +55,6 @@ function roll(seed: number, shakeSeconds = 2): Roll {
   run(shakeSeconds, t => shake(t, seed))
   const settleSeconds = run(10, () => REST_ACCELERATION, () => simulation.state === 'result')
   return { simulation, states, settleSeconds }
-}
-
-/** A repeatable stand-in for Math.random (mulberry32). */
-function seededRandom(seed: number): () => number {
-  return () => {
-    seed = (seed + 0x6D2B79F5) | 0
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
 }
 
 /** Clicks once on a desktop with no sensor, lying still, and runs until the die settles. */

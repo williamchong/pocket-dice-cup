@@ -47,10 +47,17 @@ const WAKE_ACCELERATION_DELTA = 0.5
  * rounded inside of a real cup. A cube only tips over from a push when
  * friction is at least 1, so a die shaken side to side with the phone screen
  * down slid flat on the glass and hit the walls face on; the bevel catches its
- * leading edge and turns it. The floor has none: a die at rest would lean on
- * it, cocked against a wall that is drawn square.
+ * leading edge and turns it.
  */
 const BEVEL = 0.6
+/**
+ * The same bevel where the floor meets the side walls, for a die shaken side
+ * to side screen-up, which slid on the floor and kept its face 55 times in 60
+ * on a recorded iPhone shake. It is kept narrow because a die at rest can lean
+ * on it, cocked against a wall that is drawn square: at 2 mm none of 450
+ * replayed rolls came to rest tilted, at 3 mm 45 did.
+ */
+const FLOOR_BEVEL = 0.2
 
 const REST_LINEAR_SPEED = 1
 const REST_ANGULAR_SPEED = 0.5
@@ -218,14 +225,16 @@ export class PhysicsWorld {
       { half: { x: hx + 2 * t, y: t, z: hz + 2 * t }, centre: { x: 0, y: -hy - t, z: hz }, side: true },
       { half: { x: hx + 2 * t, y: t, z: hz + 2 * t }, centre: { x: 0, y: hy + t, z: hz }, side: true },
     ]
-    // A square bar turned 45° along each edge of the glass leaves a bevel
-    // BEVEL wide on both faces.
-    const b = BEVEL / Math.SQRT2
+    // A square bar turned 45° along each edge of the glass and the floor
+    // leaves a bevel that wide on both faces.
     const alongX = axisAngle(X_AXIS, Math.PI / 4)
     const alongY = axisAngle(Y_AXIS, Math.PI / 4)
-    for (const sign of [-1, 1]) {
-      slabs.push({ half: { x: hx, y: b, z: b }, centre: { x: 0, y: sign * hy, z: depth }, side: true, rotation: alongX })
-      slabs.push({ half: { x: b, y: hy, z: b }, centre: { x: sign * hx, y: 0, z: depth }, side: true, rotation: alongY })
+    for (const [z, bevel] of [[depth, BEVEL], [0, FLOOR_BEVEL]] as const) {
+      const b = bevel / Math.SQRT2
+      for (const sign of [-1, 1]) {
+        slabs.push({ half: { x: hx, y: b, z: b }, centre: { x: 0, y: sign * hy, z }, side: true, rotation: alongX })
+        slabs.push({ half: { x: b, y: hy, z: b }, centre: { x: sign * hx, y: 0, z }, side: true, rotation: alongY })
+      }
     }
     const { ColliderDesc, CoefficientCombineRule } = this.rapier
     this.walls = slabs.map(({ half, centre, side, rotation }) => {
