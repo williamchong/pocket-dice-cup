@@ -1,5 +1,5 @@
-3D dice cup — rebuild plan
-==========================
+Pocket Dice Cup — rebuild plan
+==============================
 
 A mobile-first web app that turns the phone into a dice cup. Pick the phone up,
 shake it, feel and hear the dice rattle, put it down screen-up, and read the

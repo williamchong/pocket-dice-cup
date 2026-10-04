@@ -9,7 +9,7 @@
       v-if="permission !== 'granted'"
       class="cup__gate"
     >
-      <h1>3D Dice Cup</h1>
+      <h1>Pocket Dice Cup</h1>
       <p v-if="failed">
         3D graphics could not start in this browser.
       </p>

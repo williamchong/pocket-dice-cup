@@ -14,7 +14,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: '3D Dice Cup',
+      title: 'Pocket Dice Cup',
       htmlAttrs: { lang: 'en' },
       meta: [
         { charset: 'utf-8' },

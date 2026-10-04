@@ -1,4 +1,4 @@
-# 3D Dice Cup
+# Pocket Dice Cup
 
 A web app that turns the phone into a dice cup: shake it, put it down
 screen-up, read the dice. The plan and the reasoning behind the stack are in
