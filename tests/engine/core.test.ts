@@ -3,7 +3,7 @@ import { MotionAnalyser } from '../../app/engine/core/motionAnalyser'
 import { nextState } from '../../app/engine/core/stateMachine'
 import { D6_FACES } from '../../app/engine/dice/d6'
 import { readTopFace } from '../../app/engine/dice/faces'
-import { REST_ACCELERATION, toScreenFrame } from '../../app/engine/input/motionSource'
+import { REST_ACCELERATION } from '../../app/engine/input/motionSource'
 import { axisAngle, type Vec3 } from '../../app/engine/math'
 
 const quiet = { shaking: false, restingFaceUp: false, diceAtRest: false }
@@ -111,26 +111,5 @@ describe('readTopFace', () => {
         && other.normal.y === -face.normal.y && other.normal.z === -face.normal.z)!
       expect(face.value + opposite.value).toBe(7)
     }
-  })
-})
-
-describe('toScreenFrame', () => {
-  const close = (actual: Vec3, expected: Vec3) => {
-    expect(actual.x).toBeCloseTo(expected.x)
-    expect(actual.y).toBeCloseTo(expected.y)
-    expect(actual.z).toBeCloseTo(expected.z)
-  }
-
-  it('leaves a portrait reading unchanged', () => {
-    close(toScreenFrame({ x: 1, y: 2, z: 3 }, 0), { x: 1, y: 2, z: 3 })
-  })
-
-  it('maps the device\'s right edge to the top of the screen at 90°', () => {
-    close(toScreenFrame({ x: 1, y: 0, z: 0 }, 90), { x: 0, y: 1, z: 0 })
-    close(toScreenFrame({ x: 0, y: 1, z: 0 }, 90), { x: -1, y: 0, z: 0 })
-  })
-
-  it('maps the device\'s left edge to the top of the screen at 270°', () => {
-    close(toScreenFrame({ x: -1, y: 0, z: 0 }, 270), { x: 0, y: 1, z: 0 })
   })
 })

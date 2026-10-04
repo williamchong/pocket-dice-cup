@@ -176,7 +176,7 @@ export class PhysicsWorld {
     this.box = box
     for (const wall of this.walls) this.world.removeCollider(wall, false)
     this.buildWalls()
-    // The viewport can shrink under the dice (screen rotation), so pull any
+    // The viewport can shrink under the dice (a browser toolbar), so pull any
     // that are now outside back in.
     const half = D6_SIZE / 2
     const limitX = box.width / 2 - half

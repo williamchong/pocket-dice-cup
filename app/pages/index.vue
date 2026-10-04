@@ -1,5 +1,8 @@
 <template>
-  <main class="cup">
+  <main
+    class="cup"
+    :style="counterRotationStyle"
+  >
     <!-- Tap to shake stays on with a working sensor too: desktop Chrome
          reports one but never sends a reading, and a tap is a quick re-roll. -->
     <canvas
@@ -55,6 +58,9 @@
 const debug = 'debug' in useRoute().query
 
 const canvas = useTemplateRef('canvas')
+// Shaking tips the phone far enough for the browser to rotate the page; the
+// cup stays put in the phone's own frame instead.
+const counterRotationStyle = useCounterRotation()
 const { ready, failed, state, result, permission, start, toss, debugInfo } = useDiceCup(canvas, { randomStart: !debug })
 const debugText = ref('')
 
@@ -84,6 +90,13 @@ if (debug) {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+.cup {
+  /* The cup is turned back when the screen rotates (useCounterRotation), so
+     its edges do not line up with the viewport's safe-area insets. Keeping
+     clear of the largest one is right whichever way the phone is held. */
+  --safe-inset: max(env(safe-area-inset-top, 0px), env(safe-area-inset-right, 0px), env(safe-area-inset-bottom, 0px), env(safe-area-inset-left, 0px));
 }
 
 .cup__gate {
@@ -122,7 +135,7 @@ if (debug) {
 .cup__hint {
   position: absolute;
   right: 0;
-  bottom: env(safe-area-inset-bottom, 0);
+  bottom: var(--safe-inset);
   left: 0;
   margin: 0;
   padding: 1rem 2rem;
@@ -132,7 +145,7 @@ if (debug) {
 
 .cup__debug {
   position: absolute;
-  top: env(safe-area-inset-top, 0);
+  top: var(--safe-inset);
   left: 0;
   margin: 0;
   padding: 0.5rem;

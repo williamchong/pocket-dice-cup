@@ -5,8 +5,9 @@ export type MotionPermission = 'granted' | 'denied' | 'unsupported'
 export interface MotionSource {
   /**
    * The latest `accelerationIncludingGravity` in m/s², in the W3C sign
-   * convention (a device lying screen-up reads z = +9.81) and in the axes of
-   * the screen as currently rotated.
+   * convention (a device lying screen-up reads z = +9.81) and in the device's
+   * own axes. The page turns itself back when the screen rotates, so these
+   * are also the axes of the cup on screen.
    */
   readonly acceleration: Vec3
   /** Whether any reading has arrived yet. */
@@ -18,22 +19,6 @@ export interface MotionSource {
 
 /** What a device lying screen-up on a table reads. */
 export const REST_ACCELERATION: Readonly<Vec3> = { x: 0, y: 0, z: 9.80665 }
-
-/**
- * Rotates a reading from the device's axes into the screen's. `angleDegrees`
- * is `screen.orientation.angle`: 90 means the device was turned 90°
- * counter-clockwise, which puts its right edge (+x) at the top of the screen.
- */
-export function toScreenFrame(v: Vec3, angleDegrees: number): Vec3 {
-  const angle = angleDegrees * Math.PI / 180
-  const cos = Math.cos(angle)
-  const sin = Math.sin(angle)
-  return {
-    x: v.x * cos - v.y * sin,
-    y: v.x * sin + v.y * cos,
-    z: v.z,
-  }
-}
 
 type PermissionRequester = { requestPermission?: () => Promise<'granted' | 'denied'> }
 
@@ -71,10 +56,7 @@ export class DeviceMotionSource implements MotionSource {
     const a = event.accelerationIncludingGravity
     // Desktop browsers fire the event with null fields when there is no sensor.
     if (!a || a.x === null || a.y === null || a.z === null) return
-    this.acceleration = toScreenFrame(
-      { x: a.x * this.sign, y: a.y * this.sign, z: a.z * this.sign },
-      screen.orientation?.angle ?? 0,
-    )
+    this.acceleration = { x: a.x * this.sign, y: a.y * this.sign, z: a.z * this.sign }
     this.active = true
   }
 }
