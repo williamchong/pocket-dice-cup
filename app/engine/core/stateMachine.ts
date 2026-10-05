@@ -1,5 +1,10 @@
 export type CupState = 'idle' | 'shaking' | 'settling' | 'result'
 
+/** A roll is under way, so the dice in the cup cannot change. */
+export function isRolling(state: CupState): boolean {
+  return state === 'shaking' || state === 'settling'
+}
+
 export interface CupInput {
   /** The device is being shaken hard enough to count as rolling. */
   shaking: boolean

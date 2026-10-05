@@ -17,12 +17,14 @@ Motion sensors only work over HTTPS, so a phone needs `dev:https`. Open the
 self-signed certificate warning, tap Start and allow motion access.
 
 With no motion sensor, as on a desktop, click or tap the cup to shake it.
+The − and + buttons at the bottom change the number of dice between rolls,
+up to 12, and the count is remembered for next time.
 
 Add `?debug` to the URL to see the sensor reading, the shake level, the
 current state and how long the physics takes a frame on screen. It also
 starts the dice on a grid out from the middle with the same face up every
-time, instead of at random places and faces. The − and + buttons change the
-number of dice between rolls; `?dice=N` starts with N, up to 12. "Copy trace"
+time, instead of at random places and faces. `?dice=N` starts with N dice
+instead of the remembered count. "Copy trace"
 copies the last 30 seconds of readings as JSON, for replaying in tests. The
 Haptics and Sound buttons open sliders for tuning the feel and the clacks
 live; "Copy tuning" copies the values, to make them the new defaults.

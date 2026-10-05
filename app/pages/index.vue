@@ -31,42 +31,36 @@
       </template>
     </div>
 
-    <p
-      v-else-if="permission === 'denied'"
-      class="cup__hint"
+    <div
+      v-else
+      class="cup__footer"
     >
-      Motion access was refused, so tap to shake. To shake the phone instead, open the page again and allow motion access.
-    </p>
-    <p
-      v-else-if="permission === 'unsupported'"
-      class="cup__hint"
-    >
-      This browser has no motion sensor, so click or tap to shake.
-    </p>
+      <DiceCountStepper
+        class="cup__stepper"
+        :count="dice"
+        :max="MAX_DICE"
+        :disabled="rolling"
+        @change="changeDiceCount"
+      />
+      <p
+        v-if="permission === 'denied'"
+        class="cup__hint"
+      >
+        Motion access was refused, so tap to shake. To shake the phone instead, open the page again and allow motion access.
+      </p>
+      <p
+        v-else-if="permission === 'unsupported'"
+        class="cup__hint"
+      >
+        This browser has no motion sensor, so click or tap to shake.
+      </p>
+    </div>
 
     <div
       v-if="debug"
       class="cup__debug"
     >
       <pre>{{ debugText }}</pre>
-      <!-- The iOS app has no address bar for ?dice=N. -->
-      <div class="cup__buttons">
-        <button
-          type="button"
-          :disabled="dice <= 1"
-          @click="setDiceCount(dice - 1)"
-        >
-          −
-        </button>
-        <span class="cup__count">{{ dice }} {{ dice === 1 ? 'die' : 'dice' }}</span>
-        <button
-          type="button"
-          :disabled="dice >= MAX_DICE"
-          @click="setDiceCount(dice + 1)"
-        >
-          +
-        </button>
-      </div>
       <!-- For turning a real shake into a test fixture (tests/fixtures/traces). -->
       <form
         class="cup__trace"
@@ -133,6 +127,7 @@
 </template>
 
 <script setup lang="ts">
+import { isRolling } from '~/engine/core/stateMachine'
 import { DEFAULT_SOUND_TUNING, type SoundTuning, type VoiceName } from '~/engine/feedback/clackSound'
 import { DEFAULT_HAPTIC_TUNING, type HapticTuning } from '~/engine/feedback/cupFeedback'
 import { MAX_DICE, type Surface } from '~/engine/physics/world'
@@ -142,14 +137,20 @@ import { MAX_DICE, type Surface } from '~/engine/physics/world'
 // same place every time, so runs can be compared.
 const route = useRoute()
 const debug = 'debug' in route.query || Boolean(useRuntimeConfig().public.debug)
-// `?dice=N` starts with N dice, until there is a setting for it.
-const startDice = Number(route.query.dice) || 1
+// `?dice=N` starts with N dice, over the count saved from last time.
+const startDice = parseDiceCount(route.query.dice) ?? loadDiceCount() ?? 1
 
 const canvas = useTemplateRef('canvas')
 // Shaking tips the phone far enough for the browser to rotate the page; the
 // cup stays put in the phone's own frame instead.
 const counterRotationStyle = useCounterRotation()
 const { ready, failed, state, result, dice, permission, start, toss, setDiceCount, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, dice: startDice })
+const rolling = computed(() => isRolling(state.value))
+
+function changeDiceCount(count: number) {
+  if (setDiceCount(count)) saveDiceCount(dice.value)
+}
+
 const debugText = ref('')
 const traceNote = ref('')
 
@@ -336,15 +337,27 @@ if (debug) {
   opacity: 0.5;
 }
 
-.cup__hint {
+.cup__footer {
   position: absolute;
   right: 0;
   bottom: var(--safe-inset);
   left: 0;
-  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
   padding: 1rem 2rem;
-  text-align: center;
+  /* Taps around the stepper still reach the canvas and shake the cup. */
   pointer-events: none;
+}
+
+.cup__stepper {
+  pointer-events: auto;
+}
+
+.cup__hint {
+  margin: 0;
+  text-align: center;
 }
 
 .cup__debug {
@@ -392,9 +405,5 @@ if (debug) {
 
 .cup__trace input {
   width: 10rem;
-}
-
-.cup__count {
-  align-self: center;
 }
 </style>

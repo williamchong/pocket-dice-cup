@@ -1,6 +1,6 @@
 import type { BoxSize } from './box'
 import { MotionAnalyser } from './core/motionAnalyser'
-import { nextState, type CupState } from './core/stateMachine'
+import { isRolling, nextState, type CupState } from './core/stateMachine'
 import { D6_FACES } from './dice/d6'
 import { readTopFace } from './dice/faces'
 import type { Vec3 } from './math'
@@ -48,7 +48,7 @@ export class CupSimulation {
    * it does nothing. Returns whether the number of dice changed.
    */
   setDiceCount(count: number): boolean {
-    if (this.state === 'shaking' || this.state === 'settling') return false
+    if (isRolling(this.state)) return false
     const before = this.physics.dieCount
     this.physics.setDiceCount(count, this.random)
     if (this.physics.dieCount === before) return false

@@ -106,9 +106,11 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     return recorder?.toTrace(navigator.userAgent, note) ?? null
   }
 
-  /** Adds or removes dice between rolls; during one it does nothing. */
-  function setDiceCount(count: number) {
-    if (cup?.setDiceCount(count)) dice.value = cup.dieCount
+  /** Adds or removes dice between rolls; during one it does nothing. Returns whether the number of dice changed. */
+  function setDiceCount(count: number): boolean {
+    if (!cup?.setDiceCount(count)) return false
+    dice.value = cup.dieCount
+    return true
   }
 
   /** Rolls from a click or tap, with or without a motion sensor. */
