@@ -138,19 +138,23 @@ Phases
    the feel on it. Also write the `VibrateBackend` (`navigator.vibrate`,
    8-30 ms pulses) for Android web. Needs the most
    on-device tuning.
-   Status: the web half is built. The physics measures each hit from the change
-   in a die's velocity and tells the floor, the walls and the glass apart. Each
-   hit plays a synthesised clack: a dull thud on the felt floor, a sharp click
-   on the walls and the glass. Android web vibrates through `navigator.vibrate`.
+   Status: done. The physics measures each hit from the change in a die's
+   velocity and tells the floor, the walls and the glass apart. Each hit plays
+   a synthesised clack: a soft thud on the felt floor and a dull knock on the
+   walls and the glass, all through a low-pass at 650 Hz, tuned by ear on an
+   iPhone Air and a MacBook Pro. A brighter click sounded like dice in a tin
+   rather than a lined cup. Android web vibrates through `navigator.vibrate`.
    The audio session is `ambient`, so the iOS mute switch silences it, as it
    does in games, and the app needs no mute button of its own. The Capacitor
    shell (`ios/`) and the Core Haptics plugin are built: each pulse carries a
    sharpness as well as an intensity, soft for the felt floor and crisp for
    the walls and the glass. The shell is held in portrait and keeps the
-   screen on natively. It builds and runs in the simulator, which has no
-   Taptic Engine or motion sensor. Next, on the iPhone: check that motion,
-   the ambient audio session and the haptics work in the WebView, then tune
-   the haptic strength, the sharpness and the gap between pulses.
+   screen on natively. Checked on the iPhone in the app: the motion prompt
+   and readings, shake and put-down, the clacks, silence with the mute switch
+   on, other apps' music carrying on under the clacks, and the haptics,
+   including after the app has been idle or in the background. The haptic
+   strength, sharpness and pulse gap are still at their first values; the
+   debug overlay has sliders for tuning them and the sound on the phone.
 3. **Dice set and pool.** All geometries, mixed pools, the notation parser.
    A headless Node test rolls each die thousands of times and checks the
    distribution is roughly uniform.
