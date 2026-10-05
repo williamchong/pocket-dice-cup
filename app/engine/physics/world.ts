@@ -59,6 +59,21 @@ const BEVEL = 0.6
  */
 const FLOOR_BEVEL = 0.2
 
+/**
+ * A step counts as part of a hit when contacts change a die's velocity by more
+ * than this many times what gravity adds in a step, plus IMPACT_MIN_SPEED. A
+ * die resting on the floor, or pressed against a wall by a hard shake, is held
+ * there by exactly what gravity adds; a hit changes it far more.
+ */
+const IMPACT_GRAVITY_MULTIPLE = 3
+/** In cm/s; see IMPACT_GRAVITY_MULTIPLE. */
+const IMPACT_MIN_SPEED = 3
+/**
+ * A hit pushing the die within about 45° of straight up (or down) came from
+ * the floor (or the glass); anything else came from a wall.
+ */
+const IMPACT_FLOOR_MIN_Z = Math.SQRT1_2
+
 const REST_LINEAR_SPEED = 1
 const REST_ANGULAR_SPEED = 0.5
 const REST_DURATION_S = 0.25
@@ -76,6 +91,16 @@ const FACE_UP_ROTATIONS: readonly Quat[] = [
   axisAngle(Y_AXIS, -Math.PI / 2),
 ]
 
+export type Surface = 'floor' | 'glass' | 'wall'
+
+/** A die hitting the cup during one frame. */
+export interface Impact {
+  die: number
+  /** How much the hit changed the die's velocity, in cm/s. */
+  speed: number
+  surface: Surface
+}
+
 export class PhysicsWorld {
   private readonly world: World
   private walls: Collider[] = []
@@ -83,6 +108,7 @@ export class PhysicsWorld {
   private accumulator = 0
   private restTime = 0
   private wakeAcceleration: Vec3 | null = null
+  private _impacts: Impact[] = []
 
   constructor(private readonly rapier: Rapier, private box: BoxSize) {
     this.world = new rapier.World({ x: 0, y: 0, z: 0 })
@@ -97,6 +123,11 @@ export class PhysicsWorld {
   /** Nothing can move until the dice are woken, so there is nothing new to draw. */
   get asleep(): boolean {
     return this.dice.every(die => die.isSleeping())
+  }
+
+  /** The hits during the latest step(), at most one per die. */
+  get impacts(): readonly Impact[] {
+    return this._impacts
   }
 
   get diceAtRest(): boolean {
@@ -160,11 +191,35 @@ export class PhysicsWorld {
 
   step(dtSeconds: number): void {
     this.accumulator = Math.min(this.accumulator + dtSeconds, MAX_STEPS_PER_FRAME * FIXED_DT)
+    // What contacts did to each die over the frame: the summed size and the
+    // summed vector of the velocity changes of the steps that count as a hit.
+    const hits = this.dice.map(() => ({ speed: 0, change: { x: 0, y: 0, z: 0 } }))
+    const gravity = this.world.gravity
+    const threshold = IMPACT_GRAVITY_MULTIPLE * length(gravity) * FIXED_DT + IMPACT_MIN_SPEED
+    // Only a step changes the velocities, so each step's end is the next one's start.
+    const velocities = this.dice.map(die => die.linvel())
     while (this.accumulator >= FIXED_DT) {
       this.accumulator -= FIXED_DT
       this.world.step()
+      hits.forEach((hit, index) => {
+        const before = velocities[index]!
+        const after = velocities[index] = this.dice[index]!.linvel()
+        const change = {
+          x: after.x - before.x - gravity.x * FIXED_DT,
+          y: after.y - before.y - gravity.y * FIXED_DT,
+          z: after.z - before.z - gravity.z * FIXED_DT,
+        }
+        const speed = length(change)
+        if (speed < threshold) return
+        hit.speed += speed
+        hit.change.x += change.x
+        hit.change.y += change.y
+        hit.change.z += change.z
+      })
       this.restTime = this.dice.every(isSlow) ? this.restTime + FIXED_DT : 0
     }
+    this._impacts = hits.flatMap(({ speed, change }, die) =>
+      speed > 0 ? [{ die, speed, surface: surfaceOf(change) }] : [])
   }
 
   /**
@@ -263,6 +318,14 @@ function randomDirection(random: () => number): Vec3 {
   const longitude = 2 * Math.PI * random()
   const r = Math.sqrt(1 - z * z)
   return { x: r * Math.cos(longitude), y: r * Math.sin(longitude), z }
+}
+
+/** What a die hit, from which way the hit changed its velocity. */
+function surfaceOf(change: Vec3): Surface {
+  const up = change.z / length(change)
+  if (up > IMPACT_FLOOR_MIN_Z) return 'floor'
+  if (up < -IMPACT_FLOOR_MIN_Z) return 'glass'
+  return 'wall'
 }
 
 function isSlow(die: RigidBody): boolean {

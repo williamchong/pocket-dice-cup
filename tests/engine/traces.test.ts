@@ -88,6 +88,31 @@ describe('recorded iPhone traces', () => {
     expect(states).toEqual(['idle', 'shaking', 'settling', 'result'])
   })
 
+  it('rattle the die against the cup through a real shake, and fall quiet once it is read', () => {
+    /** Impacts per state and surface, such as "shaking glass". */
+    const count = (name: string) => {
+      const simulation = new CupSimulation(RAPIER, boxForViewport(390, 844), { randomStart: false })
+      const impacts: Partial<Record<string, number>> = {}
+      replay(simulation, load(name), Infinity, () => {
+        for (const { surface } of simulation.physics.impacts) {
+          const key = `${simulation.state} ${surface}`
+          impacts[key] = (impacts[key] ?? 0) + 1
+        }
+      })
+      const { state } = simulation
+      simulation.dispose()
+      return { impacts, state }
+    }
+    // Up and down with the screen up throws the die at the glass and back.
+    const { impacts: vertical } = count('shake-vertical')
+    expect(vertical['shaking wall']).toBeGreaterThan(10)
+    expect(vertical['shaking floor']).toBeGreaterThan(5)
+    expect(vertical['shaking glass']).toBeGreaterThan(5)
+    const { impacts: horizontal, state } = count('shake-horizontal')
+    expect(state).toBe('result')
+    expect(Object.keys(horizontal).filter(key => key.startsWith('result'))).toEqual([])
+  })
+
   it('tumble a die shaken side to side screen-up instead of sliding it on one face', () => {
     // Without the floor bevel the die kept its face in 55 of 60 starts and
     // changed face 0.1 times a shake; with it, 1 in 6 like a fair die, and

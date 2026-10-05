@@ -6,6 +6,7 @@ import { D6_FACES, D6_SIZE } from '../../app/engine/dice/d6'
 import { readTopFace } from '../../app/engine/dice/faces'
 import { REST_ACCELERATION } from '../../app/engine/input/motionSource'
 import { distance, type Vec3 } from '../../app/engine/math'
+import type { Impact } from '../../app/engine/physics/world'
 import { CupSimulation } from '../../app/engine/simulation'
 import { seededRandom } from './seededRandom'
 
@@ -162,6 +163,53 @@ describe('CupSimulation', () => {
       if (simulation.tick(FRAME, REST_ACCELERATION, 100_000 + i * FRAME * 1000)) states.push(simulation.state)
     }
     expect(states).toEqual(['shaking', 'settling', 'result'])
+    simulation.dispose()
+  })
+})
+
+describe('impacts', () => {
+  /** Runs `seconds` of frames at a steady reading and returns the impacts seen. */
+  function hold(simulation: CupSimulation, acceleration: Vec3, seconds: number): Impact[] {
+    const impacts: Impact[] = []
+    for (let i = 0; i < seconds * 60; i++) {
+      simulation.tick(FRAME, acceleration, i * FRAME * 1000)
+      impacts.push(...simulation.physics.impacts)
+    }
+    return impacts
+  }
+
+  it('reports none for a die lying still, or pressed against a wall', () => {
+    const simulation = fixedCup()
+    expect(hold(simulation, REST_ACCELERATION, 2)).toEqual([])
+    // Pushed to the right at about 5 g, as in a shake, the die hits that wall
+    // and stays there, pressed against it five times harder than by gravity.
+    const pushed = { x: -50, y: 0, z: 9.8 }
+    expect(hold(simulation, pushed, 2).length).toBeGreaterThan(0)
+    expect(hold(simulation, pushed, 2)).toEqual([])
+    simulation.dispose()
+  })
+
+  it('tells the glass, the floor and the walls apart', () => {
+    const simulation = fixedCup()
+    // Turned screen-down, the die falls onto the glass, and back onto the floor.
+    expect(hold(simulation, { x: 0, y: 0, z: -9.8 }, 2)[0]?.surface).toBe('glass')
+    const [landing] = hold(simulation, REST_ACCELERATION, 2)
+    expect(landing?.surface).toBe('floor')
+    // Falling the depth of the cup less a die, it lands at about 69 cm/s and
+    // bounces back up at 0.8 of that.
+    const fall = Math.sqrt(2 * 981 * (box.depth - D6_SIZE))
+    expect(landing!.speed).toBeGreaterThan(fall)
+    expect(landing!.speed).toBeLessThan(2 * fall)
+    expect(hold(simulation, { x: -9.8, y: 0, z: 1 }, 2)[0]?.surface).toBe('wall')
+    simulation.dispose()
+  })
+
+  it('stops once a click-tossed die has settled', () => {
+    const { simulation, states } = toss(0)
+    expect(states.at(-1)).toBe('result')
+    expect(hold(simulation, REST_ACCELERATION, 1)).toEqual([])
+    simulation.toss(seededRandom(7))
+    expect(hold(simulation, REST_ACCELERATION, 1).length).toBeGreaterThan(0)
     simulation.dispose()
   })
 })
