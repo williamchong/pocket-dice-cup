@@ -1,12 +1,12 @@
 import { boxForViewport } from './box'
 import type { CupState } from './core/stateMachine'
 import { ClackSound } from './feedback/clackSound'
-import { CupFeedback, type FeedbackStats } from './feedback/cupFeedback'
+import { CupFeedback, type FeedbackStats, type HapticTuning } from './feedback/cupFeedback'
 import { deviceHaptics } from './feedback/haptics'
 import type { MotionSource } from './input/motionSource'
 import type { TraceRecorder } from './input/motionTrace'
 import type { Vec3 } from './math'
-import type { Rapier } from './physics/world'
+import type { Rapier, Surface } from './physics/world'
 import { DiceScene } from './render/scene'
 import { CupSimulation, type CupOptions } from './simulation'
 
@@ -83,6 +83,16 @@ export class DiceCup {
       sensorActive: this.source.active,
       ...this.feedback.stats,
     }
+  }
+
+  /** The live haptic tuning, for the debug overlay to change. */
+  get hapticTuning(): HapticTuning {
+    return this.feedback.tuning
+  }
+
+  /** Plays one full-strength pulse as a hit on `surface`, to feel the tuning. */
+  testPulse(surface: Surface): void {
+    this.feedback.pulse(1, surface)
   }
 
   /** Has to run inside a tap or click: browsers only start audio from one. */

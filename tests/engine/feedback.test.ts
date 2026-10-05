@@ -66,6 +66,28 @@ describe('CupFeedback', () => {
     expect(glass).toBe(wall)
   })
 
+  it('spaces the pulses by the live tuning', () => {
+    const haptics = new FakeHaptics()
+    const feedback = new CupFeedback(null, haptics)
+    feedback.tuning.minPulseGapMs = 15
+    feedback.play([hit(200)], 0)
+    feedback.play([hit(200)], 17)
+    expect(haptics.pulses).toHaveLength(2)
+  })
+
+  it('lifts faint pulses to the minimum intensity, but not the sound', () => {
+    const sound = new FakeSound()
+    const haptics = new FakeHaptics()
+    const feedback = new CupFeedback(sound, haptics)
+    feedback.tuning.minIntensity = 0.4
+    feedback.play([hit(30)], 0)
+    feedback.play([hit(300)], 100)
+    const faint = impactStrength(30)
+    expect(haptics.pulses[0]).toBeCloseTo(0.4 + 0.6 * faint)
+    expect(haptics.pulses[1]).toBe(1)
+    expect(sound.played[0]![1]).toBeCloseTo(faint)
+  })
+
   it('counts the impacts of the last second for the debug readout', () => {
     const feedback = new CupFeedback(null, null)
     feedback.play([hit(300), hit(30)], 0)

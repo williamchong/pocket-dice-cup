@@ -12,6 +12,14 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  runtimeConfig: {
+    public: {
+      // The debug overlay without `?debug` in the URL, for the iOS app, which
+      // has no address bar: `NUXT_PUBLIC_DEBUG=1 npm run ios`.
+      debug: false,
+    },
+  },
+
   app: {
     head: {
       title: 'Pocket Dice Cup',

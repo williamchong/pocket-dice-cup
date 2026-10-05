@@ -1,6 +1,8 @@
 import type { ShallowRef } from 'vue'
 import type { CupState } from '~/engine/core/stateMachine'
 import type { CupDebugInfo, DiceCup } from '~/engine/diceCup'
+import type { HapticTuning } from '~/engine/feedback/cupFeedback'
+import type { Surface } from '~/engine/physics/world'
 import type { CupOptions } from '~/engine/simulation'
 import { DeviceMotionSource, type MotionPermission } from '~/engine/input/motionSource'
 import { TraceRecorder, type MotionTrace } from '~/engine/input/motionTrace'
@@ -81,6 +83,15 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     return cup?.debugInfo ?? null
   }
 
+  /** The live haptic tuning, a plain object rather than a reactive one; null until the engine is ready. */
+  function hapticTuning(): HapticTuning | null {
+    return cup?.hapticTuning ?? null
+  }
+
+  function testPulse(surface: Surface) {
+    cup?.testPulse(surface)
+  }
+
   /** The recent sensor readings, or null when not recording. */
   function exportTrace(note: string): MotionTrace | null {
     return recorder?.toTrace(navigator.userAgent, note) ?? null
@@ -92,5 +103,5 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     cup?.toss()
   }
 
-  return { ready, failed, state, result, permission, start, toss, debugInfo, exportTrace }
+  return { ready, failed, state, result, permission, start, toss, debugInfo, exportTrace, hapticTuning, testPulse }
 }

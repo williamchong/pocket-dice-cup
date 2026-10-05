@@ -10,16 +10,31 @@ const QUIET_SPEED = 10
  * hits the walls at up to about 250 most of the time, 450 at the most.
  */
 const LOUD_SPEED = 300
-/**
- * A vibration motor smears pulses closer than this into one long buzz, so a
- * hit within it of the last pulse is felt as part of that one.
- */
-const MIN_PULSE_GAP_MS = 35
-/**
- * How crisp a hit on each surface feels, from 0 to 1, as the clacks sound: a
- * soft thud on the felt floor, a sharp tap on the walls and the glass.
- */
-const SHARPNESS: Record<Surface, number> = { floor: 0.2, wall: 0.8, glass: 0.8 }
+export interface HapticTuning {
+  /**
+   * A vibration motor smears pulses closer than this (ms) into one long buzz,
+   * so a hit within it of the last pulse is felt as part of that one.
+   */
+  minPulseGapMs: number
+  /**
+   * How crisp a hit on each surface feels, from 0 to 1, as the clacks sound: a
+   * soft thud on the felt floor, a sharp tap on the walls and the glass.
+   */
+  sharpness: Record<Surface, number>
+  /**
+   * The intensity of the faintest hit that plays, from 0 to 1: a Taptic
+   * Engine transient much below 0.3 is hard to feel at all. Harder hits rise
+   * from it to 1. The sound keeps the plain strength.
+   */
+  minIntensity: number
+}
+
+export const DEFAULT_HAPTIC_TUNING: Readonly<HapticTuning> = {
+  minPulseGapMs: 35,
+  sharpness: { floor: 0.2, wall: 0.8, glass: 0.8 },
+  minIntensity: 0,
+}
+
 /** How far back the debug readout counts impacts. */
 const STATS_WINDOW_MS = 1000
 
@@ -62,6 +77,8 @@ export function impactStrength(speed: number): number {
 export class CupFeedback {
   private lastPulseMs = -Infinity
   private recent: { timeMs: number, strength: number }[] = []
+  /** Changed live from the debug overlay, to tune the feel on a phone. */
+  readonly tuning: HapticTuning = structuredClone(DEFAULT_HAPTIC_TUNING)
 
   constructor(private readonly sound: ImpactSound | null, private readonly haptics: HapticsBackend | null) {}
 
@@ -92,10 +109,16 @@ export class CupFeedback {
         strongestSurface = surface
       }
     }
-    if (strongest > 0 && timeMs - this.lastPulseMs >= MIN_PULSE_GAP_MS) {
-      this.haptics?.playTransient(strongest, SHARPNESS[strongestSurface])
+    if (strongest > 0 && timeMs - this.lastPulseMs >= this.tuning.minPulseGapMs) {
+      this.pulse(strongest, strongestSurface)
       this.lastPulseMs = timeMs
     }
+  }
+
+  /** Plays one pulse as a hit on `surface` at `strength` would, for feeling the tuning without a shake. */
+  pulse(strength: number, surface: Surface): void {
+    const { minIntensity, sharpness } = this.tuning
+    this.haptics?.playTransient(minIntensity + (1 - minIntensity) * strength, sharpness[surface])
   }
 
   dispose(): void {

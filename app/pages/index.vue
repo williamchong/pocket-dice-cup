@@ -59,53 +59,137 @@
           placeholder="What you did"
         >
         <button type="submit">
-          {{ traceStatus }}
+          {{ traceStatus.text }}
         </button>
+      </form>
+      <!-- "Copy tuning" carries the values tuned by feel back into
+           DEFAULT_HAPTIC_TUNING. -->
+      <form
+        class="cup__tuning"
+        @submit.prevent="copyTuning"
+      >
+        <label
+          v-for="slider in TUNING_SLIDERS"
+          :key="slider.label"
+        >
+          <span>{{ slider.label }} {{ slider.read().toFixed(slider.step < 1 ? 2 : 0) }}</span>
+          <input
+            type="range"
+            :min="slider.min"
+            :max="slider.max"
+            :step="slider.step"
+            :value="slider.read()"
+            @input="slider.write(($event.target as HTMLInputElement).valueAsNumber)"
+          >
+        </label>
+        <div class="cup__buttons">
+          <button
+            v-for="surface in TEST_SURFACES"
+            :key="surface"
+            type="button"
+            @click="testPulse(surface)"
+          >
+            Tap {{ surface }}
+          </button>
+          <button type="submit">
+            {{ tuningStatus.text }}
+          </button>
+        </div>
       </form>
     </div>
   </main>
 </template>
 
 <script setup lang="ts">
+import { DEFAULT_HAPTIC_TUNING, type HapticTuning } from '~/engine/feedback/cupFeedback'
+import type { Surface } from '~/engine/physics/world'
+
 // `?debug` shows what the sensor and the state machine are doing, for tuning
 // on a real phone where there is no console. It also starts the die in the
 // same place every time, so runs can be compared.
-const debug = 'debug' in useRoute().query
+const debug = 'debug' in useRoute().query || Boolean(useRuntimeConfig().public.debug)
 
 const canvas = useTemplateRef('canvas')
 // Shaking tips the phone far enough for the browser to rotate the page; the
 // cup stays put in the phone's own frame instead.
 const counterRotationStyle = useCounterRotation()
-const { ready, failed, state, result, permission, start, toss, debugInfo, exportTrace } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug })
+const { ready, failed, state, result, permission, start, toss, debugInfo, exportTrace, hapticTuning, testPulse } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug })
 const debugText = ref('')
 const traceNote = ref('')
-const COPY_LABEL = 'Copy trace'
-const traceStatus = ref(COPY_LABEL)
-let traceStatusTimer: ReturnType<typeof setTimeout> | undefined
+
+/** A button label that shows `message` for 2 seconds after an action, then goes back. */
+function flashLabel(label: string) {
+  const status = reactive({ text: label, flash })
+  let timer: ReturnType<typeof setTimeout> | undefined
+  function flash(message: string) {
+    status.text = message
+    clearTimeout(timer)
+    timer = setTimeout(() => status.text = label, 2000)
+  }
+  onBeforeUnmount(() => clearTimeout(timer))
+  return status
+}
+
+const traceStatus = flashLabel('Copy trace')
 
 /**
- * Copies the trace for pasting on the computer through Universal Clipboard,
- * or saves it as a file where the clipboard is refused.
+ * Copies `json` for pasting on the computer through Universal Clipboard, or
+ * saves it as a file where the clipboard is refused. Says which it did.
  */
-async function copyTrace() {
-  const trace = exportTrace(traceNote.value)
-  if (!trace) return
-  const json = JSON.stringify(trace)
+async function copyOrSave(json: string, fileName: string): Promise<'Copied' | 'Saved'> {
   try {
     await navigator.clipboard.writeText(json)
-    traceStatus.value = `Copied ${trace.samples.length}`
+    return 'Copied'
   }
   catch {
     const link = document.createElement('a')
     link.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
-    link.download = 'trace.json'
+    link.download = fileName
     link.click()
     // Safari can drop the download if the URL goes away in the same task.
     setTimeout(() => URL.revokeObjectURL(link.href), 1000)
-    traceStatus.value = `Saved ${trace.samples.length}`
+    return 'Saved'
   }
-  clearTimeout(traceStatusTimer)
-  traceStatusTimer = setTimeout(() => traceStatus.value = COPY_LABEL, 2000)
+}
+
+async function copyTrace() {
+  const trace = exportTrace(traceNote.value)
+  if (!trace) return
+  traceStatus.flash(`${await copyOrSave(JSON.stringify(trace), 'trace.json')} ${trace.samples.length}`)
+}
+
+// The engine's own tuning object stays out of Vue; the sliders change this
+// copy, and it is written through.
+const tuning = reactive<HapticTuning>(structuredClone(DEFAULT_HAPTIC_TUNING))
+watchEffect(() => {
+  const live = ready.value ? hapticTuning() : null
+  if (!live) return
+  live.minPulseGapMs = tuning.minPulseGapMs
+  live.minIntensity = tuning.minIntensity
+  Object.assign(live.sharpness, tuning.sharpness)
+})
+
+const TEST_SURFACES: Surface[] = ['floor', 'wall', 'glass']
+
+interface TuningSlider {
+  label: string
+  min: number
+  max: number
+  step: number
+  read: () => number
+  write: (value: number) => void
+}
+
+const TUNING_SLIDERS: TuningSlider[] = [
+  { label: 'gap ms', min: 15, max: 80, step: 1, read: () => tuning.minPulseGapMs, write: value => tuning.minPulseGapMs = value },
+  { label: 'min intensity', min: 0, max: 0.6, step: 0.05, read: () => tuning.minIntensity, write: value => tuning.minIntensity = value },
+  ...TEST_SURFACES.map(surface => ({ label: `${surface} sharp`, min: 0, max: 1, step: 0.05, read: () => tuning.sharpness[surface], write: (value: number) => tuning.sharpness[surface] = value })),
+]
+
+const tuningStatus = flashLabel('Copy tuning')
+
+async function copyTuning() {
+  tuningStatus.flash(await copyOrSave(JSON.stringify(tuning), 'tuning.json'))
 }
 
 if (debug) {
@@ -204,16 +288,31 @@ if (debug) {
   font: inherit;
 }
 
-.cup__trace {
+.cup__trace,
+.cup__buttons {
   display: flex;
   gap: 0.5rem;
   margin-top: 0.5rem;
   pointer-events: auto;
 }
 
+.cup__tuning {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  pointer-events: auto;
+}
+
+.cup__tuning label {
+  display: flex;
+  flex-direction: column;
+}
+
 /* 16px stops iOS Safari zooming in on focus. */
 .cup__trace input,
-.cup__trace button {
+.cup__trace button,
+.cup__buttons button {
   font: 16px/1.2 system-ui, sans-serif;
 }
 
