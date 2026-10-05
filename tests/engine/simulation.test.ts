@@ -250,6 +250,27 @@ describe('impacts', () => {
     simulation.dispose()
   })
 
+  it('hears two dice hitting each other once, apart from the cup', () => {
+    // Held upright, both dice of a fixed start fall to the bottom wall: the
+    // lower one hits it, and the upper one lands on that one, not the wall.
+    const simulation = fixedCup(box, 2)
+    expect(simulation.physics.diePosition(1).y).toBeLessThan(simulation.physics.diePosition(0).y)
+    const upright = { x: 0, y: 9.8, z: 0 }
+    const frames: Impact[][] = []
+    for (let i = 0; i < 2 * 60; i++) {
+      simulation.tick(FRAME, upright, i * FRAME * 1000)
+      frames.push([...simulation.physics.impacts])
+    }
+    const impacts = frames.flat()
+    expect(impacts.some(impact => impact.surface === 'die')).toBe(true)
+    expect(impacts.some(impact => impact.die === 1 && impact.surface === 'wall')).toBe(true)
+    expect(impacts.filter(impact => impact.die === 0 && impact.surface === 'wall')).toEqual([])
+    for (const frame of frames) expect(frame.filter(impact => impact.surface === 'die').length).toBeLessThanOrEqual(1)
+    // Lying stacked against the wall, the dice are quiet.
+    expect(hold(simulation, upright, 2)).toEqual([])
+    simulation.dispose()
+  })
+
   it('stops once a click-tossed die has settled', () => {
     const { simulation, states } = toss(0)
     expect(states.at(-1)).toBe('result')

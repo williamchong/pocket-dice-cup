@@ -1,7 +1,7 @@
 import type { Collider, RigidBody, World } from '@dimforge/rapier3d-compat'
 import type { BoxSize } from '../box'
 import { D6_EDGE_RADIUS, D6_SIZE } from '../dice/d6'
-import { axisAngle, distance, length, multiply, rotate, type Quat, type Vec3 } from '../math'
+import { axisAngle, distance, dot, length, multiply, rotate, type Quat, type Vec3 } from '../math'
 
 /** The Rapier module, passed in so that only the caller decides when its WASM is loaded. */
 export type Rapier = typeof import('@dimforge/rapier3d-compat').default
@@ -73,6 +73,11 @@ const IMPACT_MIN_SPEED = 3
  * the floor (or the glass); anything else came from a wall.
  */
 const IMPACT_FLOOR_MIN_Z = Math.SQRT1_2
+/**
+ * A hit pushing a die within about 45° of the line of its contact with
+ * another die came from that die; anything else from the cup.
+ */
+const IMPACT_DIE_MIN_ALIGNMENT = Math.SQRT1_2
 
 /** The most dice the cup holds, for screen space and performance. */
 export const MAX_DICE = 12
@@ -100,10 +105,12 @@ const FACE_UP_ROTATIONS: readonly Quat[] = [
   axisAngle(Y_AXIS, -Math.PI / 2),
 ]
 
-export type Surface = 'floor' | 'glass' | 'wall'
+/** What a die hit: a part of the cup, or another die. */
+export type Surface = 'floor' | 'glass' | 'wall' | 'die'
 
-/** A die hitting the cup during one frame. */
+/** A die hitting the cup, or two dice hitting each other, during one frame. */
 export interface Impact {
+  /** For two dice, the lower-numbered one. */
   die: number
   /** How much the hit changed the die's velocity, in cm/s. */
   speed: number
@@ -114,6 +121,8 @@ export class PhysicsWorld {
   private readonly world: World
   private walls: Collider[] = []
   private readonly dice: RigidBody[] = []
+  /** Each die's index by its body's handle, to tell which die a contact is with. */
+  private dieIndex = new Map<number, number>()
   private accumulator = 0
   private restTime = 0
   private wakeAcceleration: Vec3 | null = null
@@ -134,7 +143,10 @@ export class PhysicsWorld {
     return this.dice.every(die => die.isSleeping())
   }
 
-  /** The hits during the latest step(), at most one per die. */
+  /**
+   * The hits during the latest step(): at most one on the cup per die, and
+   * one per pair of dice that hit each other, so that a collision is heard once.
+   */
   get impacts(): readonly Impact[] {
     return this._impacts
   }
@@ -151,6 +163,7 @@ export class PhysicsWorld {
     const clamped = Math.max(1, Math.min(MAX_DICE, Math.round(count) || 1))
     while (this.dice.length > clamped) this.world.removeRigidBody(this.dice.pop()!)
     while (this.dice.length < clamped) this.addD6(random)
+    this.dieIndex = new Map(this.dice.map((die, index) => [die.handle, index]))
   }
 
   /**
@@ -250,6 +263,9 @@ export class PhysicsWorld {
     // What contacts did to each die over the frame: the summed size and the
     // summed vector of the velocity changes of the steps that count as a hit.
     const hits = this.dice.map(() => ({ speed: 0, change: { x: 0, y: 0, z: 0 } }))
+    // Hits between two dice, by the pair: what each side's velocity changed
+    // by, summed over the frame. Both sides usually count the same collision.
+    const dieHits = new Map<number, { die: number, sides: [number, number] }>()
     const gravity = this.world.gravity
     const threshold = IMPACT_GRAVITY_MULTIPLE * length(gravity) * FIXED_DT + IMPACT_MIN_SPEED
     // Only a step changes the velocities, so each step's end is the next one's start.
@@ -267,6 +283,15 @@ export class PhysicsWorld {
         }
         const speed = length(change)
         if (speed < threshold) return
+        const other = this.struckDie(index, change, speed)
+        if (other !== null) {
+          const die = Math.min(index, other)
+          const key = die * MAX_DICE + Math.max(index, other)
+          const pair = dieHits.get(key) ?? { die, sides: [0, 0] }
+          pair.sides[index === die ? 0 : 1] += speed
+          dieHits.set(key, pair)
+          return
+        }
         hit.speed += speed
         hit.change.x += change.x
         hit.change.y += change.y
@@ -274,8 +299,35 @@ export class PhysicsWorld {
       })
       this.restTime = this.dice.every(isSlow) ? this.restTime + FIXED_DT : 0
     }
-    this._impacts = hits.flatMap(({ speed, change }, die) =>
+    this._impacts = hits.flatMap(({ speed, change }, die): Impact[] =>
       speed > 0 ? [{ die, speed, surface: surfaceOf(change) }] : [])
+    for (const { die, sides } of dieHits.values()) {
+      this._impacts.push({ die, speed: Math.max(...sides), surface: 'die' })
+    }
+  }
+
+  /**
+   * The die that a step's velocity `change` (of size `speed`) on die `index`
+   * came from, if any: one it touches, and pushed along the line between them.
+   * Only asked for a step that counts as a hit: with 12 dice in a hard shake,
+   * about 1% of the frame's physics.
+   */
+  private struckDie(index: number, change: Vec3, speed: number): number | null {
+    const collider = this.dice[index]!.collider(0)
+    let struck: number | null = null
+    this.world.contactPairsWith(collider, (other) => {
+      // The cup's colliders have no body.
+      if (struck !== null) return
+      const otherIndex = this.dieIndex.get(other.parent()?.handle ?? -1)
+      if (otherIndex === undefined) return
+      this.world.contactPair(collider, other, (manifold) => {
+        // Solver contacts are the ones the step pushed on, not merely predicted.
+        if (manifold.numSolverContacts() > 0 && Math.abs(dot(manifold.normal(), change)) >= IMPACT_DIE_MIN_ALIGNMENT * speed) {
+          struck = otherIndex
+        }
+      })
+    })
+    return struck
   }
 
   /**

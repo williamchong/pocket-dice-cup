@@ -32,7 +32,7 @@ export interface HapticTuning {
 
 export const DEFAULT_HAPTIC_TUNING: Readonly<HapticTuning> = {
   minPulseGapMs: 35,
-  sharpness: { floor: 0.2, wall: 0.8, glass: 0.8 },
+  sharpness: { floor: 0.2, wall: 0.8, glass: 0.8, die: 0.8 },
   minIntensity: 0,
 }
 
