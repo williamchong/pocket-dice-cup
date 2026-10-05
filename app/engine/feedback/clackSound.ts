@@ -6,7 +6,7 @@ import type { ImpactSound } from './cupFeedback'
  * the hit, over a short sine, for the knock of the die's body. Both die away
  * exponentially in `decay` seconds.
  */
-interface Voice {
+export interface Voice {
   /** Centre of the band-pass, in Hz. */
   band: number
   /** Sharpness of the band-pass: higher rings more like a hard surface. */
@@ -17,15 +17,29 @@ interface Voice {
   gain: number
 }
 
-/**
- * The floor is felt, so a die landing on it thuds: low, damped and quieter.
- * The walls and the glass are hard and click; they share one voice because in
- * a shake the die hits both within milliseconds and nobody could tell them
- * apart.
- */
-const FELT: Voice = { band: 750, q: 1.5, knock: 220, decay: 0.025, gain: 0.5 }
-const HARD: Voice = { band: 3200, q: 4, knock: 1100, decay: 0.05, gain: 1 }
-const VOICES: Record<Surface, Voice> = { floor: FELT, wall: HARD, glass: HARD }
+export interface SoundTuning {
+  /** The floor is felt, so a die landing on it thuds: low, damped and quieter. */
+  floor: Voice
+  /**
+   * The walls and the glass share one voice because in a shake the die hits
+   * both within milliseconds and nobody could tell them apart. It is the
+   * inside of a lined cup, so a dull knock rather than a click: a bright,
+   * ringing voice sounded like dice in a tin.
+   */
+  side: Voice
+  /**
+   * Every clack goes through a low-pass at this (Hz), which takes the hiss
+   * off the noise. Tuned by ear on an iPhone Air and a MacBook Pro: 600-700
+   * Hz sounded like a lined cup on both.
+   */
+  muffleHz: number
+}
+
+export const DEFAULT_SOUND_TUNING: Readonly<SoundTuning> = {
+  floor: { band: 600, q: 1, knock: 180, decay: 0.022, gain: 0.5 },
+  side: { band: 1300, q: 1.5, knock: 400, decay: 0.03, gain: 0.9 },
+  muffleHz: 650,
+}
 
 /** Each clack is detuned at random by up to this fraction, so a rattle is not a machine gun. */
 const DETUNE = 0.1
@@ -41,9 +55,14 @@ const SILENT = 0.0001
 /** Impact sounds synthesised with Web Audio, so there are no samples to download. */
 export class ClackSound implements ImpactSound {
   private readonly context = new AudioContext()
-  private readonly output: AudioNode
+  /** Where every clack goes: through it to the compressor and the speaker. */
+  private readonly muffle: BiquadFilterNode
   private readonly noise: AudioBuffer
   private voices = 0
+  /** Why the context last refused to start, for the debug readout. */
+  private resumeError = ''
+  /** Changed live from the debug overlay, to tune the sound on a phone. */
+  readonly tuning: SoundTuning = structuredClone(DEFAULT_SOUND_TUNING)
 
   constructor() {
     // iOS: follow the mute switch, as games do, and mix with other audio
@@ -52,8 +71,10 @@ export class ClackSound implements ImpactSound {
     if (session) session.type = 'ambient'
 
     // Many clacks landing together would clip; the compressor evens them out.
-    this.output = new DynamicsCompressorNode(this.context, { threshold: -12, ratio: 8 })
-    this.output.connect(this.context.destination)
+    const compressor = new DynamicsCompressorNode(this.context, { threshold: -12, ratio: 8 })
+    compressor.connect(this.context.destination)
+    this.muffle = new BiquadFilterNode(this.context, { type: 'lowpass', frequency: this.tuning.muffleHz })
+    this.muffle.connect(compressor)
 
     const { sampleRate } = this.context
     this.noise = new AudioBuffer({ length: Math.round(NOISE_SECONDS * sampleRate), sampleRate })
@@ -61,15 +82,28 @@ export class ClackSound implements ImpactSound {
     for (let i = 0; i < samples.length; i++) samples[i] = 2 * Math.random() - 1
   }
 
-  unlock(): void {
-    // A refusal leaves it suspended, and play() then stays silent.
-    if (this.context.state !== 'running') this.context.resume().catch(() => {})
+  /** The context's state ("interrupted" is iOS only) and the clacks still sounding. */
+  get state(): string {
+    const refused = this.resumeError ? `, refused: ${this.resumeError}` : ''
+    return `${this.context.state}, ${this.voices} voices${refused}`
+  }
+
+  async unlock(): Promise<void> {
+    if (this.context.state === 'running') return
+    try {
+      await this.context.resume()
+    }
+    catch (error) {
+      // A refusal leaves it suspended, and play() then stays silent.
+      this.resumeError = String(error)
+    }
   }
 
   play(surface: Surface, strength: number): void {
     if (this.context.state !== 'running' || this.voices >= MAX_VOICES) return
     const { context } = this
-    const voice = VOICES[surface]
+    const voice = surface === 'floor' ? this.tuning.floor : this.tuning.side
+    if (this.muffle.frequency.value !== this.tuning.muffleHz) this.muffle.frequency.value = this.tuning.muffleHz
     const detune = 1 + DETUNE * (2 * Math.random() - 1)
     const peak = Math.max(SILENT, voice.gain * strength)
     const start = context.currentTime
@@ -77,11 +111,11 @@ export class ClackSound implements ImpactSound {
 
     const click = new AudioBufferSourceNode(context, { buffer: this.noise })
     const band = new BiquadFilterNode(context, { type: 'bandpass', frequency: voice.band * detune, Q: voice.q })
-    click.connect(band).connect(decaying(context, peak, start, end)).connect(this.output)
+    click.connect(band).connect(decaying(context, peak, start, end)).connect(this.muffle)
     click.start(start, Math.random() * (NOISE_SECONDS - voice.decay), voice.decay)
 
     const knock = new OscillatorNode(context, { frequency: voice.knock * detune })
-    knock.connect(decaying(context, peak * KNOCK_GAIN, start, end)).connect(this.output)
+    knock.connect(decaying(context, peak * KNOCK_GAIN, start, end)).connect(this.muffle)
     knock.start(start)
     knock.stop(end)
 

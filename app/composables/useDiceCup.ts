@@ -1,6 +1,7 @@
 import type { ShallowRef } from 'vue'
 import type { CupState } from '~/engine/core/stateMachine'
 import type { CupDebugInfo, DiceCup } from '~/engine/diceCup'
+import type { SoundTuning } from '~/engine/feedback/clackSound'
 import type { HapticTuning } from '~/engine/feedback/cupFeedback'
 import type { Surface } from '~/engine/physics/world'
 import type { CupOptions } from '~/engine/simulation'
@@ -69,7 +70,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
   /** Has to run inside a tap: iOS only shows the motion prompt, and starts audio, from a user gesture. */
   async function start() {
     if (starting || permission.value !== null) return
-    cup?.unlockSound()
+    void cup?.unlockSound()
     starting = true
     const granted = await source.start()
     starting = false
@@ -88,8 +89,14 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     return cup?.hapticTuning ?? null
   }
 
-  function testPulse(surface: Surface) {
-    cup?.testPulse(surface)
+  function soundTuning(): SoundTuning | null {
+    return cup?.soundTuning ?? null
+  }
+
+  /** A click, so it can start the sound too: a desktop browser need not have had the start tap. */
+  async function testHit(surface: Surface) {
+    await cup?.unlockSound()
+    cup?.testHit(surface)
   }
 
   /** The recent sensor readings, or null when not recording. */
@@ -99,9 +106,9 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
 
   /** Rolls from a click or tap, with or without a motion sensor. */
   function toss() {
-    cup?.unlockSound()
+    void cup?.unlockSound()
     cup?.toss()
   }
 
-  return { ready, failed, state, result, permission, start, toss, debugInfo, exportTrace, hapticTuning, testPulse }
+  return { ready, failed, state, result, permission, start, toss, debugInfo, exportTrace, hapticTuning, soundTuning, testHit }
 }

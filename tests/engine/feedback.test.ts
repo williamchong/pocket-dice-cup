@@ -4,7 +4,8 @@ import type { Impact, Surface } from '../../app/engine/physics/world'
 
 class FakeSound implements ImpactSound {
   played: [Surface, number][] = []
-  unlock() {}
+  state = 'running'
+  async unlock() {}
   play(surface: Surface, strength: number) {
     this.played.push([surface, strength])
   }

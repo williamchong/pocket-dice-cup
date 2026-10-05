@@ -1,6 +1,6 @@
 import { boxForViewport } from './box'
 import type { CupState } from './core/stateMachine'
-import { ClackSound } from './feedback/clackSound'
+import { ClackSound, type SoundTuning } from './feedback/clackSound'
 import { CupFeedback, type FeedbackStats, type HapticTuning } from './feedback/cupFeedback'
 import { deviceHaptics } from './feedback/haptics'
 import type { MotionSource } from './input/motionSource'
@@ -19,6 +19,7 @@ export interface CupDebugInfo extends FeedbackStats {
   acceleration: Vec3
   agitation: number
   sensorActive: boolean
+  sound: string
 }
 
 /** A frame longer than this is treated as a pause (a hidden tab), not as time to catch up on. */
@@ -81,6 +82,7 @@ export class DiceCup {
       acceleration: this.source.acceleration,
       agitation: this.simulation.analyser.agitation,
       sensorActive: this.source.active,
+      sound: this.feedback.soundState,
       ...this.feedback.stats,
     }
   }
@@ -90,14 +92,19 @@ export class DiceCup {
     return this.feedback.tuning
   }
 
-  /** Plays one full-strength pulse as a hit on `surface`, to feel the tuning. */
-  testPulse(surface: Surface): void {
-    this.feedback.pulse(1, surface)
+  /** The live sound tuning, for the debug overlay to change; null where there is no Web Audio. */
+  get soundTuning(): SoundTuning | null {
+    return this.feedback.soundTuning
+  }
+
+  /** Plays a full-strength hit on `surface`, to hear and feel the tuning without a shake. */
+  testHit(surface: Surface): void {
+    this.feedback.testHit(surface)
   }
 
   /** Has to run inside a tap or click: browsers only start audio from one. */
-  unlockSound(): void {
-    this.feedback.unlock()
+  unlockSound(): Promise<void> {
+    return this.feedback.unlock()
   }
 
   /** Throws the dice for a click; see CupSimulation.toss. */

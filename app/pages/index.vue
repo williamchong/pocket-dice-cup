@@ -62,45 +62,60 @@
           {{ traceStatus.text }}
         </button>
       </form>
-      <!-- "Copy tuning" carries the values tuned by feel back into
-           DEFAULT_HAPTIC_TUNING. -->
+      <!-- "Copy tuning" carries the values tuned by feel and by ear back
+           into DEFAULT_HAPTIC_TUNING and DEFAULT_SOUND_TUNING. -->
       <form
         class="cup__tuning"
         @submit.prevent="copyTuning"
       >
-        <label
-          v-for="slider in TUNING_SLIDERS"
-          :key="slider.label"
-        >
-          <span>{{ slider.label }} {{ slider.read().toFixed(slider.step < 1 ? 2 : 0) }}</span>
-          <input
-            type="range"
-            :min="slider.min"
-            :max="slider.max"
-            :step="slider.step"
-            :value="slider.read()"
-            @input="slider.write(($event.target as HTMLInputElement).valueAsNumber)"
-          >
-        </label>
+        <!-- Closed at first: open, the panel covers the start button on a phone. -->
         <div class="cup__buttons">
           <button
-            v-for="surface in TEST_SURFACES"
-            :key="surface"
+            v-for="group in TUNING_GROUPS"
+            :key="group"
             type="button"
-            @click="testPulse(surface)"
+            :aria-pressed="tuningGroup === group"
+            @click="tuningGroup = tuningGroup === group ? null : group"
           >
-            Tap {{ surface }}
-          </button>
-          <button type="submit">
-            {{ tuningStatus.text }}
+            {{ group === tuningGroup ? 'Close' : TUNING_LABELS[group] }}
           </button>
         </div>
+        <template v-if="tuningGroup">
+          <label
+            v-for="slider in TUNING_SLIDERS[tuningGroup]"
+            :key="slider.label"
+          >
+            <span>{{ slider.label }} {{ slider.read().toFixed(Number.isInteger(slider.step) ? 0 : 2) }}</span>
+            <input
+              type="range"
+              :min="slider.min"
+              :max="slider.max"
+              :step="slider.step"
+              :value="slider.read()"
+              @input="slider.write(($event.target as HTMLInputElement).valueAsNumber)"
+            >
+          </label>
+          <div class="cup__buttons">
+            <button
+              v-for="surface in TEST_SURFACES"
+              :key="surface"
+              type="button"
+              @click="testHit(surface)"
+            >
+              Tap {{ surface }}
+            </button>
+            <button type="submit">
+              {{ tuningStatus.text }}
+            </button>
+          </div>
+        </template>
       </form>
     </div>
   </main>
 </template>
 
 <script setup lang="ts">
+import { DEFAULT_SOUND_TUNING, type SoundTuning } from '~/engine/feedback/clackSound'
 import { DEFAULT_HAPTIC_TUNING, type HapticTuning } from '~/engine/feedback/cupFeedback'
 import type { Surface } from '~/engine/physics/world'
 
@@ -113,7 +128,7 @@ const canvas = useTemplateRef('canvas')
 // Shaking tips the phone far enough for the browser to rotate the page; the
 // cup stays put in the phone's own frame instead.
 const counterRotationStyle = useCounterRotation()
-const { ready, failed, state, result, permission, start, toss, debugInfo, exportTrace, hapticTuning, testPulse } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug })
+const { ready, failed, state, result, permission, start, toss, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug })
 const debugText = ref('')
 const traceNote = ref('')
 
@@ -158,15 +173,23 @@ async function copyTrace() {
   traceStatus.flash(`${await copyOrSave(JSON.stringify(trace), 'trace.json')} ${trace.samples.length}`)
 }
 
-// The engine's own tuning object stays out of Vue; the sliders change this
-// copy, and it is written through.
-const tuning = reactive<HapticTuning>(structuredClone(DEFAULT_HAPTIC_TUNING))
+// The engine's own tuning objects stay out of Vue; the sliders change these
+// copies, and they are written through.
+const haptics = reactive<HapticTuning>(structuredClone(DEFAULT_HAPTIC_TUNING))
+const sound = reactive<SoundTuning>(structuredClone(DEFAULT_SOUND_TUNING))
 watchEffect(() => {
   const live = ready.value ? hapticTuning() : null
   if (!live) return
-  live.minPulseGapMs = tuning.minPulseGapMs
-  live.minIntensity = tuning.minIntensity
-  Object.assign(live.sharpness, tuning.sharpness)
+  live.minPulseGapMs = haptics.minPulseGapMs
+  live.minIntensity = haptics.minIntensity
+  Object.assign(live.sharpness, haptics.sharpness)
+})
+watchEffect(() => {
+  const live = ready.value ? soundTuning() : null
+  if (!live) return
+  live.muffleHz = sound.muffleHz
+  Object.assign(live.floor, sound.floor)
+  Object.assign(live.side, sound.side)
 })
 
 const TEST_SURFACES: Surface[] = ['floor', 'wall', 'glass']
@@ -180,16 +203,38 @@ interface TuningSlider {
   write: (value: number) => void
 }
 
-const TUNING_SLIDERS: TuningSlider[] = [
-  { label: 'gap ms', min: 15, max: 80, step: 1, read: () => tuning.minPulseGapMs, write: value => tuning.minPulseGapMs = value },
-  { label: 'min intensity', min: 0, max: 0.6, step: 0.05, read: () => tuning.minIntensity, write: value => tuning.minIntensity = value },
-  ...TEST_SURFACES.map(surface => ({ label: `${surface} sharp`, min: 0, max: 1, step: 0.05, read: () => tuning.sharpness[surface], write: (value: number) => tuning.sharpness[surface] = value })),
-]
+const voiceSliders = (name: 'floor' | 'side'): TuningSlider[] => {
+  const voice = sound[name]
+  return [
+    { label: `${name} band Hz`, min: 200, max: 4000, step: 50, read: () => voice.band, write: value => voice.band = value },
+    { label: `${name} knock Hz`, min: 60, max: 1500, step: 10, read: () => voice.knock, write: value => voice.knock = value },
+    { label: `${name} decay ms`, min: 5, max: 80, step: 1, read: () => voice.decay * 1000, write: value => voice.decay = value / 1000 },
+    { label: `${name} gain`, min: 0.05, max: 1, step: 0.05, read: () => voice.gain, write: value => voice.gain = value },
+  ]
+}
+
+type TuningGroup = 'haptics' | 'sound'
+const TUNING_LABELS: Record<TuningGroup, string> = { haptics: 'Haptics', sound: 'Sound' }
+const TUNING_GROUPS = Object.keys(TUNING_LABELS) as TuningGroup[]
+
+const TUNING_SLIDERS: Record<TuningGroup, TuningSlider[]> = {
+  haptics: [
+    { label: 'gap ms', min: 15, max: 80, step: 1, read: () => haptics.minPulseGapMs, write: value => haptics.minPulseGapMs = value },
+    { label: 'min intensity', min: 0, max: 0.6, step: 0.05, read: () => haptics.minIntensity, write: value => haptics.minIntensity = value },
+    ...TEST_SURFACES.map(surface => ({ label: `${surface} sharp`, min: 0, max: 1, step: 0.05, read: () => haptics.sharpness[surface], write: (value: number) => haptics.sharpness[surface] = value })),
+  ],
+  sound: [
+    { label: 'muffle Hz', min: 500, max: 8000, step: 100, read: () => sound.muffleHz, write: value => sound.muffleHz = value },
+    ...voiceSliders('side'),
+    ...voiceSliders('floor'),
+  ],
+}
+const tuningGroup = ref<TuningGroup | null>(null)
 
 const tuningStatus = flashLabel('Copy tuning')
 
 async function copyTuning() {
-  tuningStatus.flash(await copyOrSave(JSON.stringify(tuning), 'tuning.json'))
+  tuningStatus.flash(await copyOrSave(JSON.stringify({ haptics, sound }), 'tuning.json'))
 }
 
 if (debug) {
@@ -206,6 +251,7 @@ if (debug) {
       `agitation ${format(info.agitation)}`,
       `impacts/s ${format(info.impactsPerSecond)}`,
       `peak hit  ${format(info.peakStrength)}`,
+      `sound     ${info.sound}`,
     ].join('\n')
   }, 100)
   onBeforeUnmount(() => clearInterval(timer))

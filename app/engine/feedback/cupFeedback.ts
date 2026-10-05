@@ -1,4 +1,5 @@
 import type { Impact, Surface } from '../physics/world'
+import type { SoundTuning } from './clackSound'
 
 /**
  * Below this (cm/s) a hit is too faint to play: a die rocking to a stop. The
@@ -40,10 +41,14 @@ const STATS_WINDOW_MS = 1000
 
 /** Plays the sound of a die hitting `surface`, at `strength` from 0 to 1. */
 export interface ImpactSound {
-  /** Has to run inside a user gesture: browsers only start audio from one. */
-  unlock(): void
+  /** Has to run inside a user gesture: browsers only start audio from one. Never rejects. */
+  unlock(): Promise<void>
   play(surface: Surface, strength: number): void
   dispose(): void
+  /** A one-line summary for the debug readout. */
+  readonly state: string
+  /** What the debug overlay can tune live, where the sound has anything to tune. */
+  readonly tuning?: SoundTuning
 }
 
 /**
@@ -89,8 +94,16 @@ export class CupFeedback {
     }
   }
 
-  unlock(): void {
-    this.sound?.unlock()
+  get soundState(): string {
+    return this.sound?.state ?? 'none'
+  }
+
+  get soundTuning(): SoundTuning | null {
+    return this.sound?.tuning ?? null
+  }
+
+  unlock(): Promise<void> {
+    return this.sound?.unlock() ?? Promise.resolve()
   }
 
   play(impacts: readonly Impact[], timeMs: number): void {
@@ -115,8 +128,13 @@ export class CupFeedback {
     }
   }
 
-  /** Plays one pulse as a hit on `surface` at `strength` would, for feeling the tuning without a shake. */
-  pulse(strength: number, surface: Surface): void {
+  /** Plays a full-strength hit on `surface`, to hear and feel the tuning without a shake. */
+  testHit(surface: Surface): void {
+    this.sound?.play(surface, 1)
+    this.pulse(1, surface)
+  }
+
+  private pulse(strength: number, surface: Surface): void {
     const { minIntensity, sharpness } = this.tuning
     this.haptics?.playTransient(minIntensity + (1 - minIntensity) * strength, sharpness[surface])
   }
