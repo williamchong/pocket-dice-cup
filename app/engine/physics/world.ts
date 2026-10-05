@@ -47,13 +47,13 @@ const WAKE_ACCELERATION_DELTA = 0.5
  * rounded inside of a real cup. A cube only tips over from a push when
  * friction is at least 1, so a die shaken side to side with the phone screen
  * down slid flat on the glass and hit the walls face on; the bevel catches its
- * leading edge and turns it. Sized with the die: 6 mm for a 16 mm die.
+ * leading edge and turns it. Three eighths of the die's edge, as first tuned.
  */
-const BEVEL = 0.45
+const BEVEL = D6_SIZE * 3 / 8
 /**
  * The same bevel where the floor meets the side walls, for a die shaken side
- * to side screen-up, which slid on the floor and kept its face 55 times in 60
- * on a recorded iPhone shake. It is kept narrow because a die at rest can lean
+ * to side screen-up, which slid on the floor and kept its face: 23 times in 30
+ * on a recorded iPhone shake without it, 3 with it. It is kept narrow because a die at rest can lean
  * on it, cocked against a wall that is drawn square. For a 12 mm die, over 480
  * replayed rolls: at 1 mm 2 came to rest tilted and a side-to-side shake left
  * 18% on their starting face, as a fair die would; at 1.25 mm 13 were tilted;

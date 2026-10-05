@@ -75,7 +75,7 @@ function toss(index: number) {
 function assertInsideBox(simulation: CupSimulation): void {
   // A die lying flat against a wall has its centre half a die away. Hard
   // impacts sink in briefly; more than this would start to show.
-  const margin = D6_SIZE / 2 - 0.35
+  const margin = D6_SIZE / 2 - 0.25
   for (let index = 0; index < simulation.physics.dieCount; index++) {
     const p = simulation.physics.diePosition(index)
     expect(Math.abs(p.x)).toBeLessThan(box.width / 2 - margin)

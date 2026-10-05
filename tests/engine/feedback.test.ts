@@ -62,11 +62,14 @@ describe('CupFeedback', () => {
     feedback.play([hit(100), hit(100, 'wall', 1), hit(100, 'floor', 2)], 100)
     expect(haptics.pulses[0]).toBe(impactStrength(100))
     expect(haptics.pulses[1]).toBe(1)
-    // Harder to top out, for a cup of many dice.
+    // Harder to top out, for a cup of many dice, and the debug overlay's
+    // test tap follows.
     feedback.tuning.fullFeelSpeed = 900
     feedback.play([hit(100), hit(100, 'wall', 1), hit(100, 'floor', 2)], 200)
     expect(haptics.pulses[2]).toBeLessThan(1)
     expect(haptics.pulses[2]).toBeGreaterThan(haptics.pulses[0]!)
+    feedback.testHit('wall')
+    expect(haptics.pulses[3]).toBeCloseTo(impactStrength(300, 900))
   })
 
   it('ignores hits too faint to hear, however many there are', () => {

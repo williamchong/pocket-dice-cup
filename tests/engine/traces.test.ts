@@ -114,9 +114,9 @@ describe('recorded iPhone traces', () => {
   })
 
   it('tumble a die shaken side to side screen-up instead of sliding it on one face', () => {
-    // Without the floor bevel the die kept its face in 55 of 60 starts and
-    // changed face 0.1 times a shake; with it, 1 in 6 like a fair die, and
-    // about 3.7 times. The limits sit between the two with room for noise.
+    // Without the floor bevel the die kept its face in 23 of 30 starts and
+    // changed face 0.6 times a shake; with it, 3 of 30, and about 8 times.
+    // The limits sit between the two with room for noise.
     const trace = load('shake-horizontal')
     const starts = 30
     let keptFace = 0
