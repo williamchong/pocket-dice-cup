@@ -16,6 +16,8 @@ export interface CupOptions {
    * for tests and debugging. On by default.
    */
   randomStart?: boolean
+  /** How many d6 are in the cup at the start. 1 by default. */
+  dice?: number
 }
 
 /**
@@ -32,10 +34,27 @@ export class CupSimulation {
   readonly physics: PhysicsWorld
   /** A click since the last tick, which starts a roll like a shake does. */
   private tossed = false
+  /** Where new dice are placed at random; with none, on a fixed grid. */
+  private readonly random: (() => number) | undefined
 
-  constructor(rapier: Rapier, box: BoxSize, { randomStart = true }: CupOptions = {}) {
+  constructor(rapier: Rapier, box: BoxSize, { randomStart = true, dice = 1 }: CupOptions = {}) {
     this.physics = new PhysicsWorld(rapier, box)
-    this.physics.addD6(randomStart ? Math.random : undefined)
+    this.random = randomStart ? Math.random : undefined
+    this.physics.setDiceCount(dice, this.random)
+  }
+
+  /**
+   * Adds or removes dice between rolls, which clears any result; during one
+   * it does nothing. Returns whether the number of dice changed.
+   */
+  setDiceCount(count: number): boolean {
+    if (this.state === 'shaking' || this.state === 'settling') return false
+    const before = this.physics.dieCount
+    this.physics.setDiceCount(count, this.random)
+    if (this.physics.dieCount === before) return false
+    this.state = 'idle'
+    this.result = null
+    return true
   }
 
   /**

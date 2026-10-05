@@ -6,7 +6,7 @@ import { D6_FACES, D6_SIZE } from '../../app/engine/dice/d6'
 import { readTopFace } from '../../app/engine/dice/faces'
 import { REST_ACCELERATION } from '../../app/engine/input/motionSource'
 import { distance, type Vec3 } from '../../app/engine/math'
-import type { Impact } from '../../app/engine/physics/world'
+import { MAX_DICE, type Impact } from '../../app/engine/physics/world'
 import { CupSimulation } from '../../app/engine/simulation'
 import { seededRandom } from './seededRandom'
 
@@ -28,8 +28,8 @@ function shake(t: number, seed: number): Vec3 {
 }
 
 /** The dice start in the same place every time, so each roll is repeatable. */
-function fixedCup(size = box): CupSimulation {
-  return new CupSimulation(RAPIER, size, { randomStart: false })
+function fixedCup(size = box, dice = 1): CupSimulation {
+  return new CupSimulation(RAPIER, size, { randomStart: false, dice })
 }
 
 interface Roll {
@@ -39,8 +39,8 @@ interface Roll {
   settleSeconds: number
 }
 
-function roll(seed: number, shakeSeconds = 2): Roll {
-  const simulation = fixedCup()
+function roll(seed: number, shakeSeconds = 2, dice = 1): Roll {
+  const simulation = fixedCup(box, dice)
   const states: CupState[] = [simulation.state]
   let time = 0
   const run = (seconds: number, sample: (t: number) => Vec3, until?: () => boolean) => {
@@ -76,11 +76,26 @@ function assertInsideBox(simulation: CupSimulation): void {
   // A die lying flat against a wall has its centre half a die away. Hard
   // impacts sink in briefly; more than this would start to show.
   const margin = D6_SIZE / 2 - 0.35
-  const p = simulation.physics.diePosition(0)
-  expect(Math.abs(p.x)).toBeLessThan(box.width / 2 - margin)
-  expect(Math.abs(p.y)).toBeLessThan(box.height / 2 - margin)
-  expect(p.z).toBeGreaterThan(margin)
-  expect(p.z).toBeLessThan(box.depth - margin)
+  for (let index = 0; index < simulation.physics.dieCount; index++) {
+    const p = simulation.physics.diePosition(index)
+    expect(Math.abs(p.x)).toBeLessThan(box.width / 2 - margin)
+    expect(Math.abs(p.y)).toBeLessThan(box.height / 2 - margin)
+    expect(p.z).toBeGreaterThan(margin)
+    expect(p.z).toBeLessThan(box.depth - margin)
+  }
+}
+
+/** Every pair of dice, by index. */
+function pairs(count: number): [number, number][] {
+  return Array.from({ length: count }, (_, a) =>
+    Array.from({ length: count - a - 1 }, (_, b): [number, number] => [a, a + b + 1])).flat()
+}
+
+/** Distance between two dice across the floor. */
+function apart(simulation: CupSimulation, a: number, b: number): number {
+  const p = simulation.physics.diePosition(a)
+  const q = simulation.physics.diePosition(b)
+  return Math.hypot(p.x - q.x, p.y - q.y)
 }
 
 describe('CupSimulation', () => {
@@ -155,6 +170,37 @@ describe('CupSimulation', () => {
     expect(counts[2]! / tosses).toBeLessThan(0.3)
     expect(counts.every(count => count > 0)).toBe(true)
   })
+  it('keeps a cup of five dice inside through hard shakes and reads every one', () => {
+    for (let seed = 0; seed < 6; seed++) {
+      const { simulation, states } = roll(seed * 0.53, 1.5, 5)
+      expect(states.at(-1)).toBe('result')
+      expect(simulation.result).toHaveLength(5)
+      for (const value of simulation.result!) {
+        expect(value).toBeGreaterThanOrEqual(1)
+        expect(value).toBeLessThanOrEqual(6)
+      }
+      simulation.dispose()
+    }
+  })
+
+  it('adds and removes dice between rolls, clearing the result, but not during one', () => {
+    const { simulation } = roll(4)
+    expect(simulation.setDiceCount(3)).toBe(true)
+    expect(simulation.physics.dieCount).toBe(3)
+    expect(simulation.state).toBe('idle')
+    expect(simulation.result).toBeNull()
+    expect(simulation.setDiceCount(3)).toBe(false)
+    expect(simulation.setDiceCount(0)).toBe(true)
+    expect(simulation.physics.dieCount).toBe(1)
+    expect(simulation.setDiceCount(99)).toBe(true)
+    expect(simulation.physics.dieCount).toBe(MAX_DICE)
+    simulation.tick(FRAME, shake(0, 1), 0)
+    expect(simulation.state).toBe('shaking')
+    expect(simulation.setDiceCount(2)).toBe(false)
+    expect(simulation.physics.dieCount).toBe(MAX_DICE)
+    simulation.dispose()
+  })
+
   it('restarts a shown result on a click, and rests there once the die settles', () => {
     const { simulation } = toss(0)
     simulation.toss(seededRandom(99))
@@ -243,5 +289,33 @@ describe('starting position', () => {
       simulation.dispose()
     }
     expect(faces.size).toBe(6)
+  })
+
+  it('lays a fixed start of several dice out from the middle, apart and all with the 3 up', () => {
+    const simulation = fixedCup(box, 3)
+    expect(simulation.physics.diePosition(0)).toMatchObject({ x: 0, y: 0 })
+    for (const [a, b] of pairs(3)) expect(apart(simulation, a, b)).toBeGreaterThanOrEqual(D6_SIZE)
+    for (let index = 0; index < 3; index++) {
+      expect(readTopFace(D6_FACES, simulation.physics.dieRotation(index))).toBe(3)
+    }
+    simulation.dispose()
+  })
+
+  it('fits a full cup on a phone, dropping in from above the dice the floor has no room for', () => {
+    for (let i = 0; i < 20; i++) {
+      const simulation = fixedCup()
+      simulation.physics.setDiceCount(MAX_DICE, seededRandom(i + 1))
+      const height = (index: number) => simulation.physics.diePosition(index).z
+      for (const [a, b] of pairs(MAX_DICE)) {
+        if (Math.abs(height(a) - height(b)) < D6_SIZE) expect(apart(simulation, a, b)).toBeGreaterThanOrEqual(D6_SIZE)
+      }
+      let time = 0
+      for (; time < 5 && !simulation.physics.diceAtRest; time += FRAME) {
+        simulation.tick(FRAME, REST_ACCELERATION, time * 1000)
+        assertInsideBox(simulation)
+      }
+      expect(simulation.physics.diceAtRest).toBe(true)
+      simulation.dispose()
+    }
   })
 })

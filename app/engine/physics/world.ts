@@ -1,7 +1,7 @@
 import type { Collider, RigidBody, World } from '@dimforge/rapier3d-compat'
 import type { BoxSize } from '../box'
 import { D6_EDGE_RADIUS, D6_SIZE } from '../dice/d6'
-import { axisAngle, distance, length, multiply, type Quat, type Vec3 } from '../math'
+import { axisAngle, distance, length, multiply, rotate, type Quat, type Vec3 } from '../math'
 
 /** The Rapier module, passed in so that only the caller decides when its WASM is loaded. */
 export type Rapier = typeof import('@dimforge/rapier3d-compat').default
@@ -74,6 +74,15 @@ const IMPACT_MIN_SPEED = 3
  */
 const IMPACT_FLOOR_MIN_Z = Math.SQRT1_2
 
+/** The most dice the cup holds, for screen space and performance. */
+export const MAX_DICE = 12
+/** Random places tried for a new die on the floor, before it goes in above the others. */
+const PLACE_ATTEMPTS = 100
+/** Room (cm) between the dice of the grid a fixed start lays out. */
+const START_GAP = 0.4
+/** The least room (cm) left between a new die and the others, so it starts clear of them. */
+const PLACE_GAP = 0.1
+
 const REST_LINEAR_SPEED = 1
 const REST_ANGULAR_SPEED = 0.5
 const REST_DURATION_S = 0.25
@@ -135,26 +144,25 @@ export class PhysicsWorld {
   }
 
   /**
-   * Adds a d6 lying flat on the floor. With `random`, it lies at a random
-   * place with a random face up and a random turn, as if left from the last
-   * roll; without, it lies in the middle with the 3 up, for repeatable tests
-   * and debugging.
+   * Adds or removes d6s until there are `count`, from 1 to MAX_DICE. The dice
+   * already in the cup stay where they are; see addD6 for where new ones go.
    */
-  addD6(random?: () => number): void {
+  setDiceCount(count: number, random?: () => number): void {
+    const clamped = Math.max(1, Math.min(MAX_DICE, Math.round(count) || 1))
+    while (this.dice.length > clamped) this.world.removeRigidBody(this.dice.pop()!)
+    while (this.dice.length < clamped) this.addD6(random)
+  }
+
+  /**
+   * Adds a d6 lying flat on the floor, clear of the dice already there, or
+   * dropped in on top of them when the floor is full. With `random`, it lies
+   * at a random place with a random face up and a random turn, as if left
+   * from the last roll; without, it lies on a grid out from the middle with
+   * the 3 up, for repeatable tests and debugging.
+   */
+  private addD6(random?: () => number): void {
     const { RigidBodyDesc, ColliderDesc } = this.rapier
-    const half = D6_SIZE / 2
-    let position: Vec3 = { x: 0, y: 0, z: half }
-    let rotation: Quat = FACE_UP_ROTATIONS[0]!
-    if (random) {
-      // Clear of the walls at any turn, which takes half the diagonal; a box
-      // too small for that keeps it in the middle.
-      const reach = half * Math.SQRT2
-      const rangeX = Math.max(0, this.box.width / 2 - reach)
-      const rangeY = Math.max(0, this.box.height / 2 - reach)
-      position = { x: (2 * random() - 1) * rangeX, y: (2 * random() - 1) * rangeY, z: half }
-      const faceUp = FACE_UP_ROTATIONS[Math.floor(random() * FACE_UP_ROTATIONS.length)]!
-      rotation = multiply(axisAngle(Z_AXIS, random() * 2 * Math.PI), faceUp)
-    }
+    const { position, rotation } = this.placeD6(random)
     const body = this.world.createRigidBody(
       RigidBodyDesc.dynamic()
         .setTranslation(position.x, position.y, position.z)
@@ -163,7 +171,7 @@ export class PhysicsWorld {
         .setCcdEnabled(true),
     )
     // roundCuboid takes the half extents of the inner box, before rounding.
-    const inner = half - D6_EDGE_RADIUS
+    const inner = D6_SIZE / 2 - D6_EDGE_RADIUS
     this.world.createCollider(
       ColliderDesc.roundCuboid(inner, inner, inner, D6_EDGE_RADIUS)
         .setRestitution(RESTITUTION)
@@ -171,6 +179,54 @@ export class PhysicsWorld {
       body,
     )
     this.dice.push(body)
+  }
+
+  private placeD6(random?: () => number): { position: Vec3, rotation: Quat } {
+    const half = D6_SIZE / 2
+    const faceUp = random ? FACE_UP_ROTATIONS[Math.floor(random() * FACE_UP_ROTATIONS.length)]! : FACE_UP_ROTATIONS[0]!
+    const placed = this.dice.map(die => ({ z: die.translation().z, footprint: footprintOf(die) }))
+    // On the floor where there is room; in a crowded cup, just under the
+    // glass, from where it falls in on top of the others.
+    for (const z of [half, this.box.depth - half]) {
+      // Only the dice at about the same height are in the way.
+      const others = placed.filter(die => Math.abs(die.z - z) < D6_SIZE).map(die => die.footprint)
+      const isFree = (spot: Footprint) => others.every(other => !overlaps(spot, other))
+      const spot = random ? this.randomSpot(isFree, random) : this.gridSpot(isFree)
+      if (spot) return { position: { x: spot.x, y: spot.y, z }, rotation: multiply(axisAngle(Z_AXIS, spot.turn), faceUp) }
+    }
+    // Both full, which only a cup far smaller than a phone can be: the
+    // solver pushes the dice apart. Square to the walls, with its face.
+    return { position: { x: 0, y: 0, z: this.box.depth - half }, rotation: faceUp }
+  }
+
+  /** A free spot at a random place and turn, or null if the tries found none. */
+  private randomSpot(isFree: (spot: Footprint) => boolean, random: () => number): Footprint | null {
+    // Clear of the walls at any turn, which takes half the diagonal; a box
+    // too small for that keeps it in the middle.
+    const reach = D6_SIZE / 2 * Math.SQRT2
+    const rangeX = Math.max(0, this.box.width / 2 - reach)
+    const rangeY = Math.max(0, this.box.height / 2 - reach)
+    for (let attempt = 0; attempt < PLACE_ATTEMPTS; attempt++) {
+      const spot = { x: (2 * random() - 1) * rangeX, y: (2 * random() - 1) * rangeY, turn: random() * 2 * Math.PI }
+      if (isFree(spot)) return spot
+    }
+    return null
+  }
+
+  /** The free spot nearest the middle on a grid of dice square to the walls, if any. */
+  private gridSpot(isFree: (spot: Footprint) => boolean): Footprint | null {
+    const half = D6_SIZE / 2
+    const spacing = D6_SIZE + START_GAP
+    const columns = Math.floor(Math.max(0, this.box.width / 2 - half) / spacing)
+    const rows = Math.floor(Math.max(0, this.box.height / 2 - half) / spacing)
+    const spots: Footprint[] = []
+    for (let row = -rows; row <= rows; row++) {
+      for (let column = -columns; column <= columns; column++) {
+        spots.push({ x: column * spacing, y: row * spacing, turn: 0 })
+      }
+    }
+    spots.sort((a, b) => Math.hypot(a.x, a.y) - Math.hypot(b.x, b.y))
+    return spots.find(isFree) ?? null
   }
 
   /**
@@ -310,6 +366,40 @@ interface Slab {
   centre: Vec3
   side: boolean
   rotation?: Quat
+}
+
+/** Where a die lying flat sits on the floor: its centre, and its turn about z. */
+interface Footprint {
+  x: number
+  y: number
+  turn: number
+}
+
+/**
+ * Where `die` sits, taken as lying flat. A die left leaning on another after
+ * a roll is not, and then its turn is only roughly right.
+ */
+function footprintOf(die: RigidBody): Footprint {
+  const { x, y } = die.translation()
+  // Any of the die's own axes that lies flat gives its turn, a square being
+  // the same every quarter turn.
+  let side = rotate(X_AXIS, die.rotation())
+  if (Math.abs(side.z) > Math.SQRT1_2) side = rotate(Y_AXIS, die.rotation())
+  return { x, y, turn: Math.atan2(side.y, side.x) }
+}
+
+/**
+ * Whether two dice lying flat come within PLACE_GAP of each other, by the
+ * separating axis test: two squares are apart when their shadows on one of
+ * their four edge directions are.
+ */
+function overlaps(a: Footprint, b: Footprint): boolean {
+  // How far a square of the die's size reaches along a direction `angle` off its edges.
+  const extent = (angle: number) => D6_SIZE / 2 * (Math.abs(Math.cos(angle)) + Math.abs(Math.sin(angle)))
+  return [a.turn, a.turn + Math.PI / 2, b.turn, b.turn + Math.PI / 2].every((axis) => {
+    const along = Math.abs((b.x - a.x) * Math.cos(axis) + (b.y - a.y) * Math.sin(axis))
+    return along < extent(a.turn - axis) + extent(b.turn - axis) + PLACE_GAP
+  })
 }
 
 /** A uniformly random unit vector: z uniform in [-1, 1], longitude uniform. */
