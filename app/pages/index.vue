@@ -120,6 +120,8 @@ if (debug) {
       `sensor    ${info.sensorActive ? 'active' : 'no readings'}`,
       `accel     ${format(x)}${format(y)}${format(z)}`,
       `agitation ${format(info.agitation)}`,
+      `impacts/s ${format(info.impactsPerSecond)}`,
+      `peak hit  ${format(info.peakStrength)}`,
     ].join('\n')
   }, 100)
   onBeforeUnmount(() => clearInterval(timer))

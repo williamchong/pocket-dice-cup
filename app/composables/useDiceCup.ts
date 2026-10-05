@@ -64,9 +64,10 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     cup?.dispose()
   })
 
-  /** Has to run inside a tap: iOS only shows the motion prompt from a user gesture. */
+  /** Has to run inside a tap: iOS only shows the motion prompt, and starts audio, from a user gesture. */
   async function start() {
     if (starting || permission.value !== null) return
+    cup?.unlockSound()
     starting = true
     const granted = await source.start()
     starting = false
@@ -87,6 +88,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
 
   /** Rolls from a click or tap, with or without a motion sensor. */
   function toss() {
+    cup?.unlockSound()
     cup?.toss()
   }
 

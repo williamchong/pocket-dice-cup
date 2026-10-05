@@ -1,5 +1,8 @@
 import { boxForViewport } from './box'
 import type { CupState } from './core/stateMachine'
+import { ClackSound } from './feedback/clackSound'
+import { CupFeedback, type FeedbackStats } from './feedback/cupFeedback'
+import { browserHaptics } from './feedback/haptics'
 import type { MotionSource } from './input/motionSource'
 import type { TraceRecorder } from './input/motionTrace'
 import type { Vec3 } from './math'
@@ -12,7 +15,7 @@ export interface CupSnapshot {
   result: number[] | null
 }
 
-export interface CupDebugInfo {
+export interface CupDebugInfo extends FeedbackStats {
   acceleration: Vec3
   agitation: number
   sensorActive: boolean
@@ -39,6 +42,7 @@ export class DiceCup {
     private readonly source: MotionSource,
     private readonly simulation: CupSimulation,
     private readonly scene: DiceScene,
+    private readonly feedback: CupFeedback,
     private readonly onChange: (snapshot: CupSnapshot) => void,
     private readonly recorder: TraceRecorder | null,
   ) {
@@ -62,7 +66,8 @@ export class DiceCup {
     try {
       const scene = new DiceScene(canvas)
       for (let index = 0; index < simulation.physics.dieCount; index++) scene.addD6()
-      return new DiceCup(canvas, source, simulation, scene, onChange, recorder)
+      const feedback = new CupFeedback(createSound(), browserHaptics())
+      return new DiceCup(canvas, source, simulation, scene, feedback, onChange, recorder)
     }
     catch (error) {
       // WebGL can be unavailable; do not leave the WASM world behind.
@@ -76,7 +81,13 @@ export class DiceCup {
       acceleration: this.source.acceleration,
       agitation: this.simulation.analyser.agitation,
       sensorActive: this.source.active,
+      ...this.feedback.stats,
     }
+  }
+
+  /** Has to run inside a tap or click: browsers only start audio from one. */
+  unlockSound(): void {
+    this.feedback.unlock()
   }
 
   /** Throws the dice for a click; see CupSimulation.toss. */
@@ -88,6 +99,7 @@ export class DiceCup {
     cancelAnimationFrame(this.frame)
     this.resizeObserver.disconnect()
     this.scene.dispose()
+    this.feedback.dispose()
     this.simulation.dispose()
   }
 
@@ -114,6 +126,7 @@ export class DiceCup {
     if (simulation.tick(dt, this.source.acceleration, timeMs)) {
       this.onChange({ state: simulation.state, result: simulation.result })
     }
+    this.feedback.play(simulation.physics.impacts, timeMs)
 
     // A result can sit on screen for minutes with the screen kept awake, so
     // do not redraw an unchanged picture 60 times a second.
@@ -124,5 +137,20 @@ export class DiceCup {
       scene.setDieTransform(index, simulation.physics.diePosition(index), simulation.physics.dieRotation(index))
     }
     scene.render()
+  }
+}
+
+/**
+ * The dice still roll, in silence, where there is no Web Audio or it will not
+ * start: iOS refuses a new AudioContext past a handful open at once.
+ */
+function createSound(): ClackSound | null {
+  if (typeof AudioContext === 'undefined') return null
+  try {
+    return new ClackSound()
+  }
+  catch (error) {
+    console.error(error)
+    return null
   }
 }
