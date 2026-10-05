@@ -1,4 +1,4 @@
-import { CanvasTexture, Mesh, MeshPhysicalMaterial, SRGBColorSpace } from 'three'
+import { CanvasTexture, Mesh, MeshPhysicalMaterial, SRGBColorSpace, type BufferGeometry } from 'three'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import { D6_EDGE_RADIUS, D6_FACES, D6_SIZE } from '../dice/d6'
 
@@ -61,7 +61,13 @@ function bumpTexture(value: number): CanvasTexture {
   })
 }
 
-export function createD6Mesh(): Mesh {
+/** What every d6 is drawn with, made once and shared, so more dice do not mean more textures. */
+export interface D6Look {
+  geometry: BufferGeometry
+  materials: MeshPhysicalMaterial[]
+}
+
+export function createD6Look(): D6Look {
   const geometry = new RoundedBoxGeometry(D6_SIZE, D6_SIZE, D6_SIZE, 4, D6_EDGE_RADIUS)
   // D6_FACES is in BoxGeometry's group order, so face i gets material i.
   const materials = D6_FACES.map(face => new MeshPhysicalMaterial({
@@ -72,6 +78,10 @@ export function createD6Mesh(): Mesh {
     clearcoat: 1,
     clearcoatRoughness: 0.08,
   }))
+  return { geometry, materials }
+}
+
+export function createD6Mesh({ geometry, materials }: D6Look): Mesh {
   const mesh = new Mesh(geometry, materials)
   mesh.castShadow = true
   return mesh

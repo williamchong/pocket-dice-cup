@@ -18,12 +18,16 @@ export interface CupSnapshot {
 export interface CupDebugInfo extends FeedbackStats {
   acceleration: Vec3
   agitation: number
+  /** What the simulation takes a frame, in ms, averaged over about the last 60 frames. */
+  physicsMs: number
   sensorActive: boolean
   sound: string
 }
 
 /** A frame longer than this is treated as a pause (a hidden tab), not as time to catch up on. */
 const MAX_FRAME_SECONDS = 0.1
+/** How much each frame moves the average of physicsMs. */
+const PHYSICS_MS_SMOOTHING = 1 / 60
 
 /**
  * The dice cup in a browser: runs the simulation from a motion source every
@@ -36,6 +40,7 @@ export class DiceCup {
   private height = 0
   /** Whether the last frame had dice in motion, or the view changed, so one more draw is owed. */
   private stale = true
+  private physicsMs = 0
   private readonly resizeObserver: ResizeObserver
 
   private constructor(
@@ -66,7 +71,7 @@ export class DiceCup {
     const simulation = new CupSimulation(rapier, boxForViewport(canvas.clientWidth || 1, canvas.clientHeight || 1), options)
     try {
       const scene = new DiceScene(canvas)
-      for (let index = 0; index < simulation.physics.dieCount; index++) scene.addD6()
+      scene.setDiceCount(simulation.physics.dieCount)
       const feedback = new CupFeedback(createSound(), deviceHaptics())
       return new DiceCup(canvas, source, simulation, scene, feedback, onChange, recorder)
     }
@@ -81,6 +86,7 @@ export class DiceCup {
     return {
       acceleration: this.source.acceleration,
       agitation: this.simulation.analyser.agitation,
+      physicsMs: this.physicsMs,
       sensorActive: this.source.active,
       sound: this.feedback.soundState,
       ...this.feedback.stats,
@@ -107,6 +113,19 @@ export class DiceCup {
     return this.feedback.unlock()
   }
 
+  get dieCount(): number {
+    return this.simulation.physics.dieCount
+  }
+
+  /** Adds or removes dice between rolls; see CupSimulation.setDiceCount. */
+  setDiceCount(count: number): boolean {
+    if (!this.simulation.setDiceCount(count)) return false
+    this.scene.setDiceCount(this.dieCount)
+    this.stale = true
+    this.notifyChange()
+    return true
+  }
+
   /** Throws the dice for a click; see CupSimulation.toss. */
   toss(): void {
     this.simulation.toss()
@@ -118,6 +137,10 @@ export class DiceCup {
     this.scene.dispose()
     this.feedback.dispose()
     this.simulation.dispose()
+  }
+
+  private notifyChange(): void {
+    this.onChange({ state: this.simulation.state, result: this.simulation.result })
   }
 
   private resize(): void {
@@ -140,9 +163,10 @@ export class DiceCup {
     const { simulation, scene } = this
     // Before the first reading the source holds a placeholder, not a measurement.
     if (this.source.active) this.recorder?.push(this.source.acceleration, timeMs)
-    if (simulation.tick(dt, this.source.acceleration, timeMs)) {
-      this.onChange({ state: simulation.state, result: simulation.result })
-    }
+    const started = performance.now()
+    const changed = simulation.tick(dt, this.source.acceleration, timeMs)
+    this.physicsMs += (performance.now() - started - this.physicsMs) * PHYSICS_MS_SMOOTHING
+    if (changed) this.notifyChange()
     this.feedback.play(simulation.physics.impacts, timeMs)
 
     // A result can sit on screen for minutes with the screen kept awake, so

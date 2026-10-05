@@ -12,13 +12,14 @@ import {
   SpotLight,
   SRGBColorSpace,
   WebGLRenderer,
+  type BufferGeometry,
   type Material,
   type WebGLRenderTarget,
 } from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { CAMERA_DISTANCE, type BoxSize } from '../box'
 import type { Quat, Vec3 } from '../math'
-import { createD6Mesh } from './d6Mesh'
+import { createD6Look, createD6Mesh } from './d6Mesh'
 
 /** Phones report 3; the extra pixels cost more than they show at this scale. */
 const MAX_PIXEL_RATIO = 2
@@ -60,6 +61,7 @@ export class DiceScene {
   private readonly lamp = new SpotLight(0xfff1dc, 5)
   private readonly feltMap = feltTexture()
   private readonly environment: WebGLRenderTarget
+  private readonly d6Look = createD6Look()
   private readonly dice: Mesh[] = []
 
   constructor(canvas: HTMLCanvasElement) {
@@ -104,10 +106,14 @@ export class DiceScene {
     this.scene.add(this.lamp, this.lamp.target)
   }
 
-  addD6(): void {
-    const mesh = createD6Mesh()
-    this.dice.push(mesh)
-    this.scene.add(mesh)
+  /** Adds or removes dice to draw `count`; the shared look is only freed by dispose. */
+  setDiceCount(count: number): void {
+    while (this.dice.length > count) this.scene.remove(this.dice.pop()!)
+    while (this.dice.length < count) {
+      const mesh = createD6Mesh(this.d6Look)
+      this.dice.push(mesh)
+      this.scene.add(mesh)
+    }
   }
 
   /** Fits the cup's opening to a viewport of the given size in CSS pixels. */
@@ -154,9 +160,13 @@ export class DiceScene {
   }
 
   dispose(): void {
-    for (const mesh of [this.tray, ...this.dice]) {
-      mesh.geometry.dispose()
-      for (const material of new Set(mesh.material as Material[])) {
+    const parts: [BufferGeometry, Material[]][] = [
+      [this.tray.geometry, this.tray.material as Material[]],
+      [this.d6Look.geometry, this.d6Look.materials],
+    ]
+    for (const [geometry, materials] of parts) {
+      geometry.dispose()
+      for (const material of new Set(materials)) {
         if (material instanceof MeshStandardMaterial) {
           material.map?.dispose()
           material.bumpMap?.dispose()

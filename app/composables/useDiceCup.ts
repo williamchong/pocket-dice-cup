@@ -24,6 +24,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
   const failed = ref(false)
   const state = ref<CupState>('idle')
   const result = ref<number[] | null>(null)
+  const dice = ref(1)
   /** Null until the user has pressed start. */
   const permission = ref<MotionPermission | null>(null)
 
@@ -52,6 +53,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
         state.value = snapshot.state
         result.value = snapshot.result
       }, options, recorder)
+      dice.value = cup.dieCount
       ready.value = true
     }
     catch (error) {
@@ -104,11 +106,16 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     return recorder?.toTrace(navigator.userAgent, note) ?? null
   }
 
+  /** Adds or removes dice between rolls; during one it does nothing. */
+  function setDiceCount(count: number) {
+    if (cup?.setDiceCount(count)) dice.value = cup.dieCount
+  }
+
   /** Rolls from a click or tap, with or without a motion sensor. */
   function toss() {
     void cup?.unlockSound()
     cup?.toss()
   }
 
-  return { ready, failed, state, result, permission, start, toss, debugInfo, exportTrace, hapticTuning, soundTuning, testHit }
+  return { ready, failed, state, result, dice, permission, start, toss, setDiceCount, debugInfo, exportTrace, hapticTuning, soundTuning, testHit }
 }

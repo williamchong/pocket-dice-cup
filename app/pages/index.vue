@@ -49,6 +49,24 @@
       class="cup__debug"
     >
       <pre>{{ debugText }}</pre>
+      <!-- The iOS app has no address bar for ?dice=N. -->
+      <div class="cup__buttons">
+        <button
+          type="button"
+          :disabled="dice <= 1"
+          @click="setDiceCount(dice - 1)"
+        >
+          −
+        </button>
+        <span class="cup__count">{{ dice }} {{ dice === 1 ? 'die' : 'dice' }}</span>
+        <button
+          type="button"
+          :disabled="dice >= MAX_DICE"
+          @click="setDiceCount(dice + 1)"
+        >
+          +
+        </button>
+      </div>
       <!-- For turning a real shake into a test fixture (tests/fixtures/traces). -->
       <form
         class="cup__trace"
@@ -117,18 +135,21 @@
 <script setup lang="ts">
 import { DEFAULT_SOUND_TUNING, type SoundTuning } from '~/engine/feedback/clackSound'
 import { DEFAULT_HAPTIC_TUNING, type HapticTuning } from '~/engine/feedback/cupFeedback'
-import type { Surface } from '~/engine/physics/world'
+import { MAX_DICE, type Surface } from '~/engine/physics/world'
 
 // `?debug` shows what the sensor and the state machine are doing, for tuning
-// on a real phone where there is no console. It also starts the die in the
+// on a real phone where there is no console. It also starts the dice in the
 // same place every time, so runs can be compared.
-const debug = 'debug' in useRoute().query || Boolean(useRuntimeConfig().public.debug)
+const route = useRoute()
+const debug = 'debug' in route.query || Boolean(useRuntimeConfig().public.debug)
+// `?dice=N` starts with N dice, until there is a setting for it.
+const startDice = Number(route.query.dice) || 1
 
 const canvas = useTemplateRef('canvas')
 // Shaking tips the phone far enough for the browser to rotate the page; the
 // cup stays put in the phone's own frame instead.
 const counterRotationStyle = useCounterRotation()
-const { ready, failed, state, result, permission, start, toss, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug })
+const { ready, failed, state, result, dice, permission, start, toss, setDiceCount, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, dice: startDice })
 const debugText = ref('')
 const traceNote = ref('')
 
@@ -249,6 +270,7 @@ if (debug) {
       `sensor    ${info.sensorActive ? 'active' : 'no readings'}`,
       `accel     ${format(x)}${format(y)}${format(z)}`,
       `agitation ${format(info.agitation)}`,
+      `physics   ${format(info.physicsMs)} ms`,
       `impacts/s ${format(info.impactsPerSecond)}`,
       `peak hit  ${format(info.peakStrength)}`,
       `sound     ${info.sound}`,
@@ -364,5 +386,9 @@ if (debug) {
 
 .cup__trace input {
   width: 10rem;
+}
+
+.cup__count {
+  align-self: center;
 }
 </style>
