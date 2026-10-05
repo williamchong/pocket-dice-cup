@@ -6,7 +6,7 @@ import { axisAngle, distance, dot, length, multiply, rotate, type Quat, type Vec
 /** The Rapier module, passed in so that only the caller decides when its WASM is loaded. */
 export type Rapier = typeof import('@dimforge/rapier3d-compat').default
 
-/** World units are centimetres, so that a 1.6-unit die is a real 16 mm die. */
+/** World units are centimetres, so that a 1.2-unit die is a real 12 mm die. */
 const UNITS_PER_METRE = 100
 
 /**
@@ -47,17 +47,19 @@ const WAKE_ACCELERATION_DELTA = 0.5
  * rounded inside of a real cup. A cube only tips over from a push when
  * friction is at least 1, so a die shaken side to side with the phone screen
  * down slid flat on the glass and hit the walls face on; the bevel catches its
- * leading edge and turns it.
+ * leading edge and turns it. Sized with the die: 6 mm for a 16 mm die.
  */
-const BEVEL = 0.6
+const BEVEL = 0.45
 /**
  * The same bevel where the floor meets the side walls, for a die shaken side
  * to side screen-up, which slid on the floor and kept its face 55 times in 60
  * on a recorded iPhone shake. It is kept narrow because a die at rest can lean
- * on it, cocked against a wall that is drawn square: at 2 mm none of 450
- * replayed rolls came to rest tilted, at 3 mm 45 did.
+ * on it, cocked against a wall that is drawn square. For a 12 mm die, over 480
+ * replayed rolls: at 1 mm 2 came to rest tilted and a side-to-side shake left
+ * 18% on their starting face, as a fair die would; at 1.25 mm 13 were tilted;
+ * at 0.75 mm 45% kept their face.
  */
-const FLOOR_BEVEL = 0.2
+const FLOOR_BEVEL = 0.1
 
 /**
  * A step counts as part of a hit when contacts change a die's velocity by more

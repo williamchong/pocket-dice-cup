@@ -1,9 +1,14 @@
 import type { DieFace } from './faces'
 
-/** Edge length in world units (centimetres): a standard 16 mm die. */
-export const D6_SIZE = 1.6
+/**
+ * Edge length in world units (centimetres): a 12 mm die, the size of most
+ * game dice. At 16 mm a dozen of them covered 40% of a phone's floor and
+ * jammed against the walls: on recorded iPhone shakes they moved at half the
+ * speed of a lone die and mostly kept their faces.
+ */
+export const D6_SIZE = 1.2
 /** Radius of the rounded edges, shared by the collider and the mesh. */
-export const D6_EDGE_RADIUS = 0.16
+export const D6_EDGE_RADIUS = D6_SIZE / 10
 
 /**
  * Opposite faces sum to 7. The order is three.js's BoxGeometry face order
