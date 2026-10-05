@@ -18,12 +18,14 @@ self-signed certificate warning, tap Start and allow motion access.
 
 With no motion sensor, as on a desktop, click or tap the cup to shake it.
 
-Add `?debug` to the URL to see the sensor reading, the shake level and the
-current state on screen. It also starts the die in the middle with the same
-face up every time, instead of at a random place and face. "Copy trace" copies
-the last 30 seconds of readings as JSON, for replaying in tests. The Haptics
-and Sound buttons open sliders for tuning the feel and the clacks live;
-"Copy tuning" copies the values, to make them the new defaults.
+Add `?debug` to the URL to see the sensor reading, the shake level, the
+current state and how long the physics takes a frame on screen. It also
+starts the dice on a grid out from the middle with the same face up every
+time, instead of at random places and faces. The − and + buttons change the
+number of dice between rolls; `?dice=N` starts with N, up to 12. "Copy trace"
+copies the last 30 seconds of readings as JSON, for replaying in tests. The
+Haptics and Sound buttons open sliders for tuning the feel and the clacks
+live; "Copy tuning" copies the values, to make them the new defaults.
 
 ## iPhone app
 

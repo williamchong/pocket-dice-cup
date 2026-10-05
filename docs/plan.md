@@ -158,6 +158,16 @@ Phases
 3. **Dice set and pool.** All geometries, mixed pools, the notation parser.
    A headless Node test rolls each die thousands of times and checks the
    distribution is roughly uniform.
+   Status: pools of up to 12 d6 are built. New dice are laid where their
+   square on the floor clears the others; when the floor is full, a die goes
+   in under the glass and falls on top. Hits between two dice are told apart
+   from hits on the cup by the contact normal, heard once per pair with a
+   shorter, higher click, and felt at 0.3 of their strength, since the hand
+   holds the cup. The count is changed from the debug overlay; the app still
+   starts with one die until there is a setting. Not yet checked on the
+   iPhone: the frame cost of many dice, whether the 8-voice cap drops clacks,
+   and how the die-to-die clack and feel sound and feel. The other shapes, the
+   notation parser and the distribution test are still to do.
 4. **Result popup and history.** Per-die values and total when the dice settle.
    History in `localStorage`.
 5. **Skins.** 3-4 dice skins and 3-4 table skins to start.
