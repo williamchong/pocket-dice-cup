@@ -19,9 +19,16 @@ export interface HapticTuning {
   minPulseGapMs: number
   /**
    * How crisp a hit on each surface feels, from 0 to 1, as the clacks sound: a
-   * soft thud on the felt floor, a sharp tap on the walls and the glass.
+   * soft thud on the felt floor, a sharp tap on the walls, the glass and
+   * another die.
    */
   sharpness: Record<Surface, number>
+  /**
+   * How much of a hit between two dice the hand feels, from 0 to 1. The hand
+   * holds the cup, so it feels the dice hitting the cup and mostly only hears
+   * them hitting each other.
+   */
+  dieFeel: number
   /**
    * The intensity of the faintest hit that plays, from 0 to 1: a Taptic
    * Engine transient much below 0.3 is hard to feel at all. Harder hits rise
@@ -33,6 +40,7 @@ export interface HapticTuning {
 export const DEFAULT_HAPTIC_TUNING: Readonly<HapticTuning> = {
   minPulseGapMs: 35,
   sharpness: { floor: 0.2, wall: 0.8, glass: 0.8, die: 0.8 },
+  dieFeel: 0.3,
   minIntensity: 0,
 }
 
@@ -77,7 +85,8 @@ export function impactStrength(speed: number): number {
 /**
  * Turns the dice's impacts into sound and vibration. Every impact is heard;
  * vibration is limited to what a motor can play apart, so it gets the
- * strongest impact of a frame, and none until the last pulse is over.
+ * impact of a frame that is felt the most, and none until the last pulse is
+ * over.
  */
 export class CupFeedback {
   private lastPulseMs = -Infinity
@@ -117,8 +126,9 @@ export class CupFeedback {
       if (strength === 0) continue
       this.sound?.play(surface, strength)
       this.recent.push({ timeMs, strength })
-      if (strength > strongest) {
-        strongest = strength
+      const felt = this.felt(strength, surface)
+      if (felt > strongest) {
+        strongest = felt
         strongestSurface = surface
       }
     }
@@ -131,7 +141,11 @@ export class CupFeedback {
   /** Plays a full-strength hit on `surface`, to hear and feel the tuning without a shake. */
   testHit(surface: Surface): void {
     this.sound?.play(surface, 1)
-    this.pulse(1, surface)
+    this.pulse(this.felt(1, surface), surface)
+  }
+
+  private felt(strength: number, surface: Surface): number {
+    return surface === 'die' ? strength * this.tuning.dieFeel : strength
   }
 
   private pulse(strength: number, surface: Surface): void {

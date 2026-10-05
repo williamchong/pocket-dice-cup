@@ -67,6 +67,25 @@ describe('CupFeedback', () => {
     expect(glass).toBe(wall)
   })
 
+  it('plays a hit between two dice in full but feels it less than one on the cup', () => {
+    const sound = new FakeSound()
+    const haptics = new FakeHaptics()
+    const feedback = new CupFeedback(sound, haptics)
+    feedback.play([hit(100, 'wall'), hit(200, 'die')], 0)
+    expect(sound.played).toEqual([['wall', impactStrength(100)], ['die', impactStrength(200)]])
+    expect(haptics.pulses).toEqual([impactStrength(100)])
+    feedback.play([hit(200, 'die')], 100)
+    expect(haptics.pulses[1]).toBeCloseTo(impactStrength(200) * feedback.tuning.dieFeel)
+    expect(haptics.sharpnesses[1]).toBe(feedback.tuning.sharpness.die)
+    feedback.tuning.dieFeel = 0
+    feedback.play([hit(300, 'die')], 200)
+    expect(haptics.pulses).toHaveLength(2)
+    // The debug overlay's test tap feels as a real hit between dice would.
+    feedback.tuning.dieFeel = 0.5
+    feedback.testHit('die')
+    expect(haptics.pulses.at(-1)).toBe(0.5)
+  })
+
   it('spaces the pulses by the live tuning', () => {
     const haptics = new FakeHaptics()
     const feedback = new CupFeedback(null, haptics)

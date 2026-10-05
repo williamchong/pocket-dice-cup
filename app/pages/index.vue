@@ -133,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-import { DEFAULT_SOUND_TUNING, type SoundTuning } from '~/engine/feedback/clackSound'
+import { DEFAULT_SOUND_TUNING, type SoundTuning, type VoiceName } from '~/engine/feedback/clackSound'
 import { DEFAULT_HAPTIC_TUNING, type HapticTuning } from '~/engine/feedback/cupFeedback'
 import { MAX_DICE, type Surface } from '~/engine/physics/world'
 
@@ -203,6 +203,7 @@ watchEffect(() => {
   if (!live) return
   live.minPulseGapMs = haptics.minPulseGapMs
   live.minIntensity = haptics.minIntensity
+  live.dieFeel = haptics.dieFeel
   Object.assign(live.sharpness, haptics.sharpness)
 })
 watchEffect(() => {
@@ -211,9 +212,10 @@ watchEffect(() => {
   live.muffleHz = sound.muffleHz
   Object.assign(live.floor, sound.floor)
   Object.assign(live.side, sound.side)
+  Object.assign(live.die, sound.die)
 })
 
-const TEST_SURFACES: Surface[] = ['floor', 'wall', 'glass']
+const TEST_SURFACES: Surface[] = ['floor', 'wall', 'glass', 'die']
 
 interface TuningSlider {
   label: string
@@ -224,7 +226,7 @@ interface TuningSlider {
   write: (value: number) => void
 }
 
-const voiceSliders = (name: 'floor' | 'side'): TuningSlider[] => {
+const voiceSliders = (name: VoiceName): TuningSlider[] => {
   const voice = sound[name]
   return [
     { label: `${name} band Hz`, min: 200, max: 4000, step: 50, read: () => voice.band, write: value => voice.band = value },
@@ -242,12 +244,14 @@ const TUNING_SLIDERS: Record<TuningGroup, TuningSlider[]> = {
   haptics: [
     { label: 'gap ms', min: 15, max: 80, step: 1, read: () => haptics.minPulseGapMs, write: value => haptics.minPulseGapMs = value },
     { label: 'min intensity', min: 0, max: 0.6, step: 0.05, read: () => haptics.minIntensity, write: value => haptics.minIntensity = value },
+    { label: 'die feel', min: 0, max: 1, step: 0.05, read: () => haptics.dieFeel, write: value => haptics.dieFeel = value },
     ...TEST_SURFACES.map(surface => ({ label: `${surface} sharp`, min: 0, max: 1, step: 0.05, read: () => haptics.sharpness[surface], write: (value: number) => haptics.sharpness[surface] = value })),
   ],
   sound: [
     { label: 'muffle Hz', min: 500, max: 8000, step: 100, read: () => sound.muffleHz, write: value => sound.muffleHz = value },
     ...voiceSliders('side'),
     ...voiceSliders('floor'),
+    ...voiceSliders('die'),
   ],
 }
 const tuningGroup = ref<TuningGroup | null>(null)

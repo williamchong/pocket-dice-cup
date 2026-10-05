@@ -28,6 +28,11 @@ export interface SoundTuning {
    */
   side: Voice
   /**
+   * Two dice hitting each other: hard on hard, with no lining between them,
+   * so a shorter, higher click than a die on the cup.
+   */
+  die: Voice
+  /**
    * Every clack goes through a low-pass at this (Hz), which takes the hiss
    * off the noise. Tuned by ear on an iPhone Air and a MacBook Pro: 600-700
    * Hz sounded like a lined cup on both.
@@ -38,8 +43,14 @@ export interface SoundTuning {
 export const DEFAULT_SOUND_TUNING: Readonly<SoundTuning> = {
   floor: { band: 600, q: 1, knock: 180, decay: 0.022, gain: 0.5 },
   side: { band: 1300, q: 1.5, knock: 400, decay: 0.03, gain: 0.9 },
+  die: { band: 2500, q: 2, knock: 900, decay: 0.015, gain: 0.7 },
   muffleHz: 650,
 }
+
+export type VoiceName = 'floor' | 'side' | 'die'
+
+/** Which voice a hit on each surface plays. */
+const VOICE: Record<Surface, VoiceName> = { floor: 'floor', wall: 'side', glass: 'side', die: 'die' }
 
 /** Each clack is detuned at random by up to this fraction, so a rattle is not a machine gun. */
 const DETUNE = 0.1
@@ -102,7 +113,7 @@ export class ClackSound implements ImpactSound {
   play(surface: Surface, strength: number): void {
     if (this.context.state !== 'running' || this.voices >= MAX_VOICES) return
     const { context } = this
-    const voice = surface === 'floor' ? this.tuning.floor : this.tuning.side
+    const voice = this.tuning[VOICE[surface]]
     if (this.muffle.frequency.value !== this.tuning.muffleHz) this.muffle.frequency.value = this.tuning.muffleHz
     const detune = 1 + DETUNE * (2 * Math.random() - 1)
     const peak = Math.max(SILENT, voice.gain * strength)
