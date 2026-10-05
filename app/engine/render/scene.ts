@@ -1,7 +1,7 @@
 import {
-  BackSide,
-  BoxGeometry,
+  BufferGeometry,
   CanvasTexture,
+  Float32BufferAttribute,
   Mesh,
   MeshStandardMaterial,
   NeutralToneMapping,
@@ -12,7 +12,6 @@ import {
   SpotLight,
   SRGBColorSpace,
   WebGLRenderer,
-  type BufferGeometry,
   type Material,
   type WebGLRenderTarget,
 } from 'three'
@@ -28,6 +27,84 @@ const FELT_COLOUR = 0x0d6b3c
 const WALL_COLOUR = 0x2a160c
 /** World units covered by one tile of the felt's speckle. */
 const FELT_TILE = 1
+/**
+ * Radius (cm) of the cove where the felt curves up into the walls, and of the
+ * cup's corners seen from above. The colliders keep the corners square, so a
+ * die jammed square into one overlaps the drawn wall by 0.4 times the amount
+ * this exceeds its own edge radius, about 1.5 mm. Against a single wall, the
+ * die hides the part of the cove it sits in.
+ */
+const ROUNDING = 0.5
+/** Segments in each quarter circle: per corner, and up the cove. */
+const CORNER_SEGMENTS = 12
+const COVE_SEGMENTS = 8
+
+/**
+ * The inside of the cup with rounded corners, open at the glass: a felt floor
+ * that curves up into wooden walls (the walls are material group 0, the felt 1). It is built by
+ * sweeping the profile of a wall, from the floor up to the glass, around a
+ * rounded rectangle, with normals facing into the cup.
+ */
+function trayGeometry({ width, height, depth }: BoxSize): BufferGeometry {
+  // Up the wall: how far in from it, how high, and the inward and upward
+  // parts of the normal. The first point is where the floor ends.
+  const profile: { inset: number, z: number, inward: number, up: number }[] = []
+  for (let i = 0; i <= COVE_SEGMENTS; i++) {
+    const angle = i / COVE_SEGMENTS * Math.PI / 2
+    const sin = Math.sin(angle)
+    const cos = Math.cos(angle)
+    profile.push({ inset: ROUNDING * (1 - sin), z: ROUNDING * (1 - cos), inward: sin, up: cos })
+  }
+  profile.push({ inset: 0, z: depth, inward: 1, up: 0 })
+  // Around the walls, anticlockwise from above: each corner's centre and the
+  // outward direction there. Offsets of a rounded rectangle share the centres.
+  const ring: { cx: number, cy: number, ox: number, oy: number }[] = []
+  for (const [quarter, sx, sy] of [[0, 1, 1], [1, -1, 1], [2, -1, -1], [3, 1, -1]] as const) {
+    for (let i = 0; i <= CORNER_SEGMENTS; i++) {
+      const angle = (quarter + i / CORNER_SEGMENTS) * Math.PI / 2
+      ring.push({ cx: sx * (width / 2 - ROUNDING), cy: sy * (height / 2 - ROUNDING), ox: Math.cos(angle), oy: Math.sin(angle) })
+    }
+  }
+
+  const positions: number[] = []
+  const normals: number[] = []
+  const uvs: number[] = []
+  const addVertex = (x: number, y: number, z: number, nx: number, ny: number, nz: number) => {
+    positions.push(x, y, z)
+    normals.push(nx, ny, nz)
+    // The felt's speckle is laid flat from above, so it keeps its size up the cove.
+    uvs.push(x / FELT_TILE, y / FELT_TILE)
+  }
+  for (const { cx, cy, ox, oy } of ring) {
+    for (const { inset, z, inward, up } of profile) {
+      const r = ROUNDING - inset
+      addVertex(cx + r * ox, cy + r * oy, z, -inward * ox, -inward * oy, up)
+    }
+  }
+  const centre = positions.length / 3
+  addVertex(0, 0, 0, 0, 0, 1)
+
+  const geometry = new BufferGeometry()
+  const felt: number[] = []
+  const wall: number[] = []
+  const rows = profile.length
+  for (let j = 0; j < ring.length; j++) {
+    const a = j * rows
+    const b = (j + 1) % ring.length * rows
+    felt.push(centre, a, b)
+    for (let i = 0; i < rows - 1; i++) {
+      const group = i < COVE_SEGMENTS ? felt : wall
+      group.push(a + i, a + i + 1, b + i, b + i, a + i + 1, b + i + 1)
+    }
+  }
+  geometry.setIndex([...wall, ...felt])
+  geometry.addGroup(0, wall.length, 0)
+  geometry.addGroup(wall.length, felt.length, 1)
+  geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
+  geometry.setAttribute('normal', new Float32BufferAttribute(normals, 3))
+  geometry.setAttribute('uv', new Float32BufferAttribute(uvs, 2))
+  return geometry
+}
 
 /** Fine random speckle, tiled across the floor, so the felt reads as cloth rather than flat paint. */
 function feltTexture(): CanvasTexture {
@@ -87,12 +164,10 @@ export class DiceScene {
     // lighting, so the table stays dark outside its pool.
     this.scene.environmentIntensity = 0.3
 
-    // A unit box seen from inside: BoxGeometry's groups are +x, -x, +y, -y,
-    // +z, -z, so the last one is the floor. The +z face is the glass, which
-    // BackSide leaves undrawn from above.
-    const wall = new MeshStandardMaterial({ color: WALL_COLOUR, roughness: 0.45, side: BackSide })
-    const felt = new MeshStandardMaterial({ color: FELT_COLOUR, map: this.feltMap, roughness: 1, side: BackSide })
-    this.tray = new Mesh(new BoxGeometry(1, 1, 1), [wall, wall, wall, wall, wall, felt])
+    // The geometry is built for each box size, in setBox.
+    const wall = new MeshStandardMaterial({ color: WALL_COLOUR, roughness: 0.45 })
+    const felt = new MeshStandardMaterial({ color: FELT_COLOUR, map: this.feltMap, roughness: 1 })
+    this.tray = new Mesh(new BufferGeometry(), [wall, felt])
     this.tray.receiveShadow = true
     this.scene.add(this.tray)
 
@@ -120,8 +195,8 @@ export class DiceScene {
   setBox(box: BoxSize, widthPx: number, heightPx: number): void {
     this.renderer.setSize(widthPx, heightPx, false)
 
-    this.tray.scale.set(box.width, box.height, box.depth)
-    this.tray.position.set(0, 0, box.depth / 2)
+    this.tray.geometry.dispose()
+    this.tray.geometry = trayGeometry(box)
 
     const distance = box.height * CAMERA_DISTANCE
     this.camera.fov = 2 * Math.atan(box.height / 2 / distance) * 180 / Math.PI
@@ -131,8 +206,6 @@ export class DiceScene {
     this.camera.position.set(0, 0, box.depth + distance)
     this.camera.lookAt(0, 0, 0)
     this.camera.updateProjectionMatrix()
-
-    this.feltMap.repeat.set(box.width / FELT_TILE, box.height / FELT_TILE)
 
     // Hung a little up and to the left of centre, so shadows fall down and
     // right. The cone reaches just past the far ends of the table, and its

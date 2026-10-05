@@ -54,7 +54,7 @@ const BEVEL = D6_SIZE * 3 / 8
  * The same bevel where the floor meets the side walls, for a die shaken side
  * to side screen-up, which slid on the floor and kept its face: 23 times in 30
  * on a recorded iPhone shake without it, 3 with it. It is kept narrow because a die at rest can lean
- * on it, cocked against a wall that is drawn square. For a 12 mm die, over 480
+ * on it, cocked against the wall. For a 12 mm die, over 480
  * replayed rolls: at 1 mm 2 came to rest tilted and a side-to-side shake left
  * 18% on their starting face, as a fair die would; at 1.25 mm 13 were tilted;
  * at 0.75 mm 45% kept their face.
