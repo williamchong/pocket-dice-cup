@@ -80,8 +80,9 @@ app/
     physics/   Rapier world, fixed 480 Hz step + CCD, convex-hull colliders, contact events
     dice/      per-die geometry and face-normal -> value tables
     input/     MotionSource interface: DeviceMotionSource
-    feedback/  HapticsBackend interface: NativeBackend | VibrateBackend | NullBackend
-               AudioEngine: Web Audio clack samples, pitch and gain per impact
+    feedback/  CupFeedback: impacts -> sound and rate-limited haptic pulses
+               HapticsBackend interface: NativeBackend | VibrateBackend
+               ClackSound: Web Audio clacks synthesised per impact and surface
     render/    three.js scene, skins
     simulation.ts  physics + motion analysis + state machine, no DOM (runs in Node tests)
     diceCup.ts     the simulation on a canvas, driven by a MotionSource every frame
@@ -105,7 +106,7 @@ Two interfaces carry most of the extras:
   started on.
 - `HapticsBackend` plays a transient of a given intensity. `NativeBackend` calls
   Core Haptics through the iOS shell, `VibrateBackend` maps it to
-  `navigator.vibrate`, and `NullBackend` covers browsers with neither.
+  `navigator.vibrate`, and browsers with neither get no backend.
 
 Dice:
 
@@ -128,17 +129,23 @@ Phases
    (self-signed certificate), opened in Safari on the iPhone; motion sensors
    need a secure context. `?debug` shows the sensor reading and the state.
    Done when: shaking the iPhone and putting it down shows the correct face.
-   Status: built and passing in Node tests and in desktop Chrome with
-   synthetic motion events. Not yet tried on the iPhone; the iOS sensor sign
-   flip and the shake thresholds are the two things to confirm there.
+   Status: done. Shake and put-down detection and the iOS sensor sign are
+   tested against motion traces recorded on the iPhone (`tests/fixtures/traces`).
 2. **Feedback and iOS shell.** Contact events feed a rate-limited haptic
    scheduler (about one transient per 30-40 ms, intensity by impact) and the
    audio engine. Add the Capacitor iOS shell and a custom Core Haptics plugin
    exposing `playTransient(intensity, sharpness)` as the `NativeBackend`; tune
    the feel on it. Also write the `VibrateBackend` (`navigator.vibrate`,
-   8-40 ms pulses) for Android web. Set `navigator.audioSession.type =
-   'playback'` so the mute switch does not silence the sound. Needs the most
+   8-30 ms pulses) for Android web. Needs the most
    on-device tuning.
+   Status: the web half is built. The physics measures each hit from the change
+   in a die's velocity and tells the floor, the walls and the glass apart. Each
+   hit plays a synthesised clack: a dull thud on the felt floor, a sharp click
+   on the walls and the glass. Android web vibrates through `navigator.vibrate`.
+   The audio session is `ambient`, so the iOS mute switch silences it, as it
+   does in games, and the app needs no mute button of its own. Next: the
+   Capacitor shell and the Core Haptics plugin, and tuning the sound on the
+   iPhone.
 3. **Dice set and pool.** All geometries, mixed pools, the notation parser.
    A headless Node test rolls each die thousands of times and checks the
    distribution is roughly uniform.
