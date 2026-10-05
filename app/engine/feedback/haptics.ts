@@ -14,6 +14,7 @@ const LONGEST_PULSE_MS = 30
  * Android. Written from the spec; no Android device has tried it yet.
  */
 export class VibrateBackend implements HapticsBackend {
+  // No sharpness: navigator.vibrate only turns the motor on and off.
   playTransient(intensity: number): void {
     navigator.vibrate(Math.round(SHORTEST_PULSE_MS + intensity * (LONGEST_PULSE_MS - SHORTEST_PULSE_MS)))
   }

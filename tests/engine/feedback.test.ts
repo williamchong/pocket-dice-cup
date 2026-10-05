@@ -14,8 +14,10 @@ class FakeSound implements ImpactSound {
 
 class FakeHaptics implements HapticsBackend {
   pulses: number[] = []
-  playTransient(intensity: number) {
+  sharpnesses: number[] = []
+  playTransient(intensity: number, sharpness: number) {
     this.pulses.push(intensity)
+    this.sharpnesses.push(sharpness)
   }
 }
 
@@ -50,6 +52,18 @@ describe('CupFeedback', () => {
     feedback.play([hit(5)], 51)
     feedback.play([hit(60)], 68)
     expect(haptics.pulses).toEqual([impactStrength(200), impactStrength(60)])
+  })
+
+  it('feels a hit on the felt floor softer than one on the walls or the glass', () => {
+    const haptics = new FakeHaptics()
+    const feedback = new CupFeedback(null, haptics)
+    feedback.play([hit(50, 'wall'), hit(200, 'floor')], 0)
+    feedback.play([hit(200, 'wall'), hit(50, 'floor')], 100)
+    feedback.play([hit(200, 'glass')], 200)
+    expect(haptics.sharpnesses).toHaveLength(3)
+    const [floor, wall, glass] = haptics.sharpnesses
+    expect(floor).toBeLessThan(wall!)
+    expect(glass).toBe(wall)
   })
 
   it('counts the impacts of the last second for the debug readout', () => {

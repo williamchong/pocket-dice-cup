@@ -15,6 +15,11 @@ const LOUD_SPEED = 300
  * hit within it of the last pulse is felt as part of that one.
  */
 const MIN_PULSE_GAP_MS = 35
+/**
+ * How crisp a hit on each surface feels, from 0 to 1, as the clacks sound: a
+ * soft thud on the felt floor, a sharp tap on the walls and the glass.
+ */
+const SHARPNESS: Record<Surface, number> = { floor: 0.2, wall: 0.8, glass: 0.8 }
 /** How far back the debug readout counts impacts. */
 const STATS_WINDOW_MS = 1000
 
@@ -26,9 +31,12 @@ export interface ImpactSound {
   dispose(): void
 }
 
-/** Plays one short tap of vibration at `intensity` from 0 to 1. */
+/**
+ * Plays one short tap of vibration at `intensity` from 0 to 1. `sharpness`,
+ * from 0 to 1, is how crisp it feels, where the hardware can vary that.
+ */
 export interface HapticsBackend {
-  playTransient(intensity: number): void
+  playTransient(intensity: number, sharpness: number): void
 }
 
 export interface FeedbackStats {
@@ -73,15 +81,19 @@ export class CupFeedback {
     if (impacts.length === 0 && this.recent.length === 0) return
     this.recent = this.recent.filter(hit => timeMs - hit.timeMs < STATS_WINDOW_MS)
     let strongest = 0
+    let strongestSurface: Surface = 'floor'
     for (const { speed, surface } of impacts) {
       const strength = impactStrength(speed)
       if (strength === 0) continue
       this.sound?.play(surface, strength)
       this.recent.push({ timeMs, strength })
-      strongest = Math.max(strongest, strength)
+      if (strength > strongest) {
+        strongest = strength
+        strongestSurface = surface
+      }
     }
     if (strongest > 0 && timeMs - this.lastPulseMs >= MIN_PULSE_GAP_MS) {
-      this.haptics?.playTransient(strongest)
+      this.haptics?.playTransient(strongest, SHARPNESS[strongestSurface])
       this.lastPulseMs = timeMs
     }
   }
