@@ -44,15 +44,36 @@ describe('CupFeedback', () => {
     expect(sound.played[0]![1]).toBeCloseTo(impactStrength(100))
   })
 
-  it('vibrates once a frame, for the strongest impact, and no closer together than a motor can play', () => {
+  it('vibrates once a frame, for all its impacts together, and no closer together than a motor can play', () => {
     const haptics = new FakeHaptics()
     const feedback = new CupFeedback(null, haptics)
-    feedback.play([hit(50), hit(200)], 0)
+    feedback.play([hit(50), hit(200, 'wall', 1)], 0)
     feedback.play([hit(300)], 17)
     feedback.play([hit(30)], 34)
     feedback.play([hit(5)], 51)
     feedback.play([hit(60)], 68)
-    expect(haptics.pulses).toEqual([impactStrength(200), impactStrength(60)])
+    expect(haptics.pulses).toEqual([impactStrength(250), impactStrength(60)])
+  })
+
+  it('feels a lone die as it sounds, and dice hitting the cup together heavier', () => {
+    const haptics = new FakeHaptics()
+    const feedback = new CupFeedback(null, haptics)
+    feedback.play([hit(100)], 0)
+    feedback.play([hit(100), hit(100, 'wall', 1), hit(100, 'floor', 2)], 100)
+    expect(haptics.pulses[0]).toBe(impactStrength(100))
+    expect(haptics.pulses[1]).toBe(1)
+    // Harder to top out, for a cup of many dice.
+    feedback.tuning.fullFeelSpeed = 900
+    feedback.play([hit(100), hit(100, 'wall', 1), hit(100, 'floor', 2)], 200)
+    expect(haptics.pulses[2]).toBeLessThan(1)
+    expect(haptics.pulses[2]).toBeGreaterThan(haptics.pulses[0]!)
+  })
+
+  it('ignores hits too faint to hear, however many there are', () => {
+    const haptics = new FakeHaptics()
+    const feedback = new CupFeedback(null, haptics)
+    feedback.play([hit(8), hit(8, 'wall', 1), hit(8, 'wall', 2), hit(8, 'wall', 3)], 0)
+    expect(haptics.pulses).toEqual([])
   })
 
   it('feels a hit on the felt floor softer than one on the walls or the glass', () => {
@@ -71,19 +92,21 @@ describe('CupFeedback', () => {
     const sound = new FakeSound()
     const haptics = new FakeHaptics()
     const feedback = new CupFeedback(sound, haptics)
+    const { dieFeel, sharpness } = feedback.tuning
     feedback.play([hit(100, 'wall'), hit(200, 'die')], 0)
     expect(sound.played).toEqual([['wall', impactStrength(100)], ['die', impactStrength(200)]])
-    expect(haptics.pulses).toEqual([impactStrength(100)])
+    expect(haptics.pulses[0]).toBeCloseTo(impactStrength(100 + 200 * dieFeel))
+    expect(haptics.sharpnesses[0]).toBe(sharpness.wall)
     feedback.play([hit(200, 'die')], 100)
-    expect(haptics.pulses[1]).toBeCloseTo(impactStrength(200) * feedback.tuning.dieFeel)
-    expect(haptics.sharpnesses[1]).toBe(feedback.tuning.sharpness.die)
+    expect(haptics.pulses[1]).toBeCloseTo(impactStrength(200 * dieFeel))
+    expect(haptics.sharpnesses[1]).toBe(sharpness.die)
     feedback.tuning.dieFeel = 0
     feedback.play([hit(300, 'die')], 200)
     expect(haptics.pulses).toHaveLength(2)
     // The debug overlay's test tap feels as a real hit between dice would.
     feedback.tuning.dieFeel = 0.5
     feedback.testHit('die')
-    expect(haptics.pulses.at(-1)).toBe(0.5)
+    expect(haptics.pulses.at(-1)).toBeCloseTo(impactStrength(150))
   })
 
   it('spaces the pulses by the live tuning', () => {

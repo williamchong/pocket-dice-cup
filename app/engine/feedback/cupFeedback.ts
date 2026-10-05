@@ -24,11 +24,18 @@ export interface HapticTuning {
    */
   sharpness: Record<Surface, number>
   /**
-   * How much of a hit between two dice the hand feels, from 0 to 1. The hand
-   * holds the cup, so it feels the dice hitting the cup and mostly only hears
-   * them hitting each other.
+   * How much of the speed of a hit between two dice counts towards a pulse,
+   * from 0 to 1. The hand holds the cup, so it feels the dice hitting the cup;
+   * two dice hitting each other only pass momentum between them, and are
+   * mostly heard.
    */
   dieFeel: number
+  /**
+   * The summed speed (cm/s) of a frame's hits that plays a full-strength
+   * pulse. At LOUD_SPEED a lone die feels as it sounds; above it, a cup of
+   * dice hitting together has more room before the motor tops out.
+   */
+  fullFeelSpeed: number
   /**
    * The intensity of the faintest hit that plays, from 0 to 1: a Taptic
    * Engine transient much below 0.3 is hard to feel at all. Harder hits rise
@@ -41,6 +48,7 @@ export const DEFAULT_HAPTIC_TUNING: Readonly<HapticTuning> = {
   minPulseGapMs: 35,
   sharpness: { floor: 0.2, wall: 0.8, glass: 0.8, die: 0.8 },
   dieFeel: 0.3,
+  fullFeelSpeed: LOUD_SPEED,
   minIntensity: 0,
 }
 
@@ -74,19 +82,19 @@ export interface FeedbackStats {
 }
 
 /**
- * How hard a hit feels and sounds, from 0 to 1. Loudness is heard on a log
- * scale, so equal steps in the speed ratio are equal steps in strength.
+ * How hard a hit feels and sounds, from 0 to 1, reaching 1 at `loudSpeed`.
+ * Loudness is heard on a log scale, so equal steps in the speed ratio are
+ * equal steps in strength.
  */
-export function impactStrength(speed: number): number {
-  const strength = Math.log(speed / QUIET_SPEED) / Math.log(LOUD_SPEED / QUIET_SPEED)
+export function impactStrength(speed: number, loudSpeed = LOUD_SPEED): number {
+  const strength = Math.log(speed / QUIET_SPEED) / Math.log(loudSpeed / QUIET_SPEED)
   return Math.min(1, Math.max(0, strength))
 }
 
 /**
  * Turns the dice's impacts into sound and vibration. Every impact is heard;
- * vibration is limited to what a motor can play apart, so it gets the
- * impact of a frame that is felt the most, and none until the last pulse is
- * over.
+ * vibration is limited to what a motor can play apart, so a frame's impacts
+ * make one pulse together, and none until the last pulse is over.
  */
 export class CupFeedback {
   private lastPulseMs = -Infinity
@@ -119,21 +127,27 @@ export class CupFeedback {
     // Most frames, and every frame of a result left on screen, have no hits.
     if (impacts.length === 0 && this.recent.length === 0) return
     this.recent = this.recent.filter(hit => timeMs - hit.timeMs < STATS_WINDOW_MS)
-    let strongest = 0
-    let strongestSurface: Surface = 'floor'
+    // The dice weigh the same, so the push on the cup is the hits' summed
+    // speed: dice hitting it together feel heavier than one. The surface
+    // that adds the most sets how crisp the pulse feels.
+    let feltSpeed = 0
+    let mostFelt = 0
+    let mostFeltSurface: Surface = 'floor'
     for (const { speed, surface } of impacts) {
       const strength = impactStrength(speed)
       if (strength === 0) continue
       this.sound?.play(surface, strength)
       this.recent.push({ timeMs, strength })
-      const felt = this.felt(strength, surface)
-      if (felt > strongest) {
-        strongest = felt
-        strongestSurface = surface
+      const felt = this.felt(speed, surface)
+      feltSpeed += felt
+      if (felt > mostFelt) {
+        mostFelt = felt
+        mostFeltSurface = surface
       }
     }
-    if (strongest > 0 && timeMs - this.lastPulseMs >= this.tuning.minPulseGapMs) {
-      this.pulse(strongest, strongestSurface)
+    const strength = impactStrength(feltSpeed, this.tuning.fullFeelSpeed)
+    if (strength > 0 && timeMs - this.lastPulseMs >= this.tuning.minPulseGapMs) {
+      this.pulse(strength, mostFeltSurface)
       this.lastPulseMs = timeMs
     }
   }
@@ -141,11 +155,12 @@ export class CupFeedback {
   /** Plays a full-strength hit on `surface`, to hear and feel the tuning without a shake. */
   testHit(surface: Surface): void {
     this.sound?.play(surface, 1)
-    this.pulse(this.felt(1, surface), surface)
+    this.pulse(impactStrength(this.felt(LOUD_SPEED, surface), this.tuning.fullFeelSpeed), surface)
   }
 
-  private felt(strength: number, surface: Surface): number {
-    return surface === 'die' ? strength * this.tuning.dieFeel : strength
+  /** How much of a hit's speed reaches the hand. */
+  private felt(speed: number, surface: Surface): number {
+    return surface === 'die' ? speed * this.tuning.dieFeel : speed
   }
 
   private pulse(strength: number, surface: Surface): void {

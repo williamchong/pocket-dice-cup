@@ -204,6 +204,7 @@ watchEffect(() => {
   live.minPulseGapMs = haptics.minPulseGapMs
   live.minIntensity = haptics.minIntensity
   live.dieFeel = haptics.dieFeel
+  live.fullFeelSpeed = haptics.fullFeelSpeed
   Object.assign(live.sharpness, haptics.sharpness)
 })
 watchEffect(() => {
@@ -245,6 +246,7 @@ const TUNING_SLIDERS: Record<TuningGroup, TuningSlider[]> = {
     { label: 'gap ms', min: 15, max: 80, step: 1, read: () => haptics.minPulseGapMs, write: value => haptics.minPulseGapMs = value },
     { label: 'min intensity', min: 0, max: 0.6, step: 0.05, read: () => haptics.minIntensity, write: value => haptics.minIntensity = value },
     { label: 'die feel', min: 0, max: 1, step: 0.05, read: () => haptics.dieFeel, write: value => haptics.dieFeel = value },
+    { label: 'full feel cm/s', min: 150, max: 1500, step: 10, read: () => haptics.fullFeelSpeed, write: value => haptics.fullFeelSpeed = value },
     ...TEST_SURFACES.map(surface => ({ label: `${surface} sharp`, min: 0, max: 1, step: 0.05, read: () => haptics.sharpness[surface], write: (value: number) => haptics.sharpness[surface] = value })),
   ],
   sound: [

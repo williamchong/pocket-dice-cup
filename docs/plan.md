@@ -162,8 +162,10 @@ Phases
    square on the floor clears the others; when the floor is full, a die goes
    in under the glass and falls on top. Hits between two dice are told apart
    from hits on the cup by the contact normal, heard once per pair with a
-   shorter, higher click, and felt at 0.3 of their strength, since the hand
-   holds the cup. The count is changed from the debug overlay; the app still
+   shorter, higher click. Each frame's pulse is sized by the summed speed of
+   its hits, so dice hitting the cup together feel heavier than one, and a
+   hit between dice adds only 0.3 of its speed, since the hand holds the
+   cup. The dice are 12 mm: at 16 mm a dozen jammed against the walls. The count is changed from the debug overlay; the app still
    starts with one die until there is a setting. Not yet checked on the
    iPhone: the frame cost of many dice, whether the 8-voice cap drops clacks,
    and how the die-to-die clack and feel sound and feel. The other shapes, the
