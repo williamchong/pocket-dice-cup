@@ -1,3 +1,4 @@
+import { Capacitor, registerPlugin } from '@capacitor/core'
 import type { HapticsBackend } from './cupFeedback'
 
 /**
@@ -20,10 +21,28 @@ export class VibrateBackend implements HapticsBackend {
   }
 }
 
+/** The custom Core Haptics plugin in the iOS shell (ios/App/App/CoreHapticsPlugin.swift). */
+interface CoreHapticsPlugin {
+  playTransient(options: { intensity: number, sharpness: number }): Promise<unknown>
+}
+
+const CoreHaptics = registerPlugin<CoreHapticsPlugin>('CoreHaptics')
+
 /**
- * The vibration this browser can play, or null where it has none: every
- * browser on iOS, which is WebKit, and desktops.
+ * Taps from the Taptic Engine through Core Haptics, in the iOS app. The call
+ * goes out without waiting for a reply, so the frame is not held up.
  */
-export function browserHaptics(): HapticsBackend | null {
+export class NativeBackend implements HapticsBackend {
+  playTransient(intensity: number, sharpness: number): void {
+    void CoreHaptics.playTransient({ intensity, sharpness })
+  }
+}
+
+/**
+ * The vibration this device can play, or null where it has none: every
+ * browser on iOS, which is WebKit, and desktops. The iOS app has Core Haptics.
+ */
+export function deviceHaptics(): HapticsBackend | null {
+  if (Capacitor.isNativePlatform()) return new NativeBackend()
   return typeof navigator.vibrate === 'function' ? new VibrateBackend() : null
 }

@@ -2,7 +2,7 @@ import { boxForViewport } from './box'
 import type { CupState } from './core/stateMachine'
 import { ClackSound } from './feedback/clackSound'
 import { CupFeedback, type FeedbackStats } from './feedback/cupFeedback'
-import { browserHaptics } from './feedback/haptics'
+import { deviceHaptics } from './feedback/haptics'
 import type { MotionSource } from './input/motionSource'
 import type { TraceRecorder } from './input/motionTrace'
 import type { Vec3 } from './math'
@@ -66,7 +66,7 @@ export class DiceCup {
     try {
       const scene = new DiceScene(canvas)
       for (let index = 0; index < simulation.physics.dieCount; index++) scene.addD6()
-      const feedback = new CupFeedback(createSound(), browserHaptics())
+      const feedback = new CupFeedback(createSound(), deviceHaptics())
       return new DiceCup(canvas, source, simulation, scene, feedback, onChange, recorder)
     }
     catch (error) {

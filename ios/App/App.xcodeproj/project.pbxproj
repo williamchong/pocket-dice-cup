@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		05BE717B3940A778845795C7 /* DiceCupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 792F2FB8ADD50A78C3CF99C4 /* DiceCupViewController.swift */; };
 		2FAD9763203C412B000D30F8 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = 2FAD9762203C412B000D30F8 /* config.xml */; };
+		39368C6261AB5AB630F5B383 /* CoreHapticsPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2298AE3604A098B3F0723320 /* CoreHapticsPlugin.swift */; };
 		4D22ABE92AF431CB00220026 /* CapApp-SPM in Frameworks */ = {isa = PBXBuildFile; productRef = 4D22ABE82AF431CB00220026 /* CapApp-SPM */; };
 		50379B232058CBB4000EE86E /* capacitor.config.json in Resources */ = {isa = PBXBuildFile; fileRef = 50379B222058CBB4000EE86E /* capacitor.config.json */; };
 		504EC3081FED79650016851F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504EC3071FED79650016851F /* AppDelegate.swift */; };
@@ -20,6 +21,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		2298AE3604A098B3F0723320 /* CoreHapticsPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoreHapticsPlugin.swift; sourceTree = "<group>"; };
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
 		50379B222058CBB4000EE86E /* capacitor.config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = capacitor.config.json; sourceTree = "<group>"; };
 		504EC3041FED79650016851F /* App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -76,6 +78,7 @@
 				2FAD9762203C412B000D30F8 /* config.xml */,
 				50B271D01FEDC1A000F3C39B /* public */,
 				792F2FB8ADD50A78C3CF99C4 /* DiceCupViewController.swift */,
+				2298AE3604A098B3F0723320 /* CoreHapticsPlugin.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -164,6 +167,7 @@
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
 				05BE717B3940A778845795C7 /* DiceCupViewController.swift in Sources */,
+				39368C6261AB5AB630F5B383 /* CoreHapticsPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
