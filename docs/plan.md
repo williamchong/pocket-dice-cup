@@ -143,9 +143,14 @@ Phases
    hit plays a synthesised clack: a dull thud on the felt floor, a sharp click
    on the walls and the glass. Android web vibrates through `navigator.vibrate`.
    The audio session is `ambient`, so the iOS mute switch silences it, as it
-   does in games, and the app needs no mute button of its own. Next: the
-   Capacitor shell and the Core Haptics plugin, and tuning the sound on the
-   iPhone.
+   does in games, and the app needs no mute button of its own. The Capacitor
+   shell (`ios/`) and the Core Haptics plugin are built: each pulse carries a
+   sharpness as well as an intensity, soft for the felt floor and crisp for
+   the walls and the glass. The shell is held in portrait and keeps the
+   screen on natively. It builds and runs in the simulator, which has no
+   Taptic Engine or motion sensor. Next, on the iPhone: check that motion,
+   the ambient audio session and the haptics work in the WebView, then tune
+   the haptic strength, the sharpness and the gap between pulses.
 3. **Dice set and pool.** All geometries, mixed pools, the notation parser.
    A headless Node test rolls each die thousands of times and checks the
    distribution is roughly uniform.
