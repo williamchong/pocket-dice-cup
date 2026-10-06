@@ -14,6 +14,7 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "test": "vitest",
+    "test:fairness": "FAIRNESS=1 vitest run tests/engine/fairness.test.ts --testTimeout=300000",
     "typecheck": "nuxt typecheck",
     "ios": "nuxt generate && cap sync ios && cap open ios"
   },
