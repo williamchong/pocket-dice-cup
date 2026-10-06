@@ -167,11 +167,28 @@ Phases
    its hits, so dice hitting the cup together feel heavier than one, and a
    hit between dice adds only 0.3 of its speed, since the hand holds the
    cup. The dice are 12 mm: at 16 mm a dozen jammed against the walls. The
-   count is set with − and + buttons at the bottom of the screen, between
-   rolls, and kept in `localStorage`. Not yet checked on the
+   dice are chosen between rolls from a button at the bottom of the screen
+   that shows them in dice notation ("3d6 + 1d20") and opens a − and + row
+   per kind, up to 12 in all. The pool is kept in `localStorage` as
+   notation, and `?dice=` takes notation too. Each shape is one table of
+   vertices, faces and values (`dice/shapes.ts`), from which come the
+   collider (a rounded convex hull; the d6 keeps its rounded box), the face
+   reading and the mesh, numbered from a texture atlas, one draw call per
+   kind. Sizes are a standard 16 mm set's scaled to the 12 mm d6. The d10 is
+   a pentagonal trapezohedron printed 0-9 and read as 1-10; the d4 reads the
+   face it lies on, shown at its top corner. New dice are laid where their
+   circle on the floor clears the others. `npm run test:fairness` rolls 1,200
+   dice per kind (100 full cups) and checks the counts are uniform by χ², all
+   six well inside the limit, and that a lone die settles flat (0-2 in 100
+   cocked, the d12 and d20 leaning on the bevels). In a crowded cup 2-6 dice
+   in 100 come to rest leaning on another and are read by the face nearest
+   up. One cup of twelve d12 in 100 took 10.6 s to settle, a die creeping off
+   the others. The hulls cost about what the boxes do: about 0.4 ms of
+   physics a frame for 12 dice of any kind in Node. Not yet checked on the
    iPhone: the frame cost of many dice, whether the 8-voice cap drops clacks,
-   and how the die-to-die clack and feel sound and feel. The other shapes, the
-   notation parser and the distribution test are still to do.
+   how the die-to-die clack and feel sound and feel, and how the new shapes
+   look and roll. The d3 (a d6 numbered 1-3 twice) and the d100 (two d10s)
+   are still to do.
 4. **Result popup and history.** Per-die values and total when the dice settle.
    History in `localStorage`.
    Status: done in a desktop browser. When the dice settle, a card at the
