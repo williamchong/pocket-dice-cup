@@ -1,35 +1,28 @@
 import RAPIER from '@dimforge/rapier3d-compat'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { boxForViewport } from '../../app/engine/box'
+import { d6Pool, MAX_DICE } from '../../app/engine/core/pool'
 import type { CupState } from '../../app/engine/core/stateMachine'
-import { D6_FACES, D6_SIZE } from '../../app/engine/dice/d6'
-import { readTopFace } from '../../app/engine/dice/faces'
+import { D6_SIZE } from '../../app/engine/dice/d6'
+import { readFace } from '../../app/engine/dice/faces'
+import { DIE_SHAPES } from '../../app/engine/dice/shapes'
 import { REST_ACCELERATION } from '../../app/engine/input/motionSource'
-import { distance, type Vec3 } from '../../app/engine/math'
-import { MAX_DICE, type Impact } from '../../app/engine/physics/world'
+import { distance, type Quat, type Vec3 } from '../../app/engine/math'
+import type { Impact } from '../../app/engine/physics/world'
 import { CupSimulation } from '../../app/engine/simulation'
 import { seededRandom } from './seededRandom'
+import { shake } from './syntheticShake'
 
 beforeAll(() => RAPIER.init())
+
+const readD6 = (rotation: Quat) => readFace(DIE_SHAPES.d6, rotation).face.value
 
 const FRAME = 1 / 60
 const box = boxForViewport(390, 844)
 
-/**
- * A vigorous shake on top of the phone being held roughly upright: several g
- * on every axis at different frequencies, with `seed` shifting the phases.
- */
-function shake(t: number, seed: number): Vec3 {
-  return {
-    x: 30 * Math.sin(2 * Math.PI * 4.1 * t + seed),
-    y: 9.8 + 45 * Math.sin(2 * Math.PI * 5.3 * t + 2 * seed),
-    z: 25 * Math.sin(2 * Math.PI * 3.7 * t + 3 * seed),
-  }
-}
-
 /** The dice start in the same place every time, so each roll is repeatable. */
 function fixedCup(size = box, dice = 1): CupSimulation {
-  return new CupSimulation(RAPIER, size, { randomStart: false, dice })
+  return new CupSimulation(RAPIER, size, { randomStart: false, pool: d6Pool(dice) })
 }
 
 interface Roll {
@@ -185,18 +178,18 @@ describe('CupSimulation', () => {
 
   it('adds and removes dice between rolls, clearing the result, but not during one', () => {
     const { simulation } = roll(4)
-    expect(simulation.setDiceCount(3)).toBe(true)
+    expect(simulation.setPool(d6Pool(3))).toBe(true)
     expect(simulation.physics.dieCount).toBe(3)
     expect(simulation.state).toBe('idle')
     expect(simulation.result).toBeNull()
-    expect(simulation.setDiceCount(3)).toBe(false)
-    expect(simulation.setDiceCount(0)).toBe(true)
-    expect(simulation.physics.dieCount).toBe(1)
-    expect(simulation.setDiceCount(99)).toBe(true)
+    expect(simulation.setPool(d6Pool(3))).toBe(false)
+    expect(simulation.setPool([])).toBe(true)
+    expect(simulation.physics.pool).toEqual(['d6'])
+    expect(simulation.setPool(d6Pool(99))).toBe(true)
     expect(simulation.physics.dieCount).toBe(MAX_DICE)
     simulation.tick(FRAME, shake(0, 1), 0)
     expect(simulation.state).toBe('shaking')
-    expect(simulation.setDiceCount(2)).toBe(false)
+    expect(simulation.setPool(d6Pool(2))).toBe(false)
     expect(simulation.physics.dieCount).toBe(MAX_DICE)
     simulation.dispose()
   })
@@ -252,7 +245,7 @@ describe('impacts', () => {
 
   it('hears two dice hitting each other once, apart from the cup', () => {
     // Held upright, both dice of a fixed start fall to the bottom wall: the
-    // lower one hits it, and the upper one lands on that one, not the wall.
+    // lower one hits it, and the upper one lands on that one.
     const simulation = fixedCup(box, 2)
     expect(simulation.physics.diePosition(1).y).toBeLessThan(simulation.physics.diePosition(0).y)
     const upright = { x: 0, y: 9.8, z: 0 }
@@ -264,7 +257,8 @@ describe('impacts', () => {
     const impacts = frames.flat()
     expect(impacts.some(impact => impact.surface === 'die')).toBe(true)
     expect(impacts.some(impact => impact.die === 1 && impact.surface === 'wall')).toBe(true)
-    expect(impacts.filter(impact => impact.die === 0 && impact.surface === 'wall')).toEqual([])
+    // It may bounce off and on to the wall after; its landing is on the die.
+    expect(impacts.find(impact => impact.die === 0)?.surface).toBe('die')
     for (const frame of frames) expect(frame.filter(impact => impact.surface === 'die').length).toBeLessThanOrEqual(1)
     // Lying stacked against the wall, the dice are quiet.
     expect(hold(simulation, upright, 2)).toEqual([])
@@ -288,7 +282,7 @@ describe('starting position', () => {
     expect(p.x).toBe(0)
     expect(p.y).toBe(0)
     expect(p.z).toBeCloseTo(D6_SIZE / 2)
-    expect(readTopFace(D6_FACES, simulation.physics.dieRotation(0))).toBe(3)
+    expect(readD6(simulation.physics.dieRotation(0))).toBe(3)
     simulation.dispose()
   })
 
@@ -297,16 +291,16 @@ describe('starting position', () => {
     for (let i = 0; i < 100; i++) {
       const simulation = new CupSimulation(RAPIER, box)
       const p = simulation.physics.diePosition(0)
-      expect(Math.abs(p.x)).toBeLessThanOrEqual(box.width / 2 - D6_SIZE / Math.SQRT2)
-      expect(Math.abs(p.y)).toBeLessThanOrEqual(box.height / 2 - D6_SIZE / Math.SQRT2)
+      expect(Math.abs(p.x)).toBeLessThanOrEqual(box.width / 2 - DIE_SHAPES.d6.footprintRadius)
+      expect(Math.abs(p.y)).toBeLessThanOrEqual(box.height / 2 - DIE_SHAPES.d6.footprintRadius)
       expect(p.z).toBeCloseTo(D6_SIZE / 2)
-      const face = readTopFace(D6_FACES, simulation.physics.dieRotation(0))
+      const face = readD6(simulation.physics.dieRotation(0))
       faces.add(face)
       // Lying flat already, so it only settles into the floor rather than
       // falling into place.
       for (let j = 1; j <= 30; j++) simulation.tick(FRAME, REST_ACCELERATION, j * FRAME * 1000)
       expect(distance(simulation.physics.diePosition(0), p)).toBeLessThan(0.1)
-      expect(readTopFace(D6_FACES, simulation.physics.dieRotation(0))).toBe(face)
+      expect(readD6(simulation.physics.dieRotation(0))).toBe(face)
       simulation.dispose()
     }
     expect(faces.size).toBe(6)
@@ -317,7 +311,7 @@ describe('starting position', () => {
     expect(simulation.physics.diePosition(0)).toMatchObject({ x: 0, y: 0 })
     for (const [a, b] of pairs(3)) expect(apart(simulation, a, b)).toBeGreaterThanOrEqual(D6_SIZE)
     for (let index = 0; index < 3; index++) {
-      expect(readTopFace(D6_FACES, simulation.physics.dieRotation(index))).toBe(3)
+      expect(readD6(simulation.physics.dieRotation(index))).toBe(3)
     }
     simulation.dispose()
   })
@@ -325,7 +319,7 @@ describe('starting position', () => {
   it('fits a full cup on a phone, dropping in from above the dice the floor has no room for', () => {
     for (let i = 0; i < 20; i++) {
       const simulation = fixedCup()
-      simulation.physics.setDiceCount(MAX_DICE, seededRandom(i + 1))
+      simulation.physics.setPool(d6Pool(MAX_DICE), seededRandom(i + 1))
       const height = (index: number) => simulation.physics.diePosition(index).z
       for (const [a, b] of pairs(MAX_DICE)) {
         if (Math.abs(height(a) - height(b)) < D6_SIZE) expect(apart(simulation, a, b)).toBeGreaterThanOrEqual(D6_SIZE)

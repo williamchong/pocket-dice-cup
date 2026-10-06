@@ -1,8 +1,8 @@
 import type { BoxSize } from './box'
 import { MotionAnalyser } from './core/motionAnalyser'
+import type { DicePool } from './core/pool'
 import { isRolling, nextState, type CupState } from './core/stateMachine'
-import { D6_FACES } from './dice/d6'
-import { readTopFace } from './dice/faces'
+import { readFace } from './dice/faces'
 import type { Vec3 } from './math'
 import { PhysicsWorld, type Rapier } from './physics/world'
 
@@ -16,8 +16,8 @@ export interface CupOptions {
    * for tests and debugging. On by default.
    */
   randomStart?: boolean
-  /** How many d6 are in the cup at the start. 1 by default. */
-  dice?: number
+  /** The dice in the cup at the start. One d6 by default. */
+  pool?: DicePool
 }
 
 /**
@@ -37,21 +37,21 @@ export class CupSimulation {
   /** Where new dice are placed at random; with none, on a fixed grid. */
   private readonly random: (() => number) | undefined
 
-  constructor(rapier: Rapier, box: BoxSize, { randomStart = true, dice = 1 }: CupOptions = {}) {
+  constructor(rapier: Rapier, box: BoxSize, { randomStart = true, pool = ['d6'] }: CupOptions = {}) {
     this.physics = new PhysicsWorld(rapier, box)
     this.random = randomStart ? Math.random : undefined
-    this.physics.setDiceCount(dice, this.random)
+    this.physics.setPool(pool, this.random)
   }
 
   /**
-   * Adds or removes dice between rolls, which clears any result; during one
-   * it does nothing. Returns whether the number of dice changed.
+   * Changes the dice between rolls, which clears any result; during one it
+   * does nothing. Returns whether the dice changed.
    */
-  setDiceCount(count: number): boolean {
+  setPool(pool: DicePool): boolean {
     if (isRolling(this.state)) return false
-    const before = this.physics.dieCount
-    this.physics.setDiceCount(count, this.random)
-    if (this.physics.dieCount === before) return false
+    const before = this.physics.pool.join()
+    this.physics.setPool(pool, this.random)
+    if (this.physics.pool.join() === before) return false
     this.state = 'idle'
     this.result = null
     return true
@@ -96,7 +96,7 @@ export class CupSimulation {
   private readDice(): number[] {
     return Array.from(
       { length: this.physics.dieCount },
-      (_, index) => readTopFace(D6_FACES, this.physics.dieRotation(index)),
+      (_, index) => readFace(this.physics.dieShape(index), this.physics.dieRotation(index)).face.value,
     )
   }
 }

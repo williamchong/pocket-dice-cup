@@ -5,15 +5,18 @@
   >
     <span class="result__total">{{ rollTotal(values) }}</span>
     <span
-      v-if="rollBreakdown(values)"
+      v-if="rollBreakdown(values, kinds)"
       class="result__dice"
-    >{{ rollBreakdown(values) }}</span>
+    >{{ rollBreakdown(values, kinds) }}</span>
   </div>
 </template>
 
 <script setup lang="ts">
+import type { DieKind } from '~/engine/dice/shapes'
+
 defineProps<{
   values: readonly number[]
+  kinds: readonly DieKind[]
 }>()
 </script>
 

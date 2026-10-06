@@ -1,11 +1,9 @@
-import { CanvasTexture, InstancedMesh, MeshPhysicalMaterial, SRGBColorSpace, type BufferGeometry } from 'three'
+import { CanvasTexture, SRGBColorSpace } from 'three'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import { D6_EDGE_RADIUS, D6_FACES, D6_SIZE } from '../dice/d6'
+import { BODY_COLOUR, dieMaterial, INK_COLOUR, type DieLook } from './dieLook'
 
 const TEXTURE_SIZE = 256
-/** Ivory rather than pure white, which blows out under the lamp. */
-const BODY_COLOUR = '#e9e2d0'
-const PIP_COLOUR = '#17171b'
 const PIP_RADIUS = TEXTURE_SIZE * 0.085
 
 /** Pip centres per value, on a 3×3 grid addressed as [column, row]. */
@@ -39,7 +37,7 @@ function faceTexture(
 
 function colourTexture(value: number): CanvasTexture {
   const texture = faceTexture(value, BODY_COLOUR, (context, x, y) => {
-    context.fillStyle = PIP_COLOUR
+    context.fillStyle = INK_COLOUR
     context.beginPath()
     context.arc(x, y, PIP_RADIUS, 0, Math.PI * 2)
     context.fill()
@@ -61,35 +59,9 @@ function bumpTexture(value: number): CanvasTexture {
   })
 }
 
-/** What every d6 is drawn with, made once and shared, so more dice do not mean more textures. */
-export interface D6Look {
-  geometry: BufferGeometry
-  materials: MeshPhysicalMaterial[]
-}
-
-export function createD6Look(): D6Look {
+export function createD6Look(): DieLook {
   const geometry = new RoundedBoxGeometry(D6_SIZE, D6_SIZE, D6_SIZE, 4, D6_EDGE_RADIUS)
   // D6_FACES is in BoxGeometry's group order, so face i gets material i.
-  const materials = D6_FACES.map(face => new MeshPhysicalMaterial({
-    map: colourTexture(face.value),
-    bumpMap: bumpTexture(face.value),
-    bumpScale: 3,
-    roughness: 0.25,
-    clearcoat: 1,
-    clearcoatRoughness: 0.08,
-  }))
+  const materials = D6_FACES.map(face => dieMaterial(colourTexture(face.value), bumpTexture(face.value)))
   return { geometry, materials }
-}
-
-/**
- * Up to `capacity` d6s drawn as one instanced mesh, so each face's material is
- * one draw call however many dice there are. None are drawn until `count` is set.
- */
-export function createD6Mesh({ geometry, materials }: D6Look, capacity: number): InstancedMesh {
-  const mesh = new InstancedMesh(geometry, materials, capacity)
-  mesh.count = 0
-  mesh.castShadow = true
-  // Its bounds are not kept up as the dice move, and the camera sees the whole cup anyway.
-  mesh.frustumCulled = false
-  return mesh
 }

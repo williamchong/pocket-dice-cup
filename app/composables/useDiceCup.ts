@@ -1,4 +1,5 @@
 import type { ShallowRef } from 'vue'
+import type { DicePool } from '~/engine/core/pool'
 import type { CupState } from '~/engine/core/stateMachine'
 import type { CupDebugInfo, DiceCup } from '~/engine/diceCup'
 import type { SoundTuning } from '~/engine/feedback/clackSound'
@@ -24,7 +25,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
   const failed = ref(false)
   const state = ref<CupState>('idle')
   const result = ref<number[] | null>(null)
-  const dice = ref(1)
+  const pool = shallowRef<DicePool>(['d6'])
   /** Null until the user has pressed start. */
   const permission = ref<MotionPermission | null>(null)
 
@@ -53,7 +54,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
         state.value = snapshot.state
         result.value = snapshot.result
       }, options, recorder)
-      dice.value = cup.dieCount
+      pool.value = cup.pool
       ready.value = true
     }
     catch (error) {
@@ -106,10 +107,10 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     return recorder?.toTrace(navigator.userAgent, note) ?? null
   }
 
-  /** Adds or removes dice between rolls; during one it does nothing. Returns whether the number of dice changed. */
-  function setDiceCount(count: number): boolean {
-    if (!cup?.setDiceCount(count)) return false
-    dice.value = cup.dieCount
+  /** Changes the dice between rolls; during one it does nothing. Returns whether the dice changed. */
+  function setPool(next: DicePool): boolean {
+    if (!cup?.setPool(next)) return false
+    pool.value = cup.pool
     return true
   }
 
@@ -119,5 +120,5 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     cup?.toss()
   }
 
-  return { ready, failed, state, result, dice, permission, start, toss, setDiceCount, debugInfo, exportTrace, hapticTuning, soundTuning, testHit }
+  return { ready, failed, state, result, pool, permission, start, toss, setPool, debugInfo, exportTrace, hapticTuning, soundTuning, testHit }
 }

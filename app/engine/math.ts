@@ -41,3 +41,43 @@ export function multiply(a: Quat, b: Quat): Quat {
     w: a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
   }
 }
+
+export function add(a: Vec3, b: Vec3): Vec3 {
+  return { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z }
+}
+
+export function subtract(a: Vec3, b: Vec3): Vec3 {
+  return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z }
+}
+
+export function scale(v: Vec3, factor: number): Vec3 {
+  return { x: v.x * factor, y: v.y * factor, z: v.z * factor }
+}
+
+/** The average of `points`: the middle of a regular polygon's corners. */
+export function centroid(points: readonly Vec3[]): Vec3 {
+  return scale(points.reduce(add), 1 / points.length)
+}
+
+export function cross(a: Vec3, b: Vec3): Vec3 {
+  return { x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x }
+}
+
+export function normalise(v: Vec3): Vec3 {
+  return scale(v, 1 / length(v))
+}
+
+/** The shortest rotation that turns the unit vector `from` onto the unit vector `to`. */
+export function rotationBetween(from: Vec3, to: Vec3): Quat {
+  const cosine = dot(from, to)
+  if (cosine < -1 + 1e-9) {
+    // Opposite: half a turn about any axis square to `from`.
+    const axis = cross(from, Math.abs(from.x) < 0.9 ? { x: 1, y: 0, z: 0 } : { x: 0, y: 1, z: 0 })
+    return axisAngle(normalise(axis), Math.PI)
+  }
+  // Half the angle, from the sum of the identity and the full rotation.
+  const { x, y, z } = cross(from, to)
+  const w = 1 + cosine
+  const norm = Math.hypot(x, y, z, w)
+  return { x: x / norm, y: y / norm, z: z / norm, w: w / norm }
+}

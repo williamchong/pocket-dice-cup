@@ -3,8 +3,8 @@ import RAPIER from '@dimforge/rapier3d-compat'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { boxForViewport } from '../../app/engine/box'
 import { MotionAnalyser } from '../../app/engine/core/motionAnalyser'
-import { D6_FACES } from '../../app/engine/dice/d6'
-import { readTopFace } from '../../app/engine/dice/faces'
+import { readFace } from '../../app/engine/dice/faces'
+import { DIE_KINDS } from '../../app/engine/dice/shapes'
 import type { MotionTrace } from '../../app/engine/input/motionTrace'
 import { CupSimulation } from '../../app/engine/simulation'
 import { seededRandom } from './seededRandom'
@@ -113,10 +113,11 @@ describe('recorded iPhone traces', () => {
     expect(Object.keys(horizontal).filter(key => key.startsWith('result'))).toEqual([])
   })
 
-  it('tumble a die shaken side to side screen-up instead of sliding it on one face', () => {
-    // Without the floor bevel the die kept its face in 23 of 30 starts and
+  it.each(DIE_KINDS)('tumble a %s shaken side to side screen-up instead of sliding it on one face', (kind) => {
+    // Without the floor bevel a d6 kept its face in 23 of 30 starts and
     // changed face 0.6 times a shake; with it, 3 of 30, and about 8 times.
-    // The limits sit between the two with room for noise.
+    // The limits sit between the two with room for noise. A d4 tumbles least,
+    // keeping its face 9 times in 30, where a fair one would 7 or 8.
     const trace = load('shake-horizontal')
     const starts = 30
     let keptFace = 0
@@ -124,13 +125,13 @@ describe('recorded iPhone traces', () => {
     for (let seed = 1; seed <= starts; seed++) {
       // The die starts at a random place and face, from Math.random.
       vi.spyOn(Math, 'random').mockImplementation(seededRandom(seed))
-      const simulation = new CupSimulation(RAPIER, boxForViewport(390, 844))
+      const simulation = new CupSimulation(RAPIER, boxForViewport(390, 844), { pool: [kind] })
       vi.restoreAllMocks()
-      const readFace = () => readTopFace(D6_FACES, simulation.physics.dieRotation(0))
-      const startFace = readFace()
+      const currentFace = () => readFace(simulation.physics.dieShape(0), simulation.physics.dieRotation(0)).face.value
+      const startFace = currentFace()
       let face = startFace
       replay(simulation, trace, HORIZONTAL_SHAKE_END_MS, () => {
-        const next = readFace()
+        const next = currentFace()
         if (next !== face) faceChanges++
         face = next
       })

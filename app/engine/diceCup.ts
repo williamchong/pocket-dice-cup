@@ -1,4 +1,5 @@
 import { boxForViewport } from './box'
+import { MAX_DICE, type DicePool } from './core/pool'
 import type { CupState } from './core/stateMachine'
 import { ClackSound, type SoundTuning } from './feedback/clackSound'
 import { CupFeedback, type FeedbackStats, type HapticTuning } from './feedback/cupFeedback'
@@ -6,7 +7,7 @@ import { deviceHaptics } from './feedback/haptics'
 import type { MotionSource } from './input/motionSource'
 import type { TraceRecorder } from './input/motionTrace'
 import type { Vec3 } from './math'
-import { MAX_DICE, type Rapier, type Surface } from './physics/world'
+import type { Rapier, Surface } from './physics/world'
 import { DiceScene } from './render/scene'
 import { CupSimulation, type CupOptions } from './simulation'
 
@@ -71,7 +72,7 @@ export class DiceCup {
     const simulation = new CupSimulation(rapier, boxForViewport(canvas.clientWidth || 1, canvas.clientHeight || 1), options)
     try {
       const scene = new DiceScene(canvas, MAX_DICE)
-      scene.setDiceCount(simulation.physics.dieCount)
+      scene.setPool(simulation.physics.pool)
       const feedback = new CupFeedback(createSound(), deviceHaptics())
       return new DiceCup(canvas, source, simulation, scene, feedback, onChange, recorder)
     }
@@ -113,14 +114,14 @@ export class DiceCup {
     return this.feedback.unlock()
   }
 
-  get dieCount(): number {
-    return this.simulation.physics.dieCount
+  get pool(): DicePool {
+    return this.simulation.physics.pool
   }
 
-  /** Adds or removes dice between rolls; see CupSimulation.setDiceCount. */
-  setDiceCount(count: number): boolean {
-    if (!this.simulation.setDiceCount(count)) return false
-    this.scene.setDiceCount(this.dieCount)
+  /** Changes the dice between rolls; see CupSimulation.setPool. */
+  setPool(pool: DicePool): boolean {
+    if (!this.simulation.setPool(pool)) return false
+    this.scene.setPool(this.pool)
     this.stale = true
     this.notifyChange()
     return true

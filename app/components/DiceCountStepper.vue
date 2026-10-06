@@ -2,16 +2,16 @@
   <div class="stepper">
     <button
       type="button"
-      aria-label="Fewer dice"
-      :disabled="disabled || count <= 1"
+      :aria-label="`Fewer ${kind}`"
+      :disabled="disabled || count <= min"
       @click="emit('change', count - 1)"
     >
       −
     </button>
-    <span class="stepper__count">{{ count }} {{ count === 1 ? 'die' : 'dice' }}</span>
+    <span class="stepper__count">{{ count }} {{ kind }}</span>
     <button
       type="button"
-      aria-label="More dice"
+      :aria-label="`More ${kind}`"
       :disabled="disabled || count >= max"
       @click="emit('change', count + 1)"
     >
@@ -21,8 +21,12 @@
 </template>
 
 <script setup lang="ts">
+import type { DieKind } from '~/engine/dice/shapes'
+
 defineProps<{
+  kind: DieKind
   count: number
+  min: number
   max: number
   /** During a roll, when the cup ignores a change anyway. */
   disabled?: boolean

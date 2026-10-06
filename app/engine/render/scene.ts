@@ -21,8 +21,12 @@ import {
 } from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { CAMERA_DISTANCE, type BoxSize } from '../box'
+import type { DicePool } from '../core/pool'
+import { DIE_KINDS, POLYHEDRA, type DieKind } from '../dice/shapes'
 import type { Quat, Vec3 } from '../math'
-import { createD6Look, createD6Mesh } from './d6Mesh'
+import { createD6Look } from './d6Mesh'
+import { createDiceMesh, type DieLook } from './dieLook'
+import { createPolyhedronLook } from './polyhedronMesh'
 
 /** Phones report 3; the extra pixels cost more than they show at this scale. */
 const MAX_PIXEL_RATIO = 2
@@ -144,14 +148,19 @@ export class DiceScene {
   private readonly lamp = new SpotLight(0xfff1dc, 5)
   private readonly feltMap = feltTexture()
   private readonly environment: WebGLRenderTarget
-  private readonly d6Look = createD6Look()
-  private readonly dice: InstancedMesh
+  private readonly looks = Object.fromEntries(DIE_KINDS.map(kind =>
+    [kind, kind === 'd6' ? createD6Look() : createPolyhedronLook(POLYHEDRA[kind])])) as Record<DieKind, DieLook>
+
+  /** One instanced mesh per kind of die. */
+  private readonly meshes: Record<DieKind, InstancedMesh>
+  /** Each die's mesh, and its instance in that mesh. */
+  private slots: { mesh: InstancedMesh, instance: number }[] = []
   /** Reused for every die's transform, rather than made anew each frame. */
   private readonly matrix = new Matrix4()
   private readonly position = new Vector3()
   private readonly quaternion = new Quaternion()
 
-  /** `capacity` is the most dice it will ever be asked to draw. */
+  /** `capacity` is the most dice of one kind it will ever be asked to draw. */
   constructor(canvas: HTMLCanvasElement, capacity: number) {
     this.renderer = new WebGLRenderer({ canvas, antialias: true })
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO))
@@ -180,8 +189,8 @@ export class DiceScene {
     const felt = new MeshStandardMaterial({ color: FELT_COLOUR, map: this.feltMap, roughness: 1 })
     this.tray = new Mesh(new BufferGeometry(), [wall, felt])
     this.tray.receiveShadow = true
-    this.dice = createD6Mesh(this.d6Look, capacity)
-    this.scene.add(this.tray, this.dice)
+    this.meshes = Object.fromEntries(DIE_KINDS.map(kind => [kind, createDiceMesh(this.looks[kind], capacity)])) as Record<DieKind, InstancedMesh>
+    this.scene.add(this.tray, ...Object.values(this.meshes))
 
     // The pool of light comes from the soft edge of the cone, not from
     // distance, so the brightness does not change with the size of the table.
@@ -193,9 +202,17 @@ export class DiceScene {
     this.scene.add(this.lamp, this.lamp.target)
   }
 
-  /** Draws the first `count` dice, up to the capacity. */
-  setDiceCount(count: number): void {
-    this.dice.count = count
+  /** Draws the dice of `pool`, die i of the pool being index i of setDieTransform. */
+  setPool(pool: DicePool): void {
+    for (const mesh of Object.values(this.meshes)) mesh.count = 0
+    this.slots = pool.map((kind) => {
+      const mesh = this.meshes[kind]
+      return { mesh, instance: mesh.count++ }
+    })
+    // An empty instanced mesh still sets up its shader and textures every
+    // frame, in both passes; a hidden one is skipped, and uploads its
+    // textures the first time it is shown.
+    for (const mesh of Object.values(this.meshes)) mesh.visible = mesh.count > 0
   }
 
   /** Fits the cup's opening to a viewport of the given size in CSS pixels. */
@@ -232,8 +249,9 @@ export class DiceScene {
   setDieTransform(index: number, position: Vec3, rotation: Quat): void {
     this.position.set(position.x, position.y, position.z)
     this.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w)
-    this.dice.setMatrixAt(index, this.matrix.compose(this.position, this.quaternion, UNIT_SCALE))
-    this.dice.instanceMatrix.needsUpdate = true
+    const { mesh, instance } = this.slots[index]!
+    mesh.setMatrixAt(instance, this.matrix.compose(this.position, this.quaternion, UNIT_SCALE))
+    mesh.instanceMatrix.needsUpdate = true
   }
 
   render(): void {
@@ -243,7 +261,7 @@ export class DiceScene {
   dispose(): void {
     const parts: [BufferGeometry, Material[]][] = [
       [this.tray.geometry, this.tray.material as Material[]],
-      [this.d6Look.geometry, this.d6Look.materials],
+      ...Object.values(this.looks).map(({ geometry, materials }): [BufferGeometry, Material[]] => [geometry, materials]),
     ]
     for (const [geometry, materials] of parts) {
       geometry.dispose()
@@ -255,7 +273,7 @@ export class DiceScene {
         material.dispose()
       }
     }
-    this.dice.dispose()
+    for (const mesh of Object.values(this.meshes)) mesh.dispose()
     this.lamp.dispose()
     this.environment.dispose()
     this.renderer.dispose()

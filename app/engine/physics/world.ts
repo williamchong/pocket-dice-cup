@@ -1,7 +1,10 @@
 import type { Collider, RigidBody, World } from '@dimforge/rapier3d-compat'
 import type { BoxSize } from '../box'
-import { D6_EDGE_RADIUS, D6_SIZE } from '../dice/d6'
-import { axisAngle, distance, dot, length, multiply, rotate, type Quat, type Vec3 } from '../math'
+import { countKinds, MAX_DICE, normalisePool, type DicePool } from '../core/pool'
+import { D6_SIZE } from '../dice/d6'
+import { TOWARDS_FLOOR } from '../dice/faces'
+import { compareKinds, DIE_KINDS, DIE_SHAPES, type DieShape } from '../dice/shapes'
+import { axisAngle, distance, dot, length, multiply, rotationBetween, type Quat, type Vec3 } from '../math'
 
 /** The Rapier module, passed in so that only the caller decides when its WASM is loaded. */
 export type Rapier = typeof import('@dimforge/rapier3d-compat').default
@@ -81,12 +84,8 @@ const IMPACT_FLOOR_MIN_Z = Math.SQRT1_2
  */
 const IMPACT_DIE_MIN_ALIGNMENT = Math.SQRT1_2
 
-/** The most dice the cup holds, for screen space and performance. */
-export const MAX_DICE = 12
 /** Random places tried for a new die on the floor, before it goes in above the others. */
 const PLACE_ATTEMPTS = 100
-/** Room (cm) between the dice of the grid a fixed start lays out. */
-const START_GAP = 0.4
 /** The least room (cm) left between a new die and the others, so it starts clear of them. */
 const PLACE_GAP = 0.1
 
@@ -97,15 +96,6 @@ const REST_DURATION_S = 0.25
 const X_AXIS: Vec3 = { x: 1, y: 0, z: 0 }
 const Y_AXIS: Vec3 = { x: 0, y: 1, z: 0 }
 const Z_AXIS: Vec3 = { x: 0, y: 0, z: 1 }
-/** One rotation per face of a cube that leaves that face pointing up (+z). */
-const FACE_UP_ROTATIONS: readonly Quat[] = [
-  { x: 0, y: 0, z: 0, w: 1 },
-  axisAngle(X_AXIS, Math.PI / 2),
-  axisAngle(X_AXIS, -Math.PI / 2),
-  axisAngle(X_AXIS, Math.PI),
-  axisAngle(Y_AXIS, Math.PI / 2),
-  axisAngle(Y_AXIS, -Math.PI / 2),
-]
 
 /** What a die hit: a part of the cup, or another die. */
 export type Surface = 'floor' | 'glass' | 'wall' | 'die'
@@ -119,10 +109,17 @@ export interface Impact {
   surface: Surface
 }
 
+/** A die in the cup: its body, and what kind of die it is. */
+interface Die {
+  body: RigidBody
+  shape: DieShape
+}
+
 export class PhysicsWorld {
   private readonly world: World
   private walls: Collider[] = []
-  private readonly dice: RigidBody[] = []
+  /** In the pool's order, smallest kind first. */
+  private dice: Die[] = []
   /** Each die's index by its body's handle, to tell which die a contact is with. */
   private dieIndex = new Map<number, number>()
   private accumulator = 0
@@ -140,9 +137,14 @@ export class PhysicsWorld {
     return this.dice.length
   }
 
+  /** The kind of each die, in order. */
+  get pool(): DicePool {
+    return this.dice.map(die => die.shape.kind)
+  }
+
   /** Nothing can move until the dice are woken, so there is nothing new to draw. */
   get asleep(): boolean {
-    return this.dice.every(die => die.isSleeping())
+    return this.dice.every(die => die.body.isSleeping())
   }
 
   /**
@@ -158,26 +160,39 @@ export class PhysicsWorld {
   }
 
   /**
-   * Adds or removes d6s until there are `count`, from 1 to MAX_DICE. The dice
-   * already in the cup stay where they are; see addD6 for where new ones go.
+   * Adds or removes dice until the cup holds `pool` (see normalisePool). The
+   * dice already in the cup that the pool keeps stay where they are; see
+   * addDie for where new ones go.
    */
-  setDiceCount(count: number, random?: () => number): void {
-    const clamped = Math.max(1, Math.min(MAX_DICE, Math.round(count) || 1))
-    while (this.dice.length > clamped) this.world.removeRigidBody(this.dice.pop()!)
-    while (this.dice.length < clamped) this.addD6(random)
-    this.dieIndex = new Map(this.dice.map((die, index) => [die.handle, index]))
+  setPool(pool: DicePool, random?: () => number): void {
+    const wanted = countKinds(normalisePool(pool))
+    const held = countKinds(this.pool)
+    // The newest of a kind go first.
+    for (let index = this.dice.length - 1; index >= 0; index--) {
+      const { body, shape } = this.dice[index]!
+      if (held[shape.kind] <= wanted[shape.kind]) continue
+      this.world.removeRigidBody(body)
+      this.dice.splice(index, 1)
+      held[shape.kind]--
+    }
+    for (const kind of DIE_KINDS) {
+      for (; held[kind] < wanted[kind]; held[kind]++) this.addDie(DIE_SHAPES[kind], random)
+    }
+    this.dice.sort((a, b) => compareKinds(a.shape.kind, b.shape.kind))
+    this.dieIndex = new Map(this.dice.map((die, index) => [die.body.handle, index]))
   }
 
   /**
-   * Adds a d6 lying flat on the floor, clear of the dice already there, or
+   * Adds a die lying flat on the floor, clear of the dice already there, or
    * dropped in on top of them when the floor is full. With `random`, it lies
-   * at a random place with a random face up and a random turn, as if left
-   * from the last roll; without, it lies on a grid out from the middle with
-   * the 3 up, for repeatable tests and debugging.
+   * at a random place on a random face with a random turn, as if left from
+   * the last roll; without, it lies on a grid out from the middle on the face
+   * lowest in its own frame (a d6 with the 3 up), for repeatable tests and
+   * debugging.
    */
-  private addD6(random?: () => number): void {
+  private addDie(shape: DieShape, random?: () => number): void {
     const { RigidBodyDesc, ColliderDesc } = this.rapier
-    const { position, rotation } = this.placeD6(random)
+    const { position, rotation } = this.placeDie(shape, random)
     const body = this.world.createRigidBody(
       RigidBodyDesc.dynamic()
         .setTranslation(position.x, position.y, position.z)
@@ -185,42 +200,41 @@ export class PhysicsWorld {
         // A hard shake moves a die further than its own size in one step.
         .setCcdEnabled(true),
     )
-    // roundCuboid takes the half extents of the inner box, before rounding.
-    const inner = D6_SIZE / 2 - D6_EDGE_RADIUS
-    this.world.createCollider(
-      ColliderDesc.roundCuboid(inner, inner, inner, D6_EDGE_RADIUS)
-        .setRestitution(RESTITUTION)
-        .setFriction(FRICTION),
-      body,
-    )
-    this.dice.push(body)
+    const { collider } = shape
+    const desc = collider.type === 'roundCuboid'
+      ? ColliderDesc.roundCuboid(collider.halfExtent, collider.halfExtent, collider.halfExtent, collider.radius)
+      : ColliderDesc.roundConvexHull(new Float32Array(collider.points.flatMap(p => [p.x, p.y, p.z])), collider.radius)
+    if (!desc) throw new Error(`No collider for a ${shape.kind}`)
+    this.world.createCollider(desc.setRestitution(RESTITUTION).setFriction(FRICTION), body)
+    this.dice.push({ body, shape })
   }
 
-  private placeD6(random?: () => number): { position: Vec3, rotation: Quat } {
-    const half = D6_SIZE / 2
-    const faceUp = random ? FACE_UP_ROTATIONS[Math.floor(random() * FACE_UP_ROTATIONS.length)]! : FACE_UP_ROTATIONS[0]!
-    const placed = this.dice.map(die => ({ z: die.translation().z, footprint: footprintOf(die) }))
+  private placeDie(shape: DieShape, random?: () => number): { position: Vec3, rotation: Quat } {
+    const lyingOn = random
+      ? shape.faces[Math.floor(random() * shape.faces.length)]!
+      : shape.faces.reduce((lowest, face) => face.normal.z < lowest.normal.z ? face : lowest)
+    const lying = rotationBetween(lyingOn.normal, TOWARDS_FLOOR)
+    const placed = this.dice.map(({ body, shape }) => ({ ...body.translation(), shape }))
     // On the floor where there is room; in a crowded cup, just under the
     // glass, from where it falls in on top of the others.
-    for (const z of [half, this.box.depth - half]) {
+    for (const z of [shape.inradius, this.box.depth - (shape.height - shape.inradius)]) {
       // Only the dice at about the same height are in the way.
-      const others = placed.filter(die => Math.abs(die.z - z) < D6_SIZE).map(die => die.footprint)
-      const isFree = (spot: Footprint) => others.every(other => !overlaps(spot, other))
-      const spot = random ? this.randomSpot(isFree, random) : this.gridSpot(isFree)
-      if (spot) return { position: { x: spot.x, y: spot.y, z }, rotation: multiply(axisAngle(Z_AXIS, spot.turn), faceUp) }
+      const others = placed.filter(die => Math.abs(die.z - z) < (die.shape.height + shape.height) / 2)
+      const isFree = (spot: Footprint) => others.every(other =>
+        Math.hypot(spot.x - other.x, spot.y - other.y) >= shape.footprintRadius + other.shape.footprintRadius + PLACE_GAP)
+      const spot = random ? this.randomSpot(shape, isFree, random) : this.gridSpot(shape, isFree)
+      if (spot) return { position: { x: spot.x, y: spot.y, z }, rotation: multiply(axisAngle(Z_AXIS, spot.turn), lying) }
     }
     // Both full, which only a cup far smaller than a phone can be: the
-    // solver pushes the dice apart. Square to the walls, with its face.
-    return { position: { x: 0, y: 0, z: this.box.depth - half }, rotation: faceUp }
+    // solver pushes the dice apart.
+    return { position: { x: 0, y: 0, z: this.box.depth - (shape.height - shape.inradius) }, rotation: lying }
   }
 
   /** A free spot at a random place and turn, or null if the tries found none. */
-  private randomSpot(isFree: (spot: Footprint) => boolean, random: () => number): Footprint | null {
-    // Clear of the walls at any turn, which takes half the diagonal; a box
-    // too small for that keeps it in the middle.
-    const reach = D6_SIZE / 2 * Math.SQRT2
-    const rangeX = Math.max(0, this.box.width / 2 - reach)
-    const rangeY = Math.max(0, this.box.height / 2 - reach)
+  private randomSpot(shape: DieShape, isFree: (spot: Footprint) => boolean, random: () => number): Footprint | null {
+    // Clear of the walls at any turn; a box too small for that keeps it in the middle.
+    const rangeX = Math.max(0, this.box.width / 2 - shape.footprintRadius)
+    const rangeY = Math.max(0, this.box.height / 2 - shape.footprintRadius)
     for (let attempt = 0; attempt < PLACE_ATTEMPTS; attempt++) {
       const spot = { x: (2 * random() - 1) * rangeX, y: (2 * random() - 1) * rangeY, turn: random() * 2 * Math.PI }
       if (isFree(spot)) return spot
@@ -228,12 +242,11 @@ export class PhysicsWorld {
     return null
   }
 
-  /** The free spot nearest the middle on a grid of dice square to the walls, if any. */
-  private gridSpot(isFree: (spot: Footprint) => boolean): Footprint | null {
-    const half = D6_SIZE / 2
-    const spacing = D6_SIZE + START_GAP
-    const columns = Math.floor(Math.max(0, this.box.width / 2 - half) / spacing)
-    const rows = Math.floor(Math.max(0, this.box.height / 2 - half) / spacing)
+  /** The free spot nearest the middle on a grid of dice of this kind just clear of each other, if any. */
+  private gridSpot(shape: DieShape, isFree: (spot: Footprint) => boolean): Footprint | null {
+    const spacing = 2 * shape.footprintRadius + PLACE_GAP
+    const columns = Math.floor(Math.max(0, this.box.width / 2 - shape.footprintRadius) / spacing)
+    const rows = Math.floor(Math.max(0, this.box.height / 2 - shape.footprintRadius) / spacing)
     const spots: Footprint[] = []
     for (let row = -rows; row <= rows; row++) {
       for (let column = -columns; column <= columns; column++) {
@@ -256,7 +269,7 @@ export class PhysicsWorld {
     }
     if (!this.wakeAcceleration || distance(acceleration, this.wakeAcceleration) > WAKE_ACCELERATION_DELTA) {
       this.wakeAcceleration = { ...acceleration }
-      for (const die of this.dice) die.wakeUp()
+      for (const die of this.dice) die.body.wakeUp()
     }
   }
 
@@ -271,13 +284,13 @@ export class PhysicsWorld {
     const gravity = this.world.gravity
     const threshold = IMPACT_GRAVITY_MULTIPLE * length(gravity) * FIXED_DT + IMPACT_MIN_SPEED
     // Only a step changes the velocities, so each step's end is the next one's start.
-    const velocities = this.dice.map(die => die.linvel())
+    const velocities = this.dice.map(die => die.body.linvel())
     while (this.accumulator >= FIXED_DT) {
       this.accumulator -= FIXED_DT
       this.world.step()
       hits.forEach((hit, index) => {
         const before = velocities[index]!
-        const after = velocities[index] = this.dice[index]!.linvel()
+        const after = velocities[index] = this.dice[index]!.body.linvel()
         const change = {
           x: after.x - before.x - gravity.x * FIXED_DT,
           y: after.y - before.y - gravity.y * FIXED_DT,
@@ -299,7 +312,7 @@ export class PhysicsWorld {
         hit.change.y += change.y
         hit.change.z += change.z
       })
-      this.restTime = this.dice.every(isSlow) ? this.restTime + FIXED_DT : 0
+      this.restTime = this.dice.every(die => isSlow(die.body)) ? this.restTime + FIXED_DT : 0
     }
     this._impacts = hits.flatMap(({ speed, change }, die): Impact[] =>
       speed > 0 ? [{ die, speed, surface: surfaceOf(change) }] : [])
@@ -315,7 +328,7 @@ export class PhysicsWorld {
    * about 1% of the frame's physics.
    */
   private struckDie(index: number, change: Vec3, speed: number): number | null {
-    const collider = this.dice[index]!.collider(0)
+    const collider = this.dice[index]!.body.collider(0)
     let struck: number | null = null
     this.world.contactPairsWith(collider, (other) => {
       // The cup's colliders have no body.
@@ -338,7 +351,7 @@ export class PhysicsWorld {
    * whatever face it starts on.
    */
   launchDice({ lift, push, spin }: { lift: number, push: number, spin: number }, random: () => number): void {
-    for (const die of this.dice) {
+    for (const { body: die } of this.dice) {
       const heading = 2 * Math.PI * random()
       die.setLinvel({ x: push * Math.cos(heading), y: push * Math.sin(heading), z: lift }, true)
       const axis = randomDirection(random)
@@ -347,11 +360,15 @@ export class PhysicsWorld {
   }
 
   diePosition(index: number): Vec3 {
-    return this.dice[index]!.translation()
+    return this.dice[index]!.body.translation()
   }
 
   dieRotation(index: number): Quat {
-    return this.dice[index]!.rotation()
+    return this.dice[index]!.body.rotation()
+  }
+
+  dieShape(index: number): DieShape {
+    return this.dice[index]!.shape
   }
 
   resize(box: BoxSize): void {
@@ -359,11 +376,10 @@ export class PhysicsWorld {
     for (const wall of this.walls) this.world.removeCollider(wall, false)
     this.buildWalls()
     // The viewport can shrink under the dice (a browser toolbar), so pull any
-    // that are now outside back in.
-    const half = D6_SIZE / 2
-    const limitX = box.width / 2 - half
-    const limitY = box.height / 2 - half
-    for (const die of this.dice) {
+    // that are now outside back in, as far as a die lying against a wall.
+    for (const { body: die, shape } of this.dice) {
+      const limitX = box.width / 2 - shape.inradius
+      const limitY = box.height / 2 - shape.inradius
       const p = die.translation()
       const x = Math.max(-limitX, Math.min(limitX, p.x))
       const y = Math.max(-limitY, Math.min(limitY, p.y))
@@ -427,33 +443,6 @@ interface Footprint {
   x: number
   y: number
   turn: number
-}
-
-/**
- * Where `die` sits, taken as lying flat. A die left leaning on another after
- * a roll is not, and then its turn is only roughly right.
- */
-function footprintOf(die: RigidBody): Footprint {
-  const { x, y } = die.translation()
-  // Any of the die's own axes that lies flat gives its turn, a square being
-  // the same every quarter turn.
-  let side = rotate(X_AXIS, die.rotation())
-  if (Math.abs(side.z) > Math.SQRT1_2) side = rotate(Y_AXIS, die.rotation())
-  return { x, y, turn: Math.atan2(side.y, side.x) }
-}
-
-/**
- * Whether two dice lying flat come within PLACE_GAP of each other, by the
- * separating axis test: two squares are apart when their shadows on one of
- * their four edge directions are.
- */
-function overlaps(a: Footprint, b: Footprint): boolean {
-  // How far a square of the die's size reaches along a direction `angle` off its edges.
-  const extent = (angle: number) => D6_SIZE / 2 * (Math.abs(Math.cos(angle)) + Math.abs(Math.sin(angle)))
-  return [a.turn, a.turn + Math.PI / 2, b.turn, b.turn + Math.PI / 2].every((axis) => {
-    const along = Math.abs((b.x - a.x) * Math.cos(axis) + (b.y - a.y) * Math.sin(axis))
-    return along < extent(a.turn - axis) + extent(b.turn - axis) + PLACE_GAP
-  })
 }
 
 /** A uniformly random unit vector: z uniform in [-1, 1], longitude uniform. */

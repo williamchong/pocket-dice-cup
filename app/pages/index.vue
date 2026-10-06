@@ -36,24 +36,34 @@
       class="cup__footer"
     >
       <RollHistory
-        v-if="historyOpen"
-        class="cup__history"
+        v-if="openSheet === 'history'"
+        class="cup__sheet"
         :rolls="history"
         @clear="clearHistory"
-        @close="historyOpen = false"
+        @close="openSheet = null"
+      />
+      <DicePoolSheet
+        v-if="openSheet === 'pool'"
+        class="cup__sheet"
+        :pool="pool"
+        :disabled="rolling"
+        @change="changePool"
+        @close="openSheet = null"
       />
       <div class="cup__controls">
-        <DiceCountStepper
-          :count="dice"
-          :max="MAX_DICE"
-          :disabled="rolling"
-          @change="changeDiceCount"
-        />
         <button
           type="button"
-          class="cup__history-button"
-          :aria-pressed="historyOpen"
-          @click="historyOpen = !historyOpen"
+          class="cup__toggle"
+          :aria-pressed="openSheet === 'pool'"
+          @click="toggle('pool')"
+        >
+          {{ formatPool(pool) }}
+        </button>
+        <button
+          type="button"
+          class="cup__toggle"
+          :aria-pressed="openSheet === 'history'"
+          @click="toggle('history')"
         >
           History
         </button>
@@ -77,6 +87,7 @@
       v-if="state === 'result' && result"
       class="cup__result"
       :values="result"
+      :kinds="pool"
     />
 
     <div
@@ -150,41 +161,47 @@
 </template>
 
 <script setup lang="ts">
+import { formatPool, type DicePool } from '~/engine/core/pool'
 import { isRolling } from '~/engine/core/stateMachine'
 import { DEFAULT_SOUND_TUNING, type SoundTuning, type VoiceName } from '~/engine/feedback/clackSound'
 import { DEFAULT_HAPTIC_TUNING, type HapticTuning } from '~/engine/feedback/cupFeedback'
-import { MAX_DICE, type Surface } from '~/engine/physics/world'
+import type { Surface } from '~/engine/physics/world'
 
 // `?debug` shows what the sensor and the state machine are doing, for tuning
 // on a real phone where there is no console. It also starts the dice in the
 // same place every time, so runs can be compared.
 const route = useRoute()
 const debug = 'debug' in route.query || Boolean(useRuntimeConfig().public.debug)
-// `?dice=N` starts with N dice, over the count saved from last time.
-const startDice = parseDiceCount(route.query.dice) ?? loadDiceCount() ?? 1
+// `?dice=N` starts with N d6, and `?dice=2d6+d20` with those dice, over the
+// dice saved from last time.
+const startPool = parsePoolSetting(route.query.dice) ?? loadPool() ?? undefined
 
 const canvas = useTemplateRef('canvas')
 // Shaking tips the phone far enough for the browser to rotate the page; the
 // cup stays put in the phone's own frame instead.
 const counterRotationStyle = useCounterRotation()
-const { ready, failed, state, result, dice, permission, start, toss, setDiceCount, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, dice: startDice })
+const { ready, failed, state, result, pool, permission, start, toss, setPool, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool })
 const rolling = computed(() => isRolling(state.value))
 
-function changeDiceCount(count: number) {
-  if (setDiceCount(count)) saveDiceCount(dice.value)
+function changePool(next: DicePool) {
+  if (setPool(next)) savePool(pool.value)
 }
 
 const history = shallowRef(loadHistory())
-const historyOpen = ref(false)
+/** The sheet open above the controls, if any. */
+const openSheet = ref<'history' | 'pool' | null>(null)
+function toggle(sheet: 'history' | 'pool') {
+  openSheet.value = openSheet.value === sheet ? null : sheet
+}
 // The cup hands over a new array each time the dice settle, and null in between.
 watch(result, (values) => {
   if (!values) return
-  history.value = addRoll(history.value, values, Date.now())
+  history.value = addRoll(history.value, values, pool.value, Date.now())
   saveHistory(history.value)
 })
-// Shaking with the list open would hide the roll behind it.
+// Shaking with a sheet open would hide the roll behind it.
 watch(rolling, (now) => {
-  if (now) historyOpen.value = false
+  if (now) openSheet.value = null
 })
 
 function clearHistory() {
@@ -388,12 +405,12 @@ if (debug) {
   align-items: center;
   gap: 0.5rem;
   padding: 1rem 2rem;
-  /* Taps around the stepper still reach the canvas and shake the cup. */
+  /* Taps around the buttons still reach the canvas and shake the cup. */
   pointer-events: none;
 }
 
 .cup__controls,
-.cup__history {
+.cup__sheet {
   pointer-events: auto;
 }
 
@@ -403,17 +420,18 @@ if (debug) {
   gap: 1rem;
 }
 
-.cup__history-button {
-  height: 2.75rem;
-  padding: 0 1rem;
+.cup__toggle {
+  /* A long mix of dice wraps onto a second line. */
+  min-height: 2.75rem;
+  padding: 0.4rem 1rem;
   border: 0;
-  border-radius: 999px;
+  border-radius: 1.375rem;
   background: rgb(244 239 227 / 15%);
   color: inherit;
-  font: 16px/1 system-ui, sans-serif;
+  font: 16px/1.2 system-ui, sans-serif;
 }
 
-.cup__history-button[aria-pressed="true"] {
+.cup__toggle[aria-pressed="true"] {
   background: rgb(244 239 227 / 30%);
 }
 

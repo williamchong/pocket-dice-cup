@@ -20,9 +20,9 @@
       >
         <span class="history__total">{{ rollTotal(roll.values) }}</span>
         <span
-          v-if="rollBreakdown(roll.values)"
+          v-if="rollBreakdown(roll.values, roll.kinds)"
           class="history__dice"
-        >{{ rollBreakdown(roll.values) }}</span>
+        >{{ rollBreakdown(roll.values, roll.kinds) }}</span>
         <time
           class="history__time"
           :datetime="new Date(roll.time).toISOString()"
