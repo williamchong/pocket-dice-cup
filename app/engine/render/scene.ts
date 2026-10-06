@@ -25,12 +25,14 @@ import type { DicePool } from '../core/pool'
 import { DIE_KINDS, POLYHEDRA, type DieKind } from '../dice/shapes'
 import type { Quat, Vec3 } from '../math'
 import { createD6Look } from './d6Mesh'
-import { createDiceMesh, type DieLook } from './dieLook'
+import { createDiceMesh, disposeLook, type DieLook } from './dieLook'
 import { createPolyhedronLook } from './polyhedronMesh'
 
 /** Phones report 3; the extra pixels cost more than they show at this scale. */
 const MAX_PIXEL_RATIO = 2
 
+/** A warm lamp, as over a games table. */
+export const LAMP_COLOUR = 0xfff1dc
 const FELT_COLOUR = 0x0d6b3c
 const WALL_COLOUR = 0x2a160c
 /** World units covered by one tile of the felt's speckle. */
@@ -136,6 +138,33 @@ function feltTexture(): CanvasTexture {
 }
 
 /**
+ * Glossy surfaces need surroundings to reflect. This room is generated, so
+ * there is no image to download. Returns the room's map, for the caller to
+ * dispose of.
+ */
+export function lightByRoom(renderer: WebGLRenderer, scene: Scene): WebGLRenderTarget {
+  const pmrem = new PMREMGenerator(renderer)
+  const room = new RoomEnvironment()
+  try {
+    // Half the default resolution, for a quarter of the GPU memory. Raise it
+    // if a mirror-like skin ever shows the reflections as blurry.
+    const environment = pmrem.fromScene(room, 0.04, 0.1, 100, { size: 128 })
+    scene.environment = environment.texture
+    // The room is built y-up, and up here is +z.
+    scene.environmentRotation.x = Math.PI / 2
+    return environment
+  }
+  finally {
+    room.dispose()
+    pmrem.dispose()
+  }
+}
+
+export function createDieLook(kind: DieKind): DieLook {
+  return kind === 'd6' ? createD6Look() : createPolyhedronLook(POLYHEDRA[kind])
+}
+
+/**
  * Draws the cup from straight above, so the screen is a window into it. Scene
  * coordinates are the physics world's, which are the device's.
  */
@@ -145,11 +174,10 @@ export class DiceScene {
   private readonly camera = new PerspectiveCamera()
   private readonly tray: Mesh
   /** A warm lamp hung over the table: bright in the middle, falling off towards the rail. */
-  private readonly lamp = new SpotLight(0xfff1dc, 5)
+  private readonly lamp = new SpotLight(LAMP_COLOUR, 5)
   private readonly feltMap = feltTexture()
   private readonly environment: WebGLRenderTarget
-  private readonly looks = Object.fromEntries(DIE_KINDS.map(kind =>
-    [kind, kind === 'd6' ? createD6Look() : createPolyhedronLook(POLYHEDRA[kind])])) as Record<DieKind, DieLook>
+  private readonly looks = Object.fromEntries(DIE_KINDS.map(kind => [kind, createDieLook(kind)])) as Record<DieKind, DieLook>
 
   /** One instanced mesh per kind of die. */
   private readonly meshes: Record<DieKind, InstancedMesh>
@@ -169,17 +197,7 @@ export class DiceScene {
     // the hue of the felt the way the filmic curves do.
     this.renderer.toneMapping = NeutralToneMapping
 
-    // Glossy surfaces need surroundings to reflect. This room is generated,
-    // so there is no image to download. It is built y-up, and up here is +z.
-    const pmrem = new PMREMGenerator(this.renderer)
-    const room = new RoomEnvironment()
-    // Half the default resolution, for a quarter of the GPU memory. Raise it
-    // if a mirror-like skin ever shows the reflections as blurry.
-    this.environment = pmrem.fromScene(room, 0.04, 0.1, 100, { size: 128 })
-    room.dispose()
-    pmrem.dispose()
-    this.scene.environment = this.environment.texture
-    this.scene.environmentRotation.x = Math.PI / 2
+    this.environment = lightByRoom(this.renderer, this.scene)
     // The room is there for reflections and a little fill. The lamp does the
     // lighting, so the table stays dark outside its pool.
     this.scene.environmentIntensity = 0.3
@@ -259,20 +277,7 @@ export class DiceScene {
   }
 
   dispose(): void {
-    const parts: [BufferGeometry, Material[]][] = [
-      [this.tray.geometry, this.tray.material as Material[]],
-      ...Object.values(this.looks).map(({ geometry, materials }): [BufferGeometry, Material[]] => [geometry, materials]),
-    ]
-    for (const [geometry, materials] of parts) {
-      geometry.dispose()
-      for (const material of new Set(materials)) {
-        if (material instanceof MeshStandardMaterial) {
-          material.map?.dispose()
-          material.bumpMap?.dispose()
-        }
-        material.dispose()
-      }
-    }
+    for (const look of [{ geometry: this.tray.geometry, materials: this.tray.material as Material[] }, ...Object.values(this.looks)]) disposeLook(look)
     for (const mesh of Object.values(this.meshes)) mesh.dispose()
     this.lamp.dispose()
     this.environment.dispose()

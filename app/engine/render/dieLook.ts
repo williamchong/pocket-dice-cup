@@ -1,4 +1,4 @@
-import { InstancedMesh, MeshPhysicalMaterial, type BufferGeometry, type Texture } from 'three'
+import { InstancedMesh, MeshPhysicalMaterial, MeshStandardMaterial, type BufferGeometry, type Material, type Texture } from 'three'
 
 /** Ivory rather than pure white, which blows out under the lamp. */
 export const BODY_COLOUR = '#e9e2d0'
@@ -35,4 +35,16 @@ export function createDiceMesh({ geometry, materials }: DieLook, capacity: numbe
   // Its bounds are not kept up as the dice move, and the camera sees the whole cup anyway.
   mesh.frustumCulled = false
   return mesh
+}
+
+/** Frees a mesh's geometry and materials, and the textures the materials draw with. */
+export function disposeLook({ geometry, materials }: { geometry: BufferGeometry, materials: readonly Material[] }): void {
+  geometry.dispose()
+  for (const material of new Set(materials)) {
+    if (material instanceof MeshStandardMaterial) {
+      material.map?.dispose()
+      material.bumpMap?.dispose()
+    }
+    material.dispose()
+  }
 }

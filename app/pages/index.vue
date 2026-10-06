@@ -199,6 +199,11 @@ watch(result, (values) => {
   history.value = addRoll(history.value, values, pool.value, Date.now())
   saveHistory(history.value)
 })
+// The dice picker's pictures hold the page for a moment as they are drawn,
+// unnoticed while the start screen waits for a tap.
+watch(ready, (now) => {
+  if (now) drawDieIcons()
+})
 // Shaking with a sheet open would hide the roll behind it.
 watch(rolling, (now) => {
   if (now) openSheet.value = null

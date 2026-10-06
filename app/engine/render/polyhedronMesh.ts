@@ -1,6 +1,6 @@
 import { BufferGeometry, CanvasTexture, Float32BufferAttribute, SRGBColorSpace } from 'three'
-import { faceLabel, type PolyhedronShape } from '../dice/shapes'
-import { centroid, cross, dot, length, normalise, subtract, type Vec3 } from '../math'
+import { faceLabel, faceTop, type PolyhedronShape } from '../dice/shapes'
+import { cross, dot, length, normalise, subtract, type Vec3 } from '../math'
 import { BODY_COLOUR, dieMaterial, INK_COLOUR, type DieLook } from './dieLook'
 
 /** Pixels per face in the texture atlas. */
@@ -28,11 +28,7 @@ function layoutFaces(shape: PolyhedronShape): { layouts: FaceLayout[], columns: 
   const columns = Math.ceil(Math.sqrt(shape.faces.length))
   const rows = Math.ceil(shape.faces.length / columns)
   const layouts = shape.faces.map((face, index) => {
-    const corners = face.corners.map(corner => shape.vertices[corner]!)
-    const centre = centroid(corners)
-    // Upright towards the furthest corner: a d10's pole, or any corner of a
-    // regular face.
-    const far = corners.reduce((best, corner) => length(subtract(corner, centre)) > length(subtract(best, centre)) + 1e-9 ? corner : best)
+    const { centre, far } = faceTop(shape, face)
     const up = normalise(subtract(far, centre))
     return {
       centre,

@@ -8,7 +8,17 @@
     >
       −
     </button>
-    <span class="stepper__count">{{ count }} {{ kind }}</span>
+    <span class="stepper__count">
+      <!-- A fixed width, so the dice line up from 0 to 12. -->
+      <span class="stepper__number">{{ count }}</span>
+      <img
+        v-if="icon"
+        class="stepper__die"
+        :src="icon"
+        :alt="kind"
+      >
+      <template v-else>{{ kind }}</template>
+    </span>
     <button
       type="button"
       :aria-label="`More ${kind}`"
@@ -25,6 +35,8 @@ import type { DieKind } from '~/engine/dice/shapes'
 
 defineProps<{
   kind: DieKind
+  /** A picture of the die, shown in place of its name once there is one. */
+  icon?: string
   count: number
   min: number
   max: number
@@ -57,8 +69,21 @@ const emit = defineEmits<{ change: [count: number] }>()
 }
 
 .stepper__count {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
   min-width: 4.5rem;
-  text-align: center;
   font-variant-numeric: tabular-nums;
+}
+
+.stepper__number {
+  min-width: 1.25em;
+  text-align: right;
+}
+
+.stepper__die {
+  width: 2.75rem;
+  height: 2.75rem;
 }
 </style>

@@ -8,6 +8,7 @@
       v-for="kind in DIE_KINDS"
       :key="kind"
       :kind="kind"
+      :icon="icons?.[kind]"
       :count="counts[kind]"
       :min="pool.length === 1 ? counts[kind] : 0"
       :max="counts[kind] + MAX_DICE - pool.length"
@@ -37,6 +38,7 @@ const props = defineProps<{
 const emit = defineEmits<{ change: [pool: DicePool], close: [] }>()
 
 const counts = computed(() => countKinds(props.pool))
+const icons = useDieIcons()
 </script>
 
 <style scoped>

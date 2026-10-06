@@ -202,6 +202,17 @@ export const POLYHEDRA = {
 
 export const DIE_SHAPES: Readonly<Record<DieKind, DieShape>> = { d6: D6, ...POLYHEDRA }
 
+/**
+ * A face's middle, and its furthest corner, which its number stands upright
+ * towards: a d10's pole, or any corner of a regular face.
+ */
+export function faceTop(shape: PolyhedronShape, face: PolyhedronFace): { centre: Vec3, far: Vec3 } {
+  const corners = face.corners.map(corner => shape.vertices[corner]!)
+  const centre = centroid(corners)
+  const far = corners.reduce((best, corner) => length(subtract(corner, centre)) > length(subtract(best, centre)) + 1e-9 ? corner : best)
+  return { centre, far }
+}
+
 /** What is printed for `value`: a d10's 10 is printed 0. */
 export function faceLabel(kind: DieKind, value: number): string {
   return kind === 'd10' ? String(value % 10) : String(value)
