@@ -17,7 +17,7 @@ Core:
 Extras:
 
 - Set the number of dice.
-- Set the kind of dice (1d3, 3d6, 1d20, mixed pools).
+- Set the kind of dice (3d6, 1d20, mixed pools).
 - Show the result as a popup when the dice are stable.
 - Result history.
 - Dice and table skins.
@@ -114,8 +114,8 @@ Dice:
 - One table of face normals per die type. The result is the face whose normal
   best aligns with "up" (for a d4, "down").
 - Colliders are convex hulls built from the render geometry.
-- Set: d4, d6, d8, d10, d12, d20. d3 is a d6 numbered 1-3 twice. d100 is two
-  d10s. d10 needs a custom mesh (pentagonal trapezohedron).
+- Set: d4, d6, d8, d10, d12, d20. d10 needs a custom mesh (pentagonal
+  trapezohedron). No d3 or d100.
 - Pool cap of about 12 dice, for screen space and performance.
 
 Skins are data objects: colours, material parameters, number style, floor
@@ -191,8 +191,7 @@ Phases
    physics a frame for 12 dice of any kind in Node. Not yet checked on the
    iPhone: the frame cost of many dice, whether the 8-voice cap drops clacks,
    how the die-to-die clack and feel sound and feel, and how the new shapes
-   look and roll. The d3 (a d6 numbered 1-3 twice) and the d100 (two d10s)
-   are still to do.
+   look and roll. The d3 and the d100 are dropped.
 4. **Result popup and history.** Per-die values and total when the dice settle.
    History in `localStorage`.
    Status: done in a desktop browser. When the dice settle, a card at the
