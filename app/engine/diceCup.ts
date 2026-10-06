@@ -6,7 +6,7 @@ import { deviceHaptics } from './feedback/haptics'
 import type { MotionSource } from './input/motionSource'
 import type { TraceRecorder } from './input/motionTrace'
 import type { Vec3 } from './math'
-import type { Rapier, Surface } from './physics/world'
+import { MAX_DICE, type Rapier, type Surface } from './physics/world'
 import { DiceScene } from './render/scene'
 import { CupSimulation, type CupOptions } from './simulation'
 
@@ -70,7 +70,7 @@ export class DiceCup {
     // A canvas that is not laid out yet has no size; the first resize corrects the box.
     const simulation = new CupSimulation(rapier, boxForViewport(canvas.clientWidth || 1, canvas.clientHeight || 1), options)
     try {
-      const scene = new DiceScene(canvas)
+      const scene = new DiceScene(canvas, MAX_DICE)
       scene.setDiceCount(simulation.physics.dieCount)
       const feedback = new CupFeedback(createSound(), deviceHaptics())
       return new DiceCup(canvas, source, simulation, scene, feedback, onChange, recorder)

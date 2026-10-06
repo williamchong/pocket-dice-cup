@@ -1,4 +1,4 @@
-import { CanvasTexture, Mesh, MeshPhysicalMaterial, SRGBColorSpace, type BufferGeometry } from 'three'
+import { CanvasTexture, InstancedMesh, MeshPhysicalMaterial, SRGBColorSpace, type BufferGeometry } from 'three'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import { D6_EDGE_RADIUS, D6_FACES, D6_SIZE } from '../dice/d6'
 
@@ -81,8 +81,15 @@ export function createD6Look(): D6Look {
   return { geometry, materials }
 }
 
-export function createD6Mesh({ geometry, materials }: D6Look): Mesh {
-  const mesh = new Mesh(geometry, materials)
+/**
+ * Up to `capacity` d6s drawn as one instanced mesh, so each face's material is
+ * one draw call however many dice there are. None are drawn until `count` is set.
+ */
+export function createD6Mesh({ geometry, materials }: D6Look, capacity: number): InstancedMesh {
+  const mesh = new InstancedMesh(geometry, materials, capacity)
+  mesh.count = 0
   mesh.castShadow = true
+  // Its bounds are not kept up as the dice move, and the camera sees the whole cup anyway.
+  mesh.frustumCulled = false
   return mesh
 }

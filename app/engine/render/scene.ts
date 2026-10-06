@@ -2,15 +2,19 @@ import {
   BufferGeometry,
   CanvasTexture,
   Float32BufferAttribute,
+  type InstancedMesh,
+  Matrix4,
   Mesh,
   MeshStandardMaterial,
   NeutralToneMapping,
   PerspectiveCamera,
   PMREMGenerator,
+  Quaternion,
   RepeatWrapping,
   Scene,
   SpotLight,
   SRGBColorSpace,
+  Vector3,
   WebGLRenderer,
   type Material,
   type WebGLRenderTarget,
@@ -38,6 +42,8 @@ const ROUNDING = 0.5
 /** Segments in each quarter circle: per corner, and up the cove. */
 const CORNER_SEGMENTS = 12
 const COVE_SEGMENTS = 8
+
+const UNIT_SCALE = new Vector3(1, 1, 1)
 
 /**
  * The inside of the cup with rounded corners, open at the glass: a felt floor
@@ -139,9 +145,14 @@ export class DiceScene {
   private readonly feltMap = feltTexture()
   private readonly environment: WebGLRenderTarget
   private readonly d6Look = createD6Look()
-  private readonly dice: Mesh[] = []
+  private readonly dice: InstancedMesh
+  /** Reused for every die's transform, rather than made anew each frame. */
+  private readonly matrix = new Matrix4()
+  private readonly position = new Vector3()
+  private readonly quaternion = new Quaternion()
 
-  constructor(canvas: HTMLCanvasElement) {
+  /** `capacity` is the most dice it will ever be asked to draw. */
+  constructor(canvas: HTMLCanvasElement, capacity: number) {
     this.renderer = new WebGLRenderer({ canvas, antialias: true })
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO))
     this.renderer.shadowMap.enabled = true
@@ -169,7 +180,8 @@ export class DiceScene {
     const felt = new MeshStandardMaterial({ color: FELT_COLOUR, map: this.feltMap, roughness: 1 })
     this.tray = new Mesh(new BufferGeometry(), [wall, felt])
     this.tray.receiveShadow = true
-    this.scene.add(this.tray)
+    this.dice = createD6Mesh(this.d6Look, capacity)
+    this.scene.add(this.tray, this.dice)
 
     // The pool of light comes from the soft edge of the cone, not from
     // distance, so the brightness does not change with the size of the table.
@@ -181,14 +193,9 @@ export class DiceScene {
     this.scene.add(this.lamp, this.lamp.target)
   }
 
-  /** Adds or removes dice to draw `count`; the shared look is only freed by dispose. */
+  /** Draws the first `count` dice, up to the capacity. */
   setDiceCount(count: number): void {
-    while (this.dice.length > count) this.scene.remove(this.dice.pop()!)
-    while (this.dice.length < count) {
-      const mesh = createD6Mesh(this.d6Look)
-      this.dice.push(mesh)
-      this.scene.add(mesh)
-    }
+    this.dice.count = count
   }
 
   /** Fits the cup's opening to a viewport of the given size in CSS pixels. */
@@ -223,9 +230,10 @@ export class DiceScene {
   }
 
   setDieTransform(index: number, position: Vec3, rotation: Quat): void {
-    const mesh = this.dice[index]!
-    mesh.position.set(position.x, position.y, position.z)
-    mesh.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w)
+    this.position.set(position.x, position.y, position.z)
+    this.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w)
+    this.dice.setMatrixAt(index, this.matrix.compose(this.position, this.quaternion, UNIT_SCALE))
+    this.dice.instanceMatrix.needsUpdate = true
   }
 
   render(): void {
@@ -247,6 +255,7 @@ export class DiceScene {
         material.dispose()
       }
     }
+    this.dice.dispose()
     this.lamp.dispose()
     this.environment.dispose()
     this.renderer.dispose()
