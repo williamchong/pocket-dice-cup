@@ -35,13 +35,29 @@
       v-else
       class="cup__footer"
     >
-      <DiceCountStepper
-        class="cup__stepper"
-        :count="dice"
-        :max="MAX_DICE"
-        :disabled="rolling"
-        @change="changeDiceCount"
+      <RollHistory
+        v-if="historyOpen"
+        class="cup__history"
+        :rolls="history"
+        @clear="clearHistory"
+        @close="historyOpen = false"
       />
+      <div class="cup__controls">
+        <DiceCountStepper
+          :count="dice"
+          :max="MAX_DICE"
+          :disabled="rolling"
+          @change="changeDiceCount"
+        />
+        <button
+          type="button"
+          class="cup__history-button"
+          :aria-pressed="historyOpen"
+          @click="historyOpen = !historyOpen"
+        >
+          History
+        </button>
+      </div>
       <p
         v-if="permission === 'denied'"
         class="cup__hint"
@@ -55,6 +71,13 @@
         This browser has no motion sensor, so click or tap to shake.
       </p>
     </div>
+
+    <!-- Taps go through to the canvas, so a shown result is re-rolled with a tap like any other. -->
+    <ResultPopup
+      v-if="state === 'result' && result"
+      class="cup__result"
+      :values="result"
+    />
 
     <div
       v-if="debug"
@@ -149,6 +172,24 @@ const rolling = computed(() => isRolling(state.value))
 
 function changeDiceCount(count: number) {
   if (setDiceCount(count)) saveDiceCount(dice.value)
+}
+
+const history = shallowRef(loadHistory())
+const historyOpen = ref(false)
+// The cup hands over a new array each time the dice settle, and null in between.
+watch(result, (values) => {
+  if (!values) return
+  history.value = addRoll(history.value, values, Date.now())
+  saveHistory(history.value)
+})
+// Shaking with the list open would hide the roll behind it.
+watch(rolling, (now) => {
+  if (now) historyOpen.value = false
+})
+
+function clearHistory() {
+  history.value = []
+  saveHistory(history.value)
 }
 
 const debugText = ref('')
@@ -351,8 +392,37 @@ if (debug) {
   pointer-events: none;
 }
 
-.cup__stepper {
+.cup__controls,
+.cup__history {
   pointer-events: auto;
+}
+
+.cup__controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cup__history-button {
+  height: 2.75rem;
+  padding: 0 1rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(244 239 227 / 15%);
+  color: inherit;
+  font: 16px/1 system-ui, sans-serif;
+}
+
+.cup__history-button[aria-pressed="true"] {
+  background: rgb(244 239 227 / 30%);
+}
+
+.cup__result {
+  position: absolute;
+  top: calc(var(--safe-inset) + 1.5rem);
+  left: 50%;
+  translate: -50% 0;
+  pointer-events: none;
 }
 
 .cup__hint {

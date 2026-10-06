@@ -76,7 +76,7 @@ Architecture
 ```
 app/
   engine/
-    core/      state machine, dice-pool model, notation parser ("3d6+1d20"), history store
+    core/      state machine, dice-pool model, notation parser ("3d6+1d20")
     physics/   Rapier world, fixed 480 Hz step + CCD, convex-hull colliders, contact events
     dice/      per-die geometry and face-normal -> value tables
     input/     MotionSource interface: DeviceMotionSource
@@ -88,6 +88,7 @@ app/
     diceCup.ts     the simulation on a canvas, driven by a MotionSource every frame
   composables/ useDiceCup: creates the engine, exposes reactive state to the UI
   components/  settings sheet, result popup, history drawer, permission/start gate
+  utils/       roll history and dice count, kept in localStorage
   pages/       index.vue: canvas plus overlay UI
 tests/engine/  Vitest, in Node, against the real Rapier WASM
 ```
@@ -173,6 +174,13 @@ Phases
    notation parser and the distribution test are still to do.
 4. **Result popup and history.** Per-die values and total when the dice settle.
    History in `localStorage`.
+   Status: done in a desktop browser. When the dice settle, a card at the
+   top of the screen shows the total and, for more than one die, each value.
+   It lets taps through, so tapping or shaking again re-rolls, and it goes
+   when the next roll starts or the count changes. Each result is added to
+   a history of the last 50 rolls, kept in `localStorage` and opened from a
+   History button beside the dice count; a shake closes it. Not yet checked
+   on the iPhone.
 5. **Skins.** 3-4 dice skins and 3-4 table skins to start.
 6. **Desktop and fallbacks.** Click or drag to throw, spacebar, and tap-to-roll
    on mobile when motion permission is denied.

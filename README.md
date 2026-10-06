@@ -18,7 +18,9 @@ self-signed certificate warning, tap Start and allow motion access.
 
 With no motion sensor, as on a desktop, click or tap the cup to shake it.
 The − and + buttons at the bottom change the number of dice between rolls,
-up to 12, and the count is remembered for next time.
+up to 12, and the count is remembered for next time. When the dice settle,
+the total shows at the top; History lists the last 50 rolls, also kept
+between visits.
 
 Add `?debug` to the URL to see the sensor reading, the shake level, the
 current state and how long the physics takes a frame on screen. It also
