@@ -180,9 +180,13 @@ Phases
    circle on the floor clears the others. `npm run test:fairness` rolls 1,200
    dice per kind (100 full cups) and checks the counts are uniform by χ², all
    six well inside the limit, and that a lone die settles flat (0-2 in 100
-   cocked, the d12 and d20 leaning on the bevels). In a crowded cup 2-6 dice
-   in 100 come to rest leaning on another and are read by the face nearest
-   up. One cup of twelve d12 in 100 took 10.6 s to settle, a die creeping off
+   cocked, the d12 and d20 leaning on the bevels). A full cup piles up
+   against a wall, and a fifth of the dice came to rest leaning on the
+   others; now, once the dice stop with any cocked, they lose their grip
+   for up to a second, with drag, so a propped die slides off and the pile
+   spreads, moving at most about two dice across. That leaves 0.2-2.5% of a
+   full cup cocked, also checked, read by the face nearest up. Not yet
+   checked on the iPhone: whether the slip can be seen. One cup of twelve d12 in 100 took 10.6 s to settle, a die creeping off
    the others. The hulls cost about what the boxes do: about 0.4 ms of
    physics a frame for 12 dice of any kind in Node. Not yet checked on the
    iPhone: the frame cost of many dice, whether the 8-voice cap drops clacks,

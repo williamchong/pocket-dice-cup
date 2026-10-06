@@ -2,7 +2,7 @@ import RAPIER from '@dimforge/rapier3d-compat'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { boxForViewport } from '../../app/engine/box'
 import { MAX_DICE, type DicePool } from '../../app/engine/core/pool'
-import { readFace } from '../../app/engine/dice/faces'
+import { COCKED_ALIGNMENT, readFace } from '../../app/engine/dice/faces'
 import { DIE_KINDS, DIE_SHAPES, type DieKind } from '../../app/engine/dice/shapes'
 import { REST_ACCELERATION } from '../../app/engine/input/motionSource'
 import { CupSimulation } from '../../app/engine/simulation'
@@ -13,8 +13,6 @@ beforeAll(() => RAPIER.init())
 
 const FRAME = 1 / 60
 const box = boxForViewport(390, 844)
-/** A die resting tilted further than this off a face, leaning on the cup or another die, counts as cocked. */
-const COCKED_ALIGNMENT = Math.cos(10 * Math.PI / 180)
 
 interface Roll {
   /** Each die's value, or null when it did not settle into a result. */
@@ -120,5 +118,15 @@ describe.runIf(process.env.FAIRNESS)('the distribution of each kind of die', () 
     for (let seed = 1; seed <= ROLLS; seed++) cocked += roll([kind], seed).cocked
     console.log(`${kind}: ${cocked} cocked of ${ROLLS}`)
     expect(cocked / ROLLS).toBeLessThan(0.05)
+  })
+
+  // A full cup piles up against a wall, where a fifth of the dice came to
+  // rest leaning on the others until they were let slip off (see
+  // settleCocked); now 2 to 30 in 1,200, the most on the d12.
+  it.each(DIE_KINDS)('lies flat when a full cup of %s settles', (kind: DieKind) => {
+    let cocked = 0
+    for (let seed = 1; seed <= ROLLS; seed++) cocked += roll(Array.from({ length: MAX_DICE }, () => kind), seed).cocked
+    console.log(`${kind}: ${cocked} cocked of ${ROLLS * MAX_DICE}`)
+    expect(cocked / (ROLLS * MAX_DICE)).toBeLessThan(0.03)
   })
 })

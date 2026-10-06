@@ -2,7 +2,7 @@ import type { Collider, RigidBody, World } from '@dimforge/rapier3d-compat'
 import type { BoxSize } from '../box'
 import { countKinds, MAX_DICE, normalisePool, type DicePool } from '../core/pool'
 import { D6_SIZE } from '../dice/d6'
-import { TOWARDS_FLOOR } from '../dice/faces'
+import { COCKED_ALIGNMENT, faceTowards, TOWARDS_FLOOR } from '../dice/faces'
 import { compareKinds, DIE_KINDS, DIE_SHAPES, type DieShape } from '../dice/shapes'
 import { axisAngle, distance, dot, length, multiply, rotationBetween, type Quat, type Vec3 } from '../math'
 
@@ -93,6 +93,20 @@ const REST_LINEAR_SPEED = 1
 const REST_ANGULAR_SPEED = 0.5
 const REST_DURATION_S = 0.25
 
+/**
+ * How long (s) a cocked die is let slip before it keeps the tilt it has. A
+ * die wedged so that it cannot slip off stays cocked and is read by the face
+ * nearest up.
+ */
+const SLIP_LIMIT_S = 1
+/**
+ * Drag on the dice while they slip, so that one sliding off a pile sinks off
+ * it and stops rather than skating on across the floor with no grip. Over 60
+ * full cups of each kind, a slipping die moved at most 2.4 cm at 20 (about two
+ * dice across, as far as one tipping off another), against 8 cm with none.
+ */
+const SLIP_DAMPING = 20
+
 const X_AXIS: Vec3 = { x: 1, y: 0, z: 0 }
 const Y_AXIS: Vec3 = { x: 0, y: 1, z: 0 }
 const Z_AXIS: Vec3 = { x: 0, y: 0, z: 1 }
@@ -124,6 +138,10 @@ export class PhysicsWorld {
   private dieIndex = new Map<number, number>()
   private accumulator = 0
   private restTime = 0
+  /** Whether the dice have their grip let go (see settleCocked). */
+  private slipping = false
+  /** How long the dice have slipped since they were last shaken or tossed, in seconds. */
+  private slipTime = 0
   private wakeAcceleration: Vec3 | null = null
   private _impacts: Impact[] = []
 
@@ -165,6 +183,8 @@ export class PhysicsWorld {
    * addDie for where new ones go.
    */
   setPool(pool: DicePool, random?: () => number): void {
+    // New dice are made gripping; they slip with the rest on the next frame.
+    this.setSlipping(false)
     const wanted = countKinds(normalisePool(pool))
     const held = countKinds(this.pool)
     // The newest of a kind go first.
@@ -270,10 +290,12 @@ export class PhysicsWorld {
     if (!this.wakeAcceleration || distance(acceleration, this.wakeAcceleration) > WAKE_ACCELERATION_DELTA) {
       this.wakeAcceleration = { ...acceleration }
       for (const die of this.dice) die.body.wakeUp()
+      this.startRoll()
     }
   }
 
   step(dtSeconds: number): void {
+    this.settleCocked(dtSeconds)
     this.accumulator = Math.min(this.accumulator + dtSeconds, MAX_STEPS_PER_FRAME * FIXED_DT)
     // What contacts did to each die over the frame: the summed size and the
     // summed vector of the velocity changes of the steps that count as a hit.
@@ -312,12 +334,52 @@ export class PhysicsWorld {
         hit.change.y += change.y
         hit.change.z += change.z
       })
-      this.restTime = this.dice.every(die => isSlow(die.body)) ? this.restTime + FIXED_DT : 0
+      this.restTime = !this.slipping && this.dice.every(die => isSlow(die.body)) ? this.restTime + FIXED_DT : 0
     }
     this._impacts = hits.flatMap(({ speed, change }, die): Impact[] =>
       speed > 0 ? [{ die, speed, surface: surfaceOf(change) }] : [])
     for (const { die, sides } of dieHits.values()) {
       this._impacts.push({ die, speed: Math.max(...sides), surface: 'die' })
+    }
+  }
+
+  /**
+   * Lets the dice slip once they have come to rest with any of them cocked:
+   * their grip goes, so a die propped on others or on the cup slides off under
+   * its own weight and falls onto a face, and a pile of them spreads out, as
+   * if they had come to rest a moment later. Nothing pushes them, and a die
+   * lying flat on a level floor has nothing to slide it, so it looks like an
+   * ordinary settle. Their grip comes back once none is cocked or they have
+   * slipped for SLIP_LIMIT_S, and at once when the dice are shaken or tossed.
+   */
+  private settleCocked(dtSeconds: number): void {
+    const slipping = this.slipTime < SLIP_LIMIT_S
+      && (this.slipping || this.dice.every(die => isSlow(die.body)))
+      && this.dice.some(die => faceTowards(die.shape.faces, die.body.rotation(), TOWARDS_FLOOR).alignment < COCKED_ALIGNMENT)
+    if (slipping) {
+      this.slipTime += dtSeconds
+      for (const die of this.dice) die.body.wakeUp()
+    }
+    this.setSlipping(slipping)
+  }
+
+  /** The dice are moved by hand, so they grip again and may slip once more when they next come to rest. */
+  private startRoll(): void {
+    this.slipTime = 0
+    this.setSlipping(false)
+  }
+
+  private setSlipping(slipping: boolean): void {
+    if (slipping === this.slipping) return
+    this.slipping = slipping
+    const { CoefficientCombineRule } = this.rapier
+    for (const { body } of this.dice) {
+      body.setLinearDamping(slipping ? SLIP_DAMPING : 0)
+      const collider = body.collider(0)
+      // The cup keeps its friction, so a contact with it takes the dice's
+      // none only under Min rather than the average of the two.
+      collider.setFriction(slipping ? 0 : FRICTION)
+      collider.setFrictionCombineRule(slipping ? CoefficientCombineRule.Min : CoefficientCombineRule.Average)
     }
   }
 
@@ -351,6 +413,7 @@ export class PhysicsWorld {
    * whatever face it starts on.
    */
   launchDice({ lift, push, spin }: { lift: number, push: number, spin: number }, random: () => number): void {
+    this.startRoll()
     for (const { body: die } of this.dice) {
       const heading = 2 * Math.PI * random()
       die.setLinvel({ x: push * Math.cos(heading), y: push * Math.sin(heading), z: lift }, true)

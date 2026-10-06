@@ -11,6 +11,12 @@ export interface DieFace {
 const TOWARDS_VIEWER: Vec3 = { x: 0, y: 0, z: 1 }
 export const TOWARDS_FLOOR: Vec3 = { x: 0, y: 0, z: -1 }
 
+/**
+ * The alignment under which a die resting tilted further than 10° off a face,
+ * propped on another die or the cup, counts as cocked.
+ */
+export const COCKED_ALIGNMENT = Math.cos(10 * Math.PI / 180)
+
 /** The face that points most directly along `direction`, and how directly: 1 for a die lying flat. */
 export function faceTowards(faces: readonly DieFace[], rotation: Quat, direction: Vec3): { face: DieFace, alignment: number } {
   let face = faces[0]!
