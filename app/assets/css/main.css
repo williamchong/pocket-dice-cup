@@ -1,3 +1,6 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
 html,
 body,
 #__nuxt {
@@ -19,4 +22,6 @@ body {
   background: #12241b;
   color: #f4efe3;
   font-family: system-ui, -apple-system, sans-serif;
+  /* The overlay is laid out with the browser's default, not preflight's 1.5. */
+  line-height: normal;
 }

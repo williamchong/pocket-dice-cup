@@ -386,6 +386,12 @@ if (debug) {
   max-width: 22rem;
 }
 
+/* The browser's heading size, which Tailwind's preflight resets. */
+.cup__gate h1 {
+  font-size: 2em;
+  font-weight: bold;
+}
+
 .cup__gate button {
   padding: 0.9rem 2.5rem;
   border: 0;
@@ -487,6 +493,12 @@ if (debug) {
 .cup__tuning label {
   display: flex;
   flex-direction: column;
+}
+
+/* The browser's look for the debug controls, which preflight strips. Keep
+   above the rules below, which it would otherwise reset. */
+.cup__debug :is(input, button) {
+  all: revert;
 }
 
 /* 16px stops iOS Safari zooming in on focus. */
