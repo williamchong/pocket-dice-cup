@@ -28,9 +28,10 @@ current state and how long the physics takes a frame on screen. It also
 starts the dice on a grid out from the middle with the same face up every
 time, instead of at random places and faces. `?dice=` starts with other dice
 than the remembered ones, as a number of d6 (`?dice=3`) or in dice notation
-(`?dice=2d6+d20`). "Copy trace" copies the last 30 seconds of readings as JSON, for replaying in tests. The
-Haptics and Sound buttons open sliders for tuning the feel and the clacks
-live; "Copy tuning" copies the values, to make them the new defaults.
+(`?dice=2d6+d20`). "Copy trace" copies the last 30 seconds of readings as
+JSON, for replaying in tests. The Haptics and Sound buttons open sliders for
+tuning the feel and the clacks live; "Copy tuning" copies the values, to make
+them the new defaults.
 
 ## iPhone app
 
