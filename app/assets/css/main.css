@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+@theme {
+  --color-felt: #12241b;
+  --color-cream: #f4efe3;
+}
+
 html,
 body,
 #__nuxt {
@@ -19,8 +24,8 @@ body {
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
-  background: #12241b;
-  color: #f4efe3;
+  background: var(--color-felt);
+  color: var(--color-cream);
   font-family: system-ui, -apple-system, sans-serif;
   /* The overlay is laid out with the browser's default, not preflight's 1.5. */
   line-height: normal;

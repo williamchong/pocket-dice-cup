@@ -1,13 +1,12 @@
 <template>
   <div class="stepper">
-    <button
-      type="button"
+    <UButton
+      icon="i-lucide-minus"
+      class="size-11"
       :aria-label="`Fewer ${kind}`"
       :disabled="disabled || count <= min"
       @click="emit('change', count - 1)"
-    >
-      −
-    </button>
+    />
     <span class="stepper__count">
       <!-- A fixed width, so the dice line up from 0 to 12. -->
       <span class="stepper__number">{{ count }}</span>
@@ -19,14 +18,13 @@
       >
       <template v-else>{{ kind }}</template>
     </span>
-    <button
-      type="button"
+    <UButton
+      icon="i-lucide-plus"
+      class="size-11"
       :aria-label="`More ${kind}`"
       :disabled="disabled || count >= max"
       @click="emit('change', count + 1)"
-    >
-      +
-    </button>
+    />
   </div>
 </template>
 
@@ -52,20 +50,6 @@ const emit = defineEmits<{ change: [count: number] }>()
   display: flex;
   align-items: center;
   gap: 0.75rem;
-}
-
-.stepper button {
-  width: 2.75rem;
-  height: 2.75rem;
-  border: 0;
-  border-radius: 999px;
-  background: rgb(244 239 227 / 15%);
-  color: inherit;
-  font: 20px/1 system-ui, sans-serif;
-}
-
-.stepper button:disabled {
-  opacity: 0.35;
 }
 
 .stepper__count {

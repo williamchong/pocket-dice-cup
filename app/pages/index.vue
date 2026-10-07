@@ -21,13 +21,13 @@
       </p>
       <template v-else>
         <p>Shake your phone like a dice cup, then put it down screen-up.</p>
-        <button
-          type="button"
+        <UButton
+          variant="solid"
+          class="px-10 py-3.5 disabled:opacity-50"
+          :label="ready ? 'Start' : 'Loading…'"
           :disabled="!ready"
           @click="start"
-        >
-          {{ ready ? 'Start' : 'Loading…' }}
-        </button>
+        />
       </template>
     </div>
 
@@ -51,22 +51,21 @@
         @close="openSheet = null"
       />
       <div class="cup__controls">
-        <button
-          type="button"
-          class="cup__toggle"
+        <!-- In the default slot, not `label`, which would truncate: a long
+             mix of dice wraps onto a second line. -->
+        <UButton
+          class="min-h-11 rounded-[1.375rem] py-1.5"
           :aria-pressed="openSheet === 'pool'"
           @click="toggle('pool')"
         >
           {{ formatPool(pool) }}
-        </button>
-        <button
-          type="button"
-          class="cup__toggle"
+        </UButton>
+        <UButton
+          class="min-h-11 py-1.5"
+          label="History"
           :aria-pressed="openSheet === 'history'"
           @click="toggle('history')"
-        >
-          History
-        </button>
+        />
       </div>
       <p
         v-if="permission === 'denied'"
@@ -392,20 +391,6 @@ if (debug) {
   font-weight: bold;
 }
 
-.cup__gate button {
-  padding: 0.9rem 2.5rem;
-  border: 0;
-  border-radius: 999px;
-  background: #f4efe3;
-  color: #12241b;
-  font: inherit;
-  font-weight: 600;
-}
-
-.cup__gate button:disabled {
-  opacity: 0.5;
-}
-
 .cup__footer {
   position: absolute;
   right: 0;
@@ -429,21 +414,6 @@ if (debug) {
   display: flex;
   align-items: center;
   gap: 1rem;
-}
-
-.cup__toggle {
-  /* A long mix of dice wraps onto a second line. */
-  min-height: 2.75rem;
-  padding: 0.4rem 1rem;
-  border: 0;
-  border-radius: 1.375rem;
-  background: rgb(244 239 227 / 15%);
-  color: inherit;
-  font: 16px/1.2 system-ui, sans-serif;
-}
-
-.cup__toggle[aria-pressed="true"] {
-  background: rgb(244 239 227 / 30%);
 }
 
 .cup__result {

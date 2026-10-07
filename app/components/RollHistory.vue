@@ -30,19 +30,15 @@
       </li>
     </ol>
     <div class="history__buttons">
-      <button
-        type="button"
+      <UButton
+        label="Clear"
         :disabled="rolls.length === 0"
         @click="emit('clear')"
-      >
-        Clear
-      </button>
-      <button
-        type="button"
+      />
+      <UButton
+        label="Close"
         @click="emit('close')"
-      >
-        Close
-      </button>
+      />
     </div>
   </section>
 </template>
@@ -129,18 +125,5 @@ function formatTime(time: number): string {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
-}
-
-.history__buttons button {
-  padding: 0.5rem 1rem;
-  border: 0;
-  border-radius: 999px;
-  background: rgb(244 239 227 / 15%);
-  color: inherit;
-  font: 16px/1.2 system-ui, sans-serif;
-}
-
-.history__buttons button:disabled {
-  opacity: 0.35;
 }
 </style>

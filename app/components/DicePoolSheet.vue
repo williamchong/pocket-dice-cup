@@ -15,13 +15,11 @@
       :disabled="disabled"
       @change="count => emit('change', withCount(pool, kind, count))"
     />
-    <button
-      type="button"
-      class="pool__done"
+    <UButton
+      class="self-end"
+      label="Done"
       @click="emit('close')"
-    >
-      Done
-    </button>
+    />
   </section>
 </template>
 
@@ -50,15 +48,5 @@ const icons = useDieIcons()
   padding: 1rem;
   border-radius: 1rem;
   background: rgb(18 36 27 / 92%);
-}
-
-.pool__done {
-  align-self: flex-end;
-  padding: 0.5rem 1rem;
-  border: 0;
-  border-radius: 999px;
-  background: rgb(244 239 227 / 15%);
-  color: inherit;
-  font: 16px/1.2 system-ui, sans-serif;
 }
 </style>
