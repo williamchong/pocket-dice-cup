@@ -27,6 +27,7 @@ import type { Quat, Vec3 } from '../math'
 import { createD6Look } from './d6Mesh'
 import { createDiceMesh, disposeLook, type DieLook } from './dieLook'
 import { createPolyhedronLook } from './polyhedronMesh'
+import type { DieSkin } from './skins'
 
 /** Phones report 3; the extra pixels cost more than they show at this scale. */
 const MAX_PIXEL_RATIO = 2
@@ -160,8 +161,12 @@ export function lightByRoom(renderer: WebGLRenderer, scene: Scene): WebGLRenderT
   }
 }
 
-export function createDieLook(kind: DieKind): DieLook {
-  return kind === 'd6' ? createD6Look() : createPolyhedronLook(POLYHEDRA[kind])
+export function createDieLook(kind: DieKind, skin: DieSkin): DieLook {
+  return kind === 'd6' ? createD6Look(skin) : createPolyhedronLook(POLYHEDRA[kind], skin)
+}
+
+function createDieLooks(skin: DieSkin): Record<DieKind, DieLook> {
+  return Object.fromEntries(DIE_KINDS.map(kind => [kind, createDieLook(kind, skin)])) as Record<DieKind, DieLook>
 }
 
 /**
@@ -177,7 +182,7 @@ export class DiceScene {
   private readonly lamp = new SpotLight(LAMP_COLOUR, 5)
   private readonly feltMap = feltTexture()
   private readonly environment: WebGLRenderTarget
-  private readonly looks = Object.fromEntries(DIE_KINDS.map(kind => [kind, createDieLook(kind)])) as Record<DieKind, DieLook>
+  private looks: Record<DieKind, DieLook>
 
   /** One instanced mesh per kind of die. */
   private readonly meshes: Record<DieKind, InstancedMesh>
@@ -189,7 +194,7 @@ export class DiceScene {
   private readonly quaternion = new Quaternion()
 
   /** `capacity` is the most dice of one kind it will ever be asked to draw. */
-  constructor(canvas: HTMLCanvasElement, capacity: number) {
+  constructor(canvas: HTMLCanvasElement, capacity: number, skin: DieSkin) {
     this.renderer = new WebGLRenderer({ canvas, antialias: true })
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO))
     this.renderer.shadowMap.enabled = true
@@ -207,6 +212,7 @@ export class DiceScene {
     const felt = new MeshStandardMaterial({ color: FELT_COLOUR, map: this.feltMap, roughness: 1 })
     this.tray = new Mesh(new BufferGeometry(), [wall, felt])
     this.tray.receiveShadow = true
+    this.looks = createDieLooks(skin)
     this.meshes = Object.fromEntries(DIE_KINDS.map(kind => [kind, createDiceMesh(this.looks[kind], capacity)])) as Record<DieKind, InstancedMesh>
     this.scene.add(this.tray, ...Object.values(this.meshes))
 
@@ -231,6 +237,18 @@ export class DiceScene {
     // frame, in both passes; a hidden one is skipped, and uploads its
     // textures the first time it is shown.
     for (const mesh of Object.values(this.meshes)) mesh.visible = mesh.count > 0
+  }
+
+  /** Recasts every die in `skin`, where it lies; the old looks are freed. */
+  setSkin(skin: DieSkin): void {
+    const old = this.looks
+    this.looks = createDieLooks(skin)
+    for (const kind of DIE_KINDS) {
+      const { geometry, materials } = this.looks[kind]
+      this.meshes[kind].geometry = geometry
+      this.meshes[kind].material = materials
+      disposeLook(old[kind])
+    }
   }
 
   /** Fits the cup's opening to a viewport of the given size in CSS pixels. */

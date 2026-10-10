@@ -8,7 +8,7 @@
       v-for="kind in DIE_KINDS"
       :key="kind"
       :kind="kind"
-      :icon="icons?.[kind]"
+      :icon="icons[kind]"
       :count="counts[kind]"
       :min="pool.length === 1 ? counts[kind] : 0"
       :max="counts[kind] + MAX_DICE - pool.length"
@@ -26,9 +26,12 @@
 <script setup lang="ts">
 import { countKinds, MAX_DICE, withCount, type DicePool } from '~/engine/core/pool'
 import { DIE_KINDS } from '~/engine/dice/shapes'
+import type { DieSkin } from '~/engine/render/skins'
 
 const props = defineProps<{
   pool: DicePool
+  /** How the dice are finished, for their pictures. */
+  skin: DieSkin
   /** During a roll, when the cup ignores a change anyway. */
   disabled?: boolean
 }>()
@@ -36,7 +39,7 @@ const props = defineProps<{
 const emit = defineEmits<{ change: [pool: DicePool], close: [] }>()
 
 const counts = computed(() => countKinds(props.pool))
-const icons = useDieIcons()
+const icons = useDieIcons(() => props.skin)
 </script>
 
 <style scoped>

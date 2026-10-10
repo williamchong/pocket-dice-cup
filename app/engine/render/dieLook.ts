@@ -1,9 +1,5 @@
 import { InstancedMesh, MeshPhysicalMaterial, MeshStandardMaterial, type BufferGeometry, type Material, type Texture } from 'three'
-
-/** Ivory rather than pure white, which blows out under the lamp. */
-export const BODY_COLOUR = '#e9e2d0'
-/** The pips and the numbers. */
-export const INK_COLOUR = '#17171b'
+import type { DieSkin } from './skins'
 
 /** What every die of a kind is drawn with, made once and shared, so more dice do not mean more textures. */
 export interface DieLook {
@@ -11,14 +7,15 @@ export interface DieLook {
   materials: MeshPhysicalMaterial[]
 }
 
-/** Glossy resin, with `bumpMap` dark where the markings are cut in. */
-export function dieMaterial(map: Texture, bumpMap: Texture): MeshPhysicalMaterial {
+/** The skin's finish, with `bumpMap` dark where the markings are cut in. */
+export function dieMaterial(map: Texture, bumpMap: Texture, { roughness, metalness, clearcoat }: DieSkin): MeshPhysicalMaterial {
   return new MeshPhysicalMaterial({
     map,
     bumpMap,
     bumpScale: 3,
-    roughness: 0.25,
-    clearcoat: 1,
+    roughness,
+    metalness,
+    clearcoat,
     clearcoatRoughness: 0.08,
   })
 }

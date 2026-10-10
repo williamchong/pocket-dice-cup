@@ -1,8 +1,9 @@
 import { Box3, DirectionalLight, MathUtils, Mesh, NeutralToneMapping, PerspectiveCamera, Scene, Vector3, WebGLRenderer, type WebGLRenderTarget } from 'three'
-import { DIE_KINDS, DIE_SHAPES, faceTop, POLYHEDRA, type DieKind } from '../dice/shapes'
+import { DIE_SHAPES, faceTop, POLYHEDRA, type DieKind } from '../dice/shapes'
 import { axisAngle, multiply, normalise, rotate, rotationBetween, subtract, type Quat, type Vec3 } from '../math'
 import { disposeLook } from './dieLook'
 import { createDieLook, LAMP_COLOUR, lightByRoom } from './scene'
+import type { DieSkin } from './skins'
 
 const X_AXIS: Vec3 = { x: 1, y: 0, z: 0 }
 const Y_AXIS: Vec3 = { x: 0, y: 1, z: 0 }
@@ -45,12 +46,19 @@ function showcaseRotation(kind: DieKind): Quat {
   return present(top.normal, normalise(subtract(far, centre)))
 }
 
+/** A die to draw a picture of. */
+export interface DieIconRequest {
+  skin: DieSkin
+  kind: DieKind
+}
+
 /**
- * A picture of each kind of die showing its highest face, `sizePx` square
- * with a clear background, as a PNG data URL. It has a WebGL context of its
- * own for as long as it takes, so the cup's renderer is left alone.
+ * A picture of each of `dice` showing its highest face, `sizePx` square with
+ * a clear background, as PNG data URLs in the same order. It has a WebGL
+ * context of its own for as long as it takes, so the cup's renderer is left
+ * alone; setting it up is most of the cost, so ask for every picture at once.
  */
-export function renderDieIcons(sizePx: number): Record<DieKind, string> {
+export function renderDieIcons(sizePx: number, dice: readonly DieIconRequest[]): string[] {
   const renderer = new WebGLRenderer({ alpha: true, antialias: true })
   let environment: WebGLRenderTarget | undefined
   try {
@@ -65,9 +73,8 @@ export function renderDieIcons(sizePx: number): Record<DieKind, string> {
     scene.add(lamp)
     const camera = new PerspectiveCamera(FIELD_OF_VIEW, 1)
 
-    const icons = {} as Record<DieKind, string>
-    for (const kind of DIE_KINDS) {
-      const look = createDieLook(kind)
+    return dice.map(({ skin, kind }) => {
+      const look = createDieLook(kind, skin)
       const die = new Mesh(look.geometry, look.materials)
       const { x, y, z, w } = showcaseRotation(kind)
       die.quaternion.set(x, y, z, w)
@@ -84,11 +91,11 @@ export function renderDieIcons(sizePx: number): Record<DieKind, string> {
       scene.add(die)
       renderer.render(scene, camera)
       // Read in the same task as the render, before the browser clears the canvas.
-      icons[kind] = renderer.domElement.toDataURL('image/png')
+      const icon = renderer.domElement.toDataURL('image/png')
       scene.remove(die)
       disposeLook(look)
-    }
-    return icons
+      return icon
+    })
   }
   finally {
     environment?.dispose()

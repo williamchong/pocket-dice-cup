@@ -1,7 +1,8 @@
 import { CanvasTexture, SRGBColorSpace } from 'three'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import { D6_EDGE_RADIUS, D6_FACES, D6_SIZE } from '../dice/d6'
-import { BODY_COLOUR, dieMaterial, INK_COLOUR, type DieLook } from './dieLook'
+import { dieMaterial, type DieLook } from './dieLook'
+import type { DieSkin } from './skins'
 
 const TEXTURE_SIZE = 256
 const PIP_RADIUS = TEXTURE_SIZE * 0.085
@@ -35,9 +36,9 @@ function faceTexture(
   return texture
 }
 
-function colourTexture(value: number): CanvasTexture {
-  const texture = faceTexture(value, BODY_COLOUR, (context, x, y) => {
-    context.fillStyle = INK_COLOUR
+function colourTexture(value: number, { body, ink }: DieSkin): CanvasTexture {
+  const texture = faceTexture(value, body, (context, x, y) => {
+    context.fillStyle = ink
     context.beginPath()
     context.arc(x, y, PIP_RADIUS, 0, Math.PI * 2)
     context.fill()
@@ -59,9 +60,9 @@ function bumpTexture(value: number): CanvasTexture {
   })
 }
 
-export function createD6Look(): DieLook {
+export function createD6Look(skin: DieSkin): DieLook {
   const geometry = new RoundedBoxGeometry(D6_SIZE, D6_SIZE, D6_SIZE, 4, D6_EDGE_RADIUS)
   // D6_FACES is in BoxGeometry's group order, so face i gets material i.
-  const materials = D6_FACES.map(face => dieMaterial(colourTexture(face.value), bumpTexture(face.value)))
+  const materials = D6_FACES.map(face => dieMaterial(colourTexture(face.value, skin), bumpTexture(face.value), skin))
   return { geometry, materials }
 }

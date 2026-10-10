@@ -1,7 +1,8 @@
 import { BufferGeometry, CanvasTexture, Float32BufferAttribute, SRGBColorSpace } from 'three'
 import { faceLabel, faceTop, type PolyhedronShape } from '../dice/shapes'
 import { cross, dot, length, normalise, subtract, type Vec3 } from '../math'
-import { BODY_COLOUR, dieMaterial, INK_COLOUR, type DieLook } from './dieLook'
+import { dieMaterial, type DieLook } from './dieLook'
+import type { DieSkin } from './skins'
 
 /** Pixels per face in the texture atlas. */
 const CELL = 128
@@ -149,11 +150,11 @@ function paintAtlas(shape: PolyhedronShape, layouts: readonly FaceLayout[], colu
 }
 
 /** Every die of one flat-faced kind: one geometry, and one material over an atlas of all its faces. */
-export function createPolyhedronLook(shape: PolyhedronShape): DieLook {
+export function createPolyhedronLook(shape: PolyhedronShape, skin: DieSkin): DieLook {
   const { layouts, columns, rows } = layoutFaces(shape)
-  const colour = paintAtlas(shape, layouts, columns, rows, BODY_COLOUR, INK_COLOUR, 0)
+  const colour = paintAtlas(shape, layouts, columns, rows, skin.body, skin.ink, 0)
   colour.colorSpace = SRGBColorSpace
   // A height map: white, dipping to black where the numbers are cut in, softened so they catch the light.
   const bump = paintAtlas(shape, layouts, columns, rows, '#fff', '#000', 1.5)
-  return { geometry: polyhedronGeometry(shape, layouts, columns, rows), materials: [dieMaterial(colour, bump)] }
+  return { geometry: polyhedronGeometry(shape, layouts, columns, rows), materials: [dieMaterial(colour, bump, skin)] }
 }

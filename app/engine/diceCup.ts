@@ -9,6 +9,7 @@ import type { TraceRecorder } from './input/motionTrace'
 import type { Vec3 } from './math'
 import type { Rapier, Surface } from './physics/world'
 import { DiceScene } from './render/scene'
+import type { DieSkin } from './render/skins'
 import { CupSimulation, type CupOptions } from './simulation'
 
 export interface CupSnapshot {
@@ -23,6 +24,11 @@ export interface CupDebugInfo extends FeedbackStats {
   physicsMs: number
   sensorActive: boolean
   sound: string
+}
+
+export interface DiceCupOptions extends CupOptions {
+  /** How the dice are finished at the start. */
+  skin: DieSkin
 }
 
 /** A frame longer than this is treated as a pause (a hidden tab), not as time to catch up on. */
@@ -65,13 +71,13 @@ export class DiceCup {
     rapier: Rapier,
     source: MotionSource,
     onChange: (snapshot: CupSnapshot) => void,
-    options: CupOptions = {},
+    { skin, ...options }: DiceCupOptions,
     recorder: TraceRecorder | null = null,
   ): DiceCup {
     // A canvas that is not laid out yet has no size; the first resize corrects the box.
     const simulation = new CupSimulation(rapier, boxForViewport(canvas.clientWidth || 1, canvas.clientHeight || 1), options)
     try {
-      const scene = new DiceScene(canvas, MAX_DICE)
+      const scene = new DiceScene(canvas, MAX_DICE, skin)
       scene.setPool(simulation.physics.pool)
       const feedback = new CupFeedback(createSound(), deviceHaptics())
       return new DiceCup(canvas, source, simulation, scene, feedback, onChange, recorder)
@@ -125,6 +131,12 @@ export class DiceCup {
     this.stale = true
     this.notifyChange()
     return true
+  }
+
+  /** Recasts the dice in `skin`, at any time: it changes nothing about how they roll. */
+  setSkin(skin: DieSkin): void {
+    this.scene.setSkin(skin)
+    this.stale = true
   }
 
   /** Throws the dice for a click; see CupSimulation.toss. */

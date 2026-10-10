@@ -46,8 +46,16 @@
         v-if="openSheet === 'pool'"
         class="cup__sheet"
         :pool="pool"
+        :skin="skin"
         :disabled="rolling"
         @change="changePool"
+        @close="openSheet = null"
+      />
+      <DiceSkinSheet
+        v-if="openSheet === 'skin'"
+        class="cup__sheet"
+        :skin="skin"
+        @change="changeSkin"
         @close="openSheet = null"
       />
       <div class="cup__controls">
@@ -65,6 +73,12 @@
           label="History"
           :aria-pressed="openSheet === 'history'"
           @click="toggle('history')"
+        />
+        <UButton
+          class="min-h-11 py-1.5"
+          label="Style"
+          :aria-pressed="openSheet === 'skin'"
+          @click="toggle('skin')"
         />
       </div>
       <p
@@ -165,6 +179,7 @@ import { isRolling } from '~/engine/core/stateMachine'
 import { DEFAULT_SOUND_TUNING, type SoundTuning, type VoiceName } from '~/engine/feedback/clackSound'
 import { DEFAULT_HAPTIC_TUNING, type HapticTuning } from '~/engine/feedback/cupFeedback'
 import type { Surface } from '~/engine/physics/world'
+import { findSkin, type DieSkin } from '~/engine/render/skins'
 
 // `?debug` shows what the sensor and the state machine are doing, for tuning
 // on a real phone where there is no console. It also starts the dice in the
@@ -174,22 +189,34 @@ const debug = 'debug' in route.query || Boolean(useRuntimeConfig().public.debug)
 // `?dice=N` starts with N d6, and `?dice=2d6+d20` with those dice, over the
 // dice saved from last time.
 const startPool = parsePoolSetting(route.query.dice) ?? loadPool() ?? undefined
+// `?skin=ebony` starts with that finish, over the one saved from last time.
+const skin = shallowRef(findSkin(parseSkinSetting(route.query.skin) ?? loadSkin()))
 
 const canvas = useTemplateRef('canvas')
 // Shaking tips the phone far enough for the browser to rotate the page; the
 // cup stays put in the phone's own frame instead.
 const counterRotationStyle = useCounterRotation()
-const { ready, failed, state, result, pool, permission, start, toss, setPool, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool })
+const { ready, failed, state, result, pool, permission, start, toss, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value })
 const rolling = computed(() => isRolling(state.value))
 
 function changePool(next: DicePool) {
   if (setPool(next)) savePool(pool.value)
 }
 
+function changeSkin(next: DieSkin) {
+  if (next === skin.value) return
+  skin.value = next
+  setSkin(next)
+  saveSkin(next.id)
+  // The dice picker's pictures of the new skin, drawn now rather than as it opens.
+  drawDieIcons(next)
+}
+
 const history = shallowRef(loadHistory())
 /** The sheet open above the controls, if any. */
-const openSheet = ref<'history' | 'pool' | null>(null)
-function toggle(sheet: 'history' | 'pool') {
+type Sheet = 'history' | 'pool' | 'skin'
+const openSheet = ref<Sheet | null>(null)
+function toggle(sheet: Sheet) {
   openSheet.value = openSheet.value === sheet ? null : sheet
 }
 // The cup hands over a new array each time the dice settle, and null in between.
@@ -201,7 +228,7 @@ watch(result, (values) => {
 // The dice picker's pictures hold the page for a moment as they are drawn,
 // unnoticed while the start screen waits for a tap.
 watch(ready, (now) => {
-  if (now) drawDieIcons()
+  if (now) drawDieIcons(skin.value)
 })
 // Shaking with a sheet open would hide the roll behind it.
 watch(rolling, (now) => {

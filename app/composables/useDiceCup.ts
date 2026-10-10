@@ -1,15 +1,15 @@
 import type { ShallowRef } from 'vue'
 import type { DicePool } from '~/engine/core/pool'
 import type { CupState } from '~/engine/core/stateMachine'
-import type { CupDebugInfo, DiceCup } from '~/engine/diceCup'
+import type { CupDebugInfo, DiceCup, DiceCupOptions } from '~/engine/diceCup'
 import type { SoundTuning } from '~/engine/feedback/clackSound'
 import type { HapticTuning } from '~/engine/feedback/cupFeedback'
 import type { Surface } from '~/engine/physics/world'
-import type { CupOptions } from '~/engine/simulation'
+import type { DieSkin } from '~/engine/render/skins'
 import { DeviceMotionSource, type MotionPermission } from '~/engine/input/motionSource'
 import { TraceRecorder, type MotionTrace } from '~/engine/input/motionTrace'
 
-export interface DiceCupOptions extends CupOptions {
+export interface UseDiceCupOptions extends DiceCupOptions {
   /** Keep the last 30 seconds of sensor readings for `exportTrace`. */
   recordTrace?: boolean
 }
@@ -19,7 +19,7 @@ export interface DiceCupOptions extends CupOptions {
  * needs. The engine itself is never made reactive: Vue's proxies would wrap
  * three.js and Rapier objects that are read thousands of times a frame.
  */
-export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>>, { recordTrace = false, ...options }: DiceCupOptions = {}) {
+export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>>, { recordTrace = false, ...options }: UseDiceCupOptions) {
   const ready = ref(false)
   /** The engine could not start, for example because WebGL is unavailable. */
   const failed = ref(false)
@@ -114,11 +114,16 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     return true
   }
 
+  /** Recasts the dice in `skin`, at any time. */
+  function setSkin(skin: DieSkin) {
+    cup?.setSkin(skin)
+  }
+
   /** Rolls from a click or tap, with or without a motion sensor. */
   function toss() {
     void cup?.unlockSound()
     cup?.toss()
   }
 
-  return { ready, failed, state, result, pool, permission, start, toss, setPool, debugInfo, exportTrace, hapticTuning, soundTuning, testHit }
+  return { ready, failed, state, result, pool, permission, start, toss, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit }
 }

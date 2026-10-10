@@ -202,6 +202,16 @@ Phases
    History button beside the dice count; a shake closes it. Not yet checked
    on the iPhone.
 5. **Skins.** 3-4 dice skins and 3-4 table skins to start.
+   Status: dice skins done, all free. A skin is a data object
+   (`engine/render/skins.ts`): body and ink colours plus roughness,
+   metalness and clearcoat, which the looks turn into face atlases and a
+   `MeshPhysicalMaterial`. Seven ship: ivory, ebony, casino red, sapphire,
+   emerald, amethyst and gold. A Style sheet beside History shows a d6 in
+   each, swaps the cup's looks in place without disturbing a roll, and the
+   choice is kept in `localStorage` (`?skin=` overrides it). Not yet done:
+   table skins, and anything paid. If skins are ever sold, add a `locked`
+   flag to the data and an entitlement check in the sheet; the renderer
+   need not know.
 6. **Desktop and fallbacks.** Click or drag to throw, spacebar, and tap-to-roll
    on mobile when motion permission is denied.
 7. **PWA polish.** Offline, installable, fullscreen, rendering paused while the
