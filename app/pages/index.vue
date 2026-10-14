@@ -73,7 +73,7 @@
         v-else-if="permission === 'unsupported'"
         class="cup__hint"
       >
-        This browser has no motion sensor, so click or tap to shake.
+        This browser has no motion sensor, so click, tap or press space to shake.
       </p>
     </div>
 
@@ -254,6 +254,16 @@ watch(() => ready.value || failed.value, (done) => {
 watch(rolling, (now) => {
   if (now) openSheet.value = null
 })
+
+// The space bar rolls, as a click does; a key press also lets the sound start.
+function onKeydown(event: KeyboardEvent) {
+  if (!isRollKey(event)) return
+  // Space would otherwise scroll the page.
+  event.preventDefault()
+  toss()
+}
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 function clearHistory() {
   history.value = []

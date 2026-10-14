@@ -223,6 +223,10 @@ Phases
    need not know.
 6. **Desktop and fallbacks.** Click or drag to throw, spacebar, and tap-to-roll
    on mobile when motion permission is denied.
+   Status: a click or tap tosses the dice, with or without a sensor, and
+   when motion access is refused or there is no sensor a line under the
+   buttons says so. The space bar tosses too, unless a button or field has
+   the focus, where it presses that instead. Not yet done: drag to throw.
 7. **PWA polish.** Offline, installable, fullscreen, rendering paused while the
    phone is face-down.
 

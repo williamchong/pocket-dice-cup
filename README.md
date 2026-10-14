@@ -16,7 +16,8 @@ Motion sensors only work over HTTPS, so a phone needs `dev:https`. Open the
 `https://<your-computer's-address>:3000` URL it prints in Safari, accept the
 self-signed certificate warning, tap Start and allow motion access.
 
-With no motion sensor, as on a desktop, click or tap the cup to shake it.
+With no motion sensor, as on a desktop, click or tap the cup to shake it,
+or press the space bar.
 The button at the bottom shows the dice in dice notation ("3d6 + 1d20") and
 opens a − and + row for each kind, d4 to d20, up to 12 dice in all; the
 dice are chosen between rolls and remembered for next time. When the dice
