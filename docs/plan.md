@@ -230,6 +230,11 @@ Phases
    the focus, where it presses that instead. Not yet done: drag to throw.
 7. **PWA polish.** Offline, installable, fullscreen, rendering paused while the
    phone is face-down.
+   Status: screen-down, the dice still roll and are heard and felt, but are
+   not drawn. Left still screen-down for 2 s with the dice asleep, the frames
+   stop and the web wake lock is let go, until a reading moves the phone.
+   This works in the shells too, though they keep the screen on natively, so
+   there it stays lit. Not yet done: offline, installable, fullscreen.
 8. **Android shell.** The same web build in a Capacitor Android shell, with a
    `CupHaptics` plugin in Java beside the Swift one.
    Status: built, and checked in the emulator (Pixel 7a, Android 16,

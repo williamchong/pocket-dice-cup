@@ -79,6 +79,29 @@ describe('MotionAnalyser', () => {
     expect(analyser.restingFaceUp).toBe(false)
   })
 
+  it('reads a device lying screen-down as face-down, until it tilts well back', () => {
+    const analyser = new MotionAnalyser()
+    let time = feed(analyser, 0, 1, () => REST_ACCELERATION)
+    expect(analyser.faceDown).toBe(false)
+    time = feed(analyser, time, 2, () => ({ x: 0, y: 0, z: -9.81 }))
+    expect(analyser.faceDown).toBe(true)
+    // About 40° past horizontal, between the two thresholds: still down.
+    time = feed(analyser, time, 2, () => ({ x: 0, y: 7.5, z: -6.3 }))
+    expect(analyser.faceDown).toBe(true)
+    feed(analyser, time, 2, () => ({ x: 0, y: 9.5, z: -2.4 }))
+    expect(analyser.faceDown).toBe(false)
+  })
+
+  it('counts how long the device has been still, from zero while it moves', () => {
+    const analyser = new MotionAnalyser()
+    const time = feed(analyser, 0, 1, shake)
+    expect(analyser.stillMs).toBe(0)
+    feed(analyser, time, 2, () => REST_ACCELERATION)
+    expect(analyser.stillMs).toBeGreaterThan(1000)
+    expect(analyser.disturbedBy(REST_ACCELERATION)).toBe(false)
+    expect(analyser.disturbedBy({ x: 2, y: 0, z: 9.81 })).toBe(true)
+  })
+
   it('ignores the gentle motion of picking the device up', () => {
     const analyser = new MotionAnalyser()
     feed(analyser, 0, 1, t => ({ x: 2 * Math.sin(3 * t), y: 3 * t, z: 9.81 - 3 * t }))

@@ -9,6 +9,8 @@ import { PhysicsWorld, type Rapier } from './physics/world'
 
 /** How hard a click hits the dice: up and sideways in cm/s, spin in rad/s. */
 const TOSS = { lift: 100, push: 80, spin: 50 }
+/** How long the phone lies still screen-down, its dice asleep, before the cup goes dormant. */
+const DORMANT_AFTER_MS = 2000
 
 export interface CupOptions {
   /**
@@ -119,6 +121,14 @@ export class CupSimulation {
     if (!isRolling(this.state)) return false
     this.pinned = { ...REST_ACCELERATION }
     return true
+  }
+
+  /**
+   * Screen-down and still for a while, with every die asleep: nothing moves
+   * or is seen until the phone is picked up, so frames can stop.
+   */
+  get dormant(): boolean {
+    return this.analyser.faceDown && this.analyser.stillMs >= DORMANT_AFTER_MS && this.physics.asleep
   }
 
   dispose(): void {

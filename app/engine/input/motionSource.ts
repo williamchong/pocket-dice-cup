@@ -13,6 +13,8 @@ export interface MotionSource {
   readonly acceleration: Vec3
   /** Whether any reading has arrived yet. */
   readonly active: boolean
+  /** Called on each reading, after `acceleration` has taken it. */
+  onReading: (() => void) | null
   /**
    * iOS only shows its prompt from a user gesture. Called outside one, this
    * starts where no prompt is needed, or where access was already given, and
@@ -30,6 +32,7 @@ type PermissionRequester = { requestPermission?: () => Promise<'granted' | 'deni
 export class DeviceMotionSource implements MotionSource {
   acceleration: Vec3 = { ...REST_ACCELERATION }
   active = false
+  onReading: (() => void) | null = null
 
   private readonly sign: number
 
@@ -64,6 +67,7 @@ export class DeviceMotionSource implements MotionSource {
     if (!a || a.x === null || a.y === null || a.z === null) return
     this.acceleration = { x: a.x * this.sign, y: a.y * this.sign, z: a.z * this.sign }
     this.active = true
+    this.onReading?.()
   }
 }
 

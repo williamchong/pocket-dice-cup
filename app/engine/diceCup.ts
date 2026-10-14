@@ -15,6 +15,8 @@ import { CupSimulation, type CupOptions } from './simulation'
 export interface CupSnapshot {
   state: CupState
   result: number[] | null
+  /** Frames have stopped while the phone lies screen-down; see CupSimulation.dormant. */
+  dormant: boolean
 }
 
 export interface CupDebugInfo extends FeedbackStats {
@@ -48,6 +50,8 @@ export class DiceCup {
   /** Whether the last frame had dice in motion, or the view changed, so one more draw is owed. */
   private stale = true
   private physicsMs = 0
+  /** Dormant: no frame is asked for until a reading disturbs the stillness. */
+  private framesStopped = false
   private readonly resizeObserver: ResizeObserver
 
   private constructor(
@@ -62,6 +66,7 @@ export class DiceCup {
     this.resizeObserver = new ResizeObserver(() => this.resize())
     this.resizeObserver.observe(canvas)
     this.resize()
+    source.onReading = this.onReading
     this.frame = requestAnimationFrame(this.tick)
   }
 
@@ -129,6 +134,7 @@ export class DiceCup {
     if (!this.simulation.setPool(pool)) return false
     this.scene.setPool(this.pool)
     this.stale = true
+    this.wake()
     this.notifyChange()
     return true
   }
@@ -137,10 +143,12 @@ export class DiceCup {
   setSkin(skin: DieSkin): void {
     this.scene.setSkin(skin)
     this.stale = true
+    this.wake()
   }
 
   /** Throws the dice for a click; see CupSimulation.toss. */
   toss(): void {
+    this.wake()
     this.simulation.toss()
   }
 
@@ -150,6 +158,7 @@ export class DiceCup {
   }
 
   dispose(): void {
+    this.source.onReading = null
     cancelAnimationFrame(this.frame)
     this.resizeObserver.disconnect()
     this.scene.dispose()
@@ -158,7 +167,28 @@ export class DiceCup {
   }
 
   private notifyChange(): void {
-    this.onChange({ state: this.simulation.state, result: this.simulation.result })
+    this.onChange({ state: this.simulation.state, result: this.simulation.result, dormant: this.framesStopped })
+  }
+
+  /**
+   * While dormant, the sensor still reads at its own rate. A reading that
+   * moves the phone starts the frames again, before the next hit is due.
+   */
+  private readonly onReading = (): void => {
+    const { analyser } = this.simulation
+    if (!this.framesStopped || !analyser.disturbedBy(this.source.acceleration)) return
+    // Taken in now, so the stillness ends here even if the first frame
+    // reads a quieter sample, and the cup does not go straight back.
+    analyser.update(this.source.acceleration, performance.now())
+    this.wake()
+  }
+
+  private wake(): void {
+    if (!this.framesStopped) return
+    this.framesStopped = false
+    // The frame after the gap counts as a pause, as for a hidden tab (MAX_FRAME_SECONDS).
+    this.frame = requestAnimationFrame(this.tick)
+    this.notifyChange()
   }
 
   private resize(): void {
@@ -186,6 +216,18 @@ export class DiceCup {
     this.physicsMs += (performance.now() - started - this.physicsMs) * PHYSICS_MS_SMOOTHING
     if (changed) this.notifyChange()
     this.feedback.play(simulation.physics.impacts, timeMs)
+
+    // Screen-down, the dice still roll and are heard and felt, but no one
+    // sees them; the first frame back up draws where they are.
+    if (simulation.analyser.faceDown) {
+      this.stale = true
+      if (simulation.dormant) {
+        cancelAnimationFrame(this.frame)
+        this.framesStopped = true
+        this.notifyChange()
+      }
+      return
+    }
 
     // A result can sit on screen for minutes with the screen kept awake, so
     // do not redraw an unchanged picture 60 times a second.

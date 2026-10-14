@@ -1,4 +1,4 @@
-import { dot, length, type Vec3 } from '../math'
+import { distance, dot, length, type Vec3 } from '../math'
 
 /**
  * Agitation above this (m/s²) counts as shaking. On an iPhone, a hard shake
@@ -25,6 +25,10 @@ const STILL_THRESHOLD = 1
 const STILL_DURATION_MS = 300
 /** Screen-up means the screen normal is within about 45° of straight up (9.81 × cos 45°). */
 const FACE_UP_MIN_Z = 7
+/** Screen-down from about 45° past straight down, the mirror of FACE_UP_MIN_Z. */
+const FACE_DOWN_MAX_Z = -7
+/** Screen-down holds until about 30° past horizontal, so a phone tilted near 45° does not flicker. */
+const FACE_DOWN_EXIT_Z = -5
 
 /** Time constant of the low-pass filter that estimates steady gravity. */
 const GRAVITY_TAU_S = 0.3
@@ -41,6 +45,11 @@ const AGITATION_TAU_S = 0.15
 export class MotionAnalyser {
   /** Peak-hold envelope of how far samples stray from steady gravity, in m/s². */
   agitation = 0
+  /**
+   * The screen faces down, against a table or a palm, still or shaken, so
+   * nobody can see it.
+   */
+  faceDown = false
 
   private gravity: Vec3 | null = null
   private lastTimeMs = 0
@@ -76,6 +85,17 @@ export class MotionAnalyser {
 
     if (this.agitation >= STILL_THRESHOLD) this.stillSinceMs = null
     else this.stillSinceMs ??= timeMs
+
+    if (this.gravity.z < FACE_DOWN_MAX_Z) this.faceDown = true
+    else if (this.gravity.z > FACE_DOWN_EXIT_Z) this.faceDown = false
+  }
+
+  /**
+   * Whether `sample` strays from steady gravity enough to end a stillness,
+   * without taking it in: a reading to wake on while nothing is updating.
+   */
+  disturbedBy(sample: Vec3): boolean {
+    return !this.gravity || distance(sample, this.gravity) >= STILL_THRESHOLD
   }
 
   private trackSwings(motion: Vec3, deviation: number, timeMs: number): void {
@@ -97,10 +117,16 @@ export class MotionAnalyser {
     return this.agitation > SHAKE_THRESHOLD || this.reversalTimesMs.length >= REVERSALS_TO_SHAKE
   }
 
+  /** How long the device has been still, in ms; 0 while it moves. */
+  get stillMs(): number {
+    return this.stillSinceMs === null ? 0 : this.lastTimeMs - this.stillSinceMs
+  }
+
   get restingFaceUp(): boolean {
     return this.gravity !== null
       && this.stillSinceMs !== null
-      && this.lastTimeMs - this.stillSinceMs >= STILL_DURATION_MS
+      && this.stillMs >= STILL_DURATION_MS
       && this.gravity.z > FACE_UP_MIN_Z
   }
+
 }

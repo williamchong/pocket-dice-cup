@@ -308,6 +308,36 @@ describe('CupSimulation', () => {
     simulation.dispose()
   })
 
+  it('goes dormant only once lying still screen-down with the dice asleep, and still rolls when shaken that way', () => {
+    const simulation = fixedCup()
+    const screenDown = { x: 0, y: 0, z: -9.81 }
+    let time = 0
+    const run = (seconds: number, sample: (t: number) => Vec3) => {
+      let impacts = 0
+      for (let i = 0; i < seconds * 60; i++) {
+        time += FRAME * 1000
+        simulation.tick(FRAME, sample(time / 1000), time)
+        impacts += simulation.physics.impacts.length
+      }
+      return impacts
+    }
+    run(1, () => REST_ACCELERATION)
+    expect(simulation.dormant).toBe(false)
+    // Turned over, the die falls onto the glass; still, it goes dormant.
+    run(1, () => screenDown)
+    expect(simulation.dormant).toBe(false)
+    run(4, () => screenDown)
+    expect(simulation.analyser.faceDown).toBe(true)
+    expect(simulation.dormant).toBe(true)
+    // Shaken screen-down, the die still rolls and hits, so it is still heard and felt.
+    const hits = run(1, t => ({ ...shake(t, 1), z: -9.81 + 10 * Math.sin(2 * Math.PI * 3 * t) }))
+    expect(simulation.analyser.faceDown).toBe(true)
+    expect(simulation.state).toBe('shaking')
+    expect(hits).toBeGreaterThan(0)
+    expect(simulation.dormant).toBe(false)
+    simulation.dispose()
+  })
+
   it('restarts a shown result on a click, and rests there once the die settles', () => {
     const { simulation } = toss(0)
     simulation.toss(seededRandom(99))

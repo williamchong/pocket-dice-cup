@@ -24,6 +24,7 @@ interface Frame {
   timeMs: number
   shaking: boolean
   restingFaceUp: boolean
+  faceDown: boolean
 }
 
 /** Runs a trace through the motion analyser, as DiceCup does once a frame. */
@@ -31,7 +32,7 @@ function analyse(trace: MotionTrace): Frame[] {
   const analyser = new MotionAnalyser()
   return trace.samples.map(([timeMs, x, y, z]) => {
     analyser.update({ x, y, z }, timeMs)
-    return { timeMs, shaking: analyser.shaking, restingFaceUp: analyser.restingFaceUp }
+    return { timeMs, shaking: analyser.shaking, restingFaceUp: analyser.restingFaceUp, faceDown: analyser.faceDown }
   })
 }
 
@@ -69,6 +70,14 @@ describe('recorded iPhone traces', () => {
 
   it('do not count picking the phone up and putting it back as a shake', () => {
     expect(analyse(load('pickup')).filter(frame => frame.shaking).map(frame => frame.timeMs)).toEqual([])
+  })
+
+  it('read a phone shaken screen-down as face-down all through the shake', () => {
+    const frames = analyse(load('shake-face-down'))
+    const shakenDown = frames.filter(frame => frame.timeMs > 3000 && frame.timeMs < FACE_DOWN_TURNED_UP_MS - 700)
+    expect(shakenDown.filter(frame => !frame.faceDown).map(frame => frame.timeMs)).toEqual([])
+    expect(shakenDown.filter(frame => frame.shaking).length).toBeGreaterThan(100)
+    expect(frames.at(-1)!.faceDown).toBe(false)
   })
 
   it('do not count a phone shaken screen-down as put down', () => {

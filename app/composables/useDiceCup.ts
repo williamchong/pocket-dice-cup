@@ -8,6 +8,7 @@ import type { Surface } from '~/engine/physics/world'
 import type { DieSkin } from '~/engine/render/skins'
 import { DeviceMotionSource, type MotionPermission } from '~/engine/input/motionSource'
 import { TraceRecorder, type MotionTrace } from '~/engine/input/motionTrace'
+import type { ScreenAwake } from '~/utils/wakeLock'
 
 export interface UseDiceCupOptions extends DiceCupOptions {
   /** Keep the last 30 seconds of sensor readings for `exportTrace`. */
@@ -37,7 +38,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
   const source = new DeviceMotionSource()
   const recorder = recordTrace ? new TraceRecorder() : null
   let cup: DiceCup | null = null
-  let releaseWakeLock = () => {}
+  let screenAwake: ScreenAwake | null = null
   let starting = false
   let unmounted = false
 
@@ -61,6 +62,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
         state.value = snapshot.state
         result.value = snapshot.result
         sensing.value = source.active
+        screenAwake?.setWanted(!snapshot.dormant)
       }, options, recorder)
       pool.value = cup.pool
       // Capacitor's WebView lets audio start without a tap; a browser leaves
@@ -73,14 +75,14 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
       failed.value = true
       // Started on mount for a cup that will not come.
       source.stop()
-      releaseWakeLock()
+      screenAwake?.release()
     }
   })
 
   onBeforeUnmount(() => {
     unmounted = true
     source.stop()
-    releaseWakeLock()
+    screenAwake?.release()
     cup?.dispose()
   })
 
@@ -99,7 +101,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     // The component can go away while the iOS prompt is open.
     if (unmounted) return source.stop()
     permission.value = granted
-    if (granted === 'granted') releaseWakeLock = keepScreenAwake()
+    if (granted === 'granted') screenAwake = keepScreenAwake()
   }
 
   function debugInfo(): CupDebugInfo | null {
