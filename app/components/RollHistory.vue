@@ -30,11 +30,13 @@
       </li>
     </ol>
     <div class="history__buttons">
+      <!-- The rolls cannot be brought back, so the first tap only asks. -->
       <UButton
         class="min-h-11"
-        label="Clear"
+        :color="confirming ? 'error' : 'neutral'"
+        :label="confirming ? 'Clear all?' : 'Clear'"
         :disabled="rolls.length === 0"
-        @click="emit('clear')"
+        @click="clear"
       />
       <UButton
         class="min-h-11"
@@ -54,6 +56,23 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{ clear: [], close: [] }>()
+
+/** How long Clear waits for the second tap. */
+const CONFIRM_MS = 3000
+/** Whether Clear has been tapped once and waits for a second tap. */
+const confirming = ref(false)
+let timer: ReturnType<typeof setTimeout> | undefined
+function clear() {
+  clearTimeout(timer)
+  if (confirming.value) {
+    confirming.value = false
+    emit('clear')
+    return
+  }
+  confirming.value = true
+  timer = setTimeout(() => confirming.value = false, CONFIRM_MS)
+}
+onBeforeUnmount(() => clearTimeout(timer))
 
 const TIME_FORMAT = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' })
 const DATE_TIME_FORMAT = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
