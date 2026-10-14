@@ -151,8 +151,11 @@ export function lightByRoom(renderer: WebGLRenderer, scene: Scene): WebGLRenderT
     // if a mirror-like skin ever shows the reflections as blurry.
     const environment = pmrem.fromScene(room, 0.04, 0.1, 100, { size: 128 })
     scene.environment = environment.texture
-    // The room is built y-up, and up here is +z.
-    scene.environmentRotation.x = Math.PI / 2
+    // The room is built y-up, and up here is +z. It is then tipped 0.6 rad
+    // (34°) so its ceiling light hangs towards the top of the screen, beside
+    // the lamp: straight overhead, a face lying flat mirrors it into the
+    // camera and the number that shows the roll washes out.
+    scene.environmentRotation.x = Math.PI / 2 - 0.6
     return environment
   }
   finally {
@@ -267,16 +270,18 @@ export class DiceScene {
     this.camera.lookAt(0, 0, 0)
     this.camera.updateProjectionMatrix()
 
-    // Hung a little up and to the left of centre, so shadows fall down and
-    // right. The cone reaches just past the far ends of the table, and its
-    // wide penumbra is what dims them.
+    // Hung up and to the left of centre, so shadows fall down and right. About
+    // 30° off the camera's line, so a face lying flat does not glare with it.
+    // The cone reaches just past the far ends of the table, and its wide
+    // penumbra is what dims them.
     const reach = Math.max(box.width, box.height)
     const height = reach * 1.1
-    this.lamp.position.set(-reach * 0.12, reach * 0.15, height)
+    this.lamp.position.set(-reach * 0.45, reach * 0.45, height)
     this.lamp.target.position.set(0, 0, 0)
     this.lamp.angle = Math.atan(reach * 0.6 / height)
     this.lamp.shadow.camera.near = height * 0.5
-    this.lamp.shadow.camera.far = height * 1.5
+    // Off-centre, the lamp sees the far corner of a square table at about 1.63 heights.
+    this.lamp.shadow.camera.far = height * 1.7
     // three.js only rebuilds the shadow projection when the cone angle
     // changes, and the angle is the same for every table size.
     this.lamp.shadow.camera.updateProjectionMatrix()
