@@ -59,6 +59,7 @@
       <UButton
         v-if="rolling && sensing"
         class="cup__settle min-h-11 py-1.5"
+        variant="solid"
         label="Settle"
         @click="settle"
       />
