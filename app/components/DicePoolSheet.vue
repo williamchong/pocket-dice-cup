@@ -48,8 +48,5 @@ const icons = useDieIcons(() => props.skin)
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  padding: 1rem;
-  border-radius: 1rem;
-  background: rgb(18 36 27 / 92%);
 }
 </style>

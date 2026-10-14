@@ -31,29 +31,6 @@
       v-if="ready"
       class="cup__footer"
     >
-      <RollHistory
-        v-if="openSheet === 'history'"
-        class="cup__sheet"
-        :rolls="history"
-        @clear="clearHistory"
-        @close="openSheet = null"
-      />
-      <DicePoolSheet
-        v-if="openSheet === 'pool'"
-        class="cup__sheet"
-        :pool="pool"
-        :skin="skin"
-        :disabled="rolling"
-        @change="changePool"
-        @close="openSheet = null"
-      />
-      <DiceSkinSheet
-        v-if="openSheet === 'skin'"
-        class="cup__sheet"
-        :skin="skin"
-        @change="changeSkin"
-        @close="openSheet = null"
-      />
       <!-- Held in the hand, the phone is never put down flat enough to end
            the roll, so this ends it as if it were. -->
       <UButton
@@ -99,6 +76,38 @@
         This browser has no motion sensor, so click or tap to shake.
       </p>
     </div>
+
+    <!-- A sheet comes up from the bottom edge over the buttons, as on iOS.
+         It stays inside the cup, so it turns with the dice, and leaves the
+         rest of the felt to take taps, which roll and close it. -->
+    <Transition
+      name="cup__sheet"
+      mode="out-in"
+    >
+      <RollHistory
+        v-if="openSheet === 'history'"
+        class="cup__sheet"
+        :rolls="history"
+        @clear="clearHistory"
+        @close="openSheet = null"
+      />
+      <DicePoolSheet
+        v-else-if="openSheet === 'pool'"
+        class="cup__sheet"
+        :pool="pool"
+        :skin="skin"
+        :disabled="rolling"
+        @change="changePool"
+        @close="openSheet = null"
+      />
+      <DiceSkinSheet
+        v-else-if="openSheet === 'skin'"
+        class="cup__sheet"
+        :skin="skin"
+        @change="changeSkin"
+        @close="openSheet = null"
+      />
+    </Transition>
 
     <!-- Taps go through to the canvas, so a shown result is re-rolled with a tap like any other. -->
     <ResultPopup
@@ -448,9 +457,40 @@ if (debug) {
 }
 
 .cup__settle,
-.cup__controls,
-.cup__sheet {
+.cup__controls {
   pointer-events: auto;
+}
+
+.cup__sheet {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  /* On a tablet, or a phone held sideways, it stays phone-wide. */
+  max-width: 28rem;
+  margin-inline: auto;
+  padding: 1rem 1rem calc(var(--safe-inset) + 1rem);
+  box-sizing: border-box;
+  border-radius: 1.5rem 1.5rem 0 0;
+  /* Solid: the buttons it covers would show through. */
+  background: var(--color-felt);
+}
+
+.cup__sheet-enter-active,
+.cup__sheet-leave-active {
+  transition: translate 0.25s ease-out;
+}
+
+.cup__sheet-enter-from,
+.cup__sheet-leave-to {
+  translate: 0 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cup__sheet-enter-active,
+  .cup__sheet-leave-active {
+    transition: none;
+  }
 }
 
 .cup__controls {

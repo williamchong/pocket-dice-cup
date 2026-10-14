@@ -89,12 +89,7 @@ function formatTime(time: number): string {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  width: min(100%, 22rem);
   max-height: 50vh;
-  padding: 1rem;
-  box-sizing: border-box;
-  border-radius: 1rem;
-  background: rgb(18 36 27 / 92%);
 }
 
 .history__empty {
