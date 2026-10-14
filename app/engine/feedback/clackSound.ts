@@ -103,6 +103,8 @@ export class ClackSound implements ImpactSound {
     if (this.context.state === 'running') return
     try {
       await this.context.resume()
+      // A refusal outside a tap, now overtaken by one inside it.
+      this.resumeError = ''
     }
     catch (error) {
       // A refusal leaves it suspended, and play() then stays silent.

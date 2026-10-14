@@ -115,7 +115,7 @@ export class DiceCup {
     this.feedback.testHit(surface)
   }
 
-  /** Has to run inside a tap or click: browsers only start audio from one. */
+  /** In a browser, has to run inside a tap or click: browsers only start audio from one. */
   unlockSound(): Promise<void> {
     return this.feedback.unlock()
   }

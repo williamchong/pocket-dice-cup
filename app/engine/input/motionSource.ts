@@ -1,6 +1,7 @@
 import type { Vec3 } from '../math'
 
-export type MotionPermission = 'granted' | 'denied' | 'unsupported'
+/** `prompt`: iOS has not been asked yet, and only asks from a tap. */
+export type MotionPermission = 'granted' | 'denied' | 'unsupported' | 'prompt'
 
 export interface MotionSource {
   /**
@@ -12,7 +13,11 @@ export interface MotionSource {
   readonly acceleration: Vec3
   /** Whether any reading has arrived yet. */
   readonly active: boolean
-  /** Must be called from a user gesture: iOS only shows its prompt from one. */
+  /**
+   * iOS only shows its prompt from a user gesture. Called outside one, this
+   * starts where no prompt is needed, or where access was already given, and
+   * otherwise returns `prompt`.
+   */
   start(): Promise<MotionPermission>
   stop(): void
 }
@@ -41,7 +46,8 @@ export class DeviceMotionSource implements MotionSource {
         if (await requester.requestPermission() !== 'granted') return 'denied'
       }
       catch {
-        return 'denied'
+        // Called outside a gesture. Rejected inside one, it will never work.
+        return navigator.userActivation?.isActive ? 'denied' : 'prompt'
       }
     }
     window.addEventListener('devicemotion', this.onMotion)

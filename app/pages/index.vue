@@ -2,6 +2,7 @@
   <main
     class="cup"
     :style="counterRotationStyle"
+    @click="start"
   >
     <!-- Tap to shake stays on with a working sensor too: desktop Chrome
          reports one but never sends a reading, and a tap is a quick re-roll. -->
@@ -11,28 +12,23 @@
       @pointerdown="toss"
     />
 
-    <div
-      v-if="failed || permission === null"
-      class="cup__gate"
+    <p
+      v-if="failed"
+      class="cup__message"
     >
-      <h1>Pocket Dice Cup</h1>
-      <p v-if="failed">
-        3D graphics could not start in this browser.
-      </p>
-      <template v-else>
-        <p>Shake your phone like a dice cup, then put it down screen-up.</p>
-        <UButton
-          variant="solid"
-          class="px-10 py-3.5 disabled:opacity-50"
-          :label="ready ? 'Start' : 'Loading…'"
-          :disabled="!ready"
-          @click="start"
-        />
-      </template>
-    </div>
+      3D graphics could not start in this browser.
+    </p>
+
+    <!-- Taps go through to the canvas, so the one that begins also rolls. -->
+    <p
+      v-else-if="ready && permission === 'prompt'"
+      class="cup__message cup__message--pulse"
+    >
+      Tap to begin
+    </p>
 
     <div
-      v-else
+      v-if="ready"
       class="cup__footer"
     >
       <RollHistory
@@ -131,7 +127,7 @@
         class="cup__tuning"
         @submit.prevent="copyTuning"
       >
-        <!-- Closed at first: open, the panel covers the start button on a phone. -->
+        <!-- Closed at first: open, the panel covers the cup on a phone. -->
         <div class="cup__buttons">
           <button
             v-for="group in TUNING_GROUPS"
@@ -397,29 +393,33 @@ if (debug) {
   --safe-inset: max(env(safe-area-inset-top, 0px), env(safe-area-inset-right, 0px), env(safe-area-inset-bottom, 0px), env(safe-area-inset-left, 0px));
 }
 
-.cup__gate {
+.cup__message {
   position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 2rem;
-  text-align: center;
-  background: rgb(18 36 27 / 85%);
-}
-
-.cup__gate h1,
-.cup__gate p {
+  top: 50%;
+  right: 2rem;
+  left: 2rem;
+  translate: 0 -50%;
   margin: 0;
-  max-width: 22rem;
+  text-align: center;
+  font-size: 1.25rem;
+  text-shadow: 0 1px 4px rgb(0 0 0 / 60%);
+  pointer-events: none;
 }
 
-/* The browser's heading size, which Tailwind's preflight resets. */
-.cup__gate h1 {
-  font-size: 2em;
-  font-weight: bold;
+.cup__message--pulse {
+  animation: cup__pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes cup__pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cup__message--pulse {
+    animation: none;
+  }
 }
 
 .cup__splash-leave-active {

@@ -26,7 +26,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
   const state = ref<CupState>('idle')
   const result = ref<number[] | null>(null)
   const pool = shallowRef<DicePool>(['d6'])
-  /** Null until the user has pressed start. */
+  /** Null until the first attempt to start the sensor, on mount, has settled. */
   const permission = ref<MotionPermission | null>(null)
 
   const source = new DeviceMotionSource()
@@ -37,6 +37,8 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
   let unmounted = false
 
   onMounted(async () => {
+    // Only iOS waits for a tap, and only until access is given.
+    void start()
     const element = canvas.value!
     try {
       // Both are imported here rather than statically so three.js and the
@@ -55,11 +57,17 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
         result.value = snapshot.result
       }, options, recorder)
       pool.value = cup.pool
+      // Capacitor's WebView lets audio start without a tap; a browser leaves
+      // it waiting for the first one.
+      void cup.unlockSound()
       ready.value = true
     }
     catch (error) {
       console.error(error)
       failed.value = true
+      // Started on mount for a cup that will not come.
+      source.stop()
+      releaseWakeLock()
     }
   })
 
@@ -70,10 +78,15 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     cup?.dispose()
   })
 
-  /** Has to run inside a tap: iOS only shows the motion prompt, and starts audio, from a user gesture. */
+  /**
+   * Starts the sensor, and the sound. On iOS both need a tap the first time:
+   * it only shows the motion prompt, and starts audio, from a user gesture.
+   */
   async function start() {
-    if (starting || permission.value !== null) return
     void cup?.unlockSound()
+    // 'prompt' is the one outcome a tap can change.
+    const settled = permission.value !== null && permission.value !== 'prompt'
+    if (starting || settled) return
     starting = true
     const granted = await source.start()
     starting = false
