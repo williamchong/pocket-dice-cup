@@ -26,6 +26,11 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
   const state = ref<CupState>('idle')
   const result = ref<number[] | null>(null)
   const pool = shallowRef<DicePool>(['d6'])
+  /**
+   * The sensor has sent a reading, as of the last change of state. Desktop
+   * Chrome grants motion access yet never sends one.
+   */
+  const sensing = ref(false)
   /** Null until the first attempt to start the sensor, on mount, has settled. */
   const permission = ref<MotionPermission | null>(null)
 
@@ -55,6 +60,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
       cup = engine.DiceCup.create(element, rapier, source, (snapshot) => {
         state.value = snapshot.state
         result.value = snapshot.result
+        sensing.value = source.active
       }, options, recorder)
       pool.value = cup.pool
       // Capacitor's WebView lets audio start without a tap; a browser leaves
@@ -138,5 +144,10 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     cup?.toss()
   }
 
-  return { ready, failed, state, result, pool, permission, start, toss, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit }
+  /** Lays the dice down during a roll, for a phone held in the hand rather than put down. */
+  function settle() {
+    cup?.settle()
+  }
+
+  return { ready, failed, state, result, pool, sensing, permission, start, toss, settle, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit }
 }

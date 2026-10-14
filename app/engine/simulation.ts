@@ -3,6 +3,7 @@ import { MotionAnalyser } from './core/motionAnalyser'
 import type { DicePool } from './core/pool'
 import { isRolling, nextState, type CupState } from './core/stateMachine'
 import { readFace } from './dice/faces'
+import { REST_ACCELERATION } from './input/motionSource'
 import type { Vec3 } from './math'
 import { PhysicsWorld, type Rapier } from './physics/world'
 
@@ -38,6 +39,8 @@ export class CupSimulation {
    * The pull the dice feel in place of the sensor's, or null to follow it.
    * A result keeps the pull the dice came to rest under, so they stay put
    * while the phone is picked up and passed around, until the next roll.
+   * During a roll it is only set by settle(), so it also stands for the
+   * phone lying flat.
    */
   private pinned: Vec3 | null = null
   /** Where new dice are placed at random; with none, on a fixed grid. */
@@ -75,20 +78,24 @@ export class CupSimulation {
 
     const next = nextState(this.state, {
       shaking: this.analyser.shaking || this.tossed,
-      restingFaceUp: this.analyser.restingFaceUp,
+      // Pinned during a roll means settle() was asked for.
+      restingFaceUp: this.analyser.restingFaceUp || this.pinned !== null,
       diceAtRest: this.physics.diceAtRest,
     })
     this.tossed = false
     if (next === this.state) return false
 
     this.state = next
+    // Only a new roll lets go of the pin. The analyser still calls the phone
+    // shaken for up to a second after it stops, and a settle asked for then
+    // must hold.
     if (next === 'shaking') {
       this.result = null
       this.pinned = null
     }
     if (next === 'result') {
       this.result = this.readDice()
-      this.pinned = { ...acceleration }
+      this.pinned ??= { ...acceleration }
     }
     return true
   }
@@ -100,6 +107,18 @@ export class CupSimulation {
   toss(random: () => number = Math.random): void {
     this.physics.launchDice(TOSS, random)
     this.tossed = true
+  }
+
+  /**
+   * Lays the dice down during a roll as if the phone were flat and still,
+   * however it is held: they fall straight onto the screen and the roll
+   * goes on to a result. A shake starts a new roll. Returns whether it did
+   * anything.
+   */
+  settle(): boolean {
+    if (!isRolling(this.state)) return false
+    this.pinned = { ...REST_ACCELERATION }
+    return true
   }
 
   dispose(): void {

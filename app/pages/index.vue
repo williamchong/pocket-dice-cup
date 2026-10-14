@@ -54,6 +54,14 @@
         @change="changeSkin"
         @close="openSheet = null"
       />
+      <!-- Held in the hand, the phone is never put down flat enough to end
+           the roll, so this ends it as if it were. -->
+      <UButton
+        v-if="rolling && sensing"
+        class="cup__settle min-h-11 py-1.5"
+        label="Settle"
+        @click="settle"
+      />
       <div class="cup__controls">
         <!-- In the default slot, not `label`, which would truncate: a long
              mix of dice wraps onto a second line. -->
@@ -192,7 +200,7 @@ const canvas = useTemplateRef('canvas')
 // Shaking tips the phone far enough for the browser to rotate the page; the
 // cup stays put in the phone's own frame instead.
 const counterRotationStyle = useCounterRotation()
-const { ready, failed, state, result, pool, permission, start, toss, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value })
+const { ready, failed, state, result, pool, sensing, permission, start, toss, settle, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value })
 const rolling = computed(() => isRolling(state.value))
 
 function changePool(next: DicePool) {
@@ -438,6 +446,7 @@ if (debug) {
   pointer-events: none;
 }
 
+.cup__settle,
 .cup__controls,
 .cup__sheet {
   pointer-events: auto;

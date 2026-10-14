@@ -51,6 +51,11 @@ In `result` the dice keep the pull they came to rest under instead of the
 sensor's, so picking the phone up to show the roll leaves them where they are
 and silent. Only a shake or a tap rolls them again.
 
+A phone held in the hand is never put down flat enough to reach `settling`,
+and its dice slide into the low wall. While a roll is under way and the sensor
+is sending readings, a Settle button gives the dice a straight-down pull, as
+if the phone lay flat and still, and the roll goes on to a result.
+
 Stack
 -----
 

@@ -144,6 +144,11 @@ export class DiceCup {
     this.simulation.toss()
   }
 
+  /** Lays the dice down as if the phone were flat; see CupSimulation.settle. */
+  settle(): void {
+    this.simulation.settle()
+  }
+
   dispose(): void {
     cancelAnimationFrame(this.frame)
     this.resizeObserver.disconnect()

@@ -4,7 +4,7 @@ import { boxForViewport } from '../../app/engine/box'
 import { d6Pool, MAX_DICE } from '../../app/engine/core/pool'
 import type { CupState } from '../../app/engine/core/stateMachine'
 import { D6_SIZE } from '../../app/engine/dice/d6'
-import { readFace } from '../../app/engine/dice/faces'
+import { COCKED_ALIGNMENT, readFace } from '../../app/engine/dice/faces'
 import { DIE_SHAPES } from '../../app/engine/dice/shapes'
 import { REST_ACCELERATION } from '../../app/engine/input/motionSource'
 import { distance, type Quat, type Vec3 } from '../../app/engine/math'
@@ -173,6 +173,83 @@ describe('CupSimulation', () => {
     expect(simulation.state).toBe('shaking')
     expect(distance(simulation.physics.diePosition(0), before)).toBeGreaterThan(D6_SIZE)
     simulation.dispose()
+  })
+
+  describe('settle', () => {
+    /** Held in the hand at 60° off flat, trembling a little. */
+    const inHand = (t: number): Vec3 => ({
+      x: REST_ACCELERATION.z * Math.sin(Math.PI / 3) + 0.2 * Math.sin(2 * Math.PI * 8 * t),
+      y: 0.2 * Math.sin(2 * Math.PI * 11 * t),
+      z: REST_ACCELERATION.z * Math.cos(Math.PI / 3),
+    })
+
+    /** Shakes three dice, then holds the phone in the hand, settling after `settleAfter` s if given. */
+    function holdAfterShake(seconds: number, settleAfter?: number) {
+      const simulation = fixedCup(box, 3)
+      let time = 0
+      const run = (frames: number, sample: (t: number) => Vec3) => {
+        for (let i = 0; i < frames; i++) {
+          time += FRAME
+          simulation.tick(FRAME, sample(time), time * 1000)
+        }
+      }
+      run(30, () => REST_ACCELERATION)
+      run(2 * 60, t => shake(t, 7))
+      run(Math.round((settleAfter ?? seconds) * 60), inHand)
+      if (settleAfter !== undefined) {
+        expect(simulation.settle()).toBe(true)
+        run(Math.round((seconds - settleAfter) * 60), inHand)
+      }
+      return simulation
+    }
+
+    it('never reads the dice of a phone held tilted in the hand', () => {
+      const simulation = holdAfterShake(6)
+      expect(simulation.state).toBe('shaking')
+      simulation.dispose()
+    })
+
+    it('lays the dice flat and reads them when asked, however the phone is held', () => {
+      // Asked as the shake ends, while the dice are still flying about.
+      const simulation = holdAfterShake(6, 0)
+      expect(simulation.state).toBe('result')
+      expect(simulation.result).toHaveLength(3)
+      for (let index = 0; index < 3; index++) {
+        const { alignment } = readFace(simulation.physics.dieShape(index), simulation.physics.dieRotation(index))
+        expect(alignment).toBeGreaterThanOrEqual(COCKED_ALIGNMENT)
+        expect(simulation.physics.diePosition(index).z).toBeCloseTo(D6_SIZE / 2, 1)
+      }
+      // Dropped straight down, not slid into the low wall as the hand tilts the phone.
+      const offWall = [0, 1, 2].filter(index => simulation.physics.diePosition(index).x > -box.width / 2 + D6_SIZE)
+      expect(offWall.length).toBeGreaterThan(0)
+      simulation.dispose()
+    })
+
+    it('does nothing between rolls', () => {
+      const idle = fixedCup()
+      expect(idle.settle()).toBe(false)
+      idle.dispose()
+      const { simulation } = roll(8)
+      expect(simulation.settle()).toBe(false)
+      simulation.dispose()
+    })
+
+    it('gives way to a new shake', () => {
+      const simulation = holdAfterShake(1, 0.5)
+      let time = 100
+      for (let i = 0; i < 30; i++) {
+        time += FRAME
+        simulation.tick(FRAME, shake(i * FRAME, 9), time * 1000)
+      }
+      expect(simulation.state).toBe('shaking')
+      // The dice follow the phone again: held in the hand, there is no result.
+      for (let i = 0; i < 5 * 60; i++) {
+        time += FRAME
+        simulation.tick(FRAME, inHand(i * FRAME), time * 1000)
+      }
+      expect(simulation.state).toBe('shaking')
+      simulation.dispose()
+    })
   })
 
   it('pulls the die back inside when the cup shrinks around it', () => {
