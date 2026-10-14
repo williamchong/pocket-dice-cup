@@ -21,12 +21,12 @@ export class VibrateBackend implements HapticsBackend {
   }
 }
 
-/** The custom Core Haptics plugin in the iOS shell (ios/App/App/CoreHapticsPlugin.swift). */
-interface CoreHapticsPlugin {
+/** The custom Core Haptics plugin in the iOS shell (ios/App/App/CupHapticsPlugin.swift). */
+interface CupHapticsPlugin {
   playTransient(options: { intensity: number, sharpness: number }): Promise<unknown>
 }
 
-const CoreHaptics = registerPlugin<CoreHapticsPlugin>('CoreHaptics')
+const CupHaptics = registerPlugin<CupHapticsPlugin>('CupHaptics')
 
 /**
  * Taps from the Taptic Engine through Core Haptics, in the iOS app. The call
@@ -34,7 +34,7 @@ const CoreHaptics = registerPlugin<CoreHapticsPlugin>('CoreHaptics')
  */
 export class NativeBackend implements HapticsBackend {
   playTransient(intensity: number, sharpness: number): void {
-    void CoreHaptics.playTransient({ intensity, sharpness })
+    void CupHaptics.playTransient({ intensity, sharpness })
   }
 }
 

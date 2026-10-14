@@ -6,10 +6,10 @@ import CoreHaptics
  * how hard and how crisp each one is. The stock Capacitor haptics plugin only
  * has a few fixed impact styles.
  */
-@objc(CoreHapticsPlugin)
-public class CoreHapticsPlugin: CAPPlugin, CAPBridgedPlugin {
-    public let identifier = "CoreHapticsPlugin"
-    public let jsName = "CoreHaptics"
+@objc(CupHapticsPlugin)
+public class CupHapticsPlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "CupHapticsPlugin"
+    public let jsName = "CupHaptics"
     // Fire and forget: a shake plays about 30 taps a second, and none of them
     // is worth a reply over the bridge.
     public let pluginMethods: [CAPPluginMethod] = [
@@ -31,7 +31,7 @@ public class CoreHapticsPlugin: CAPPlugin, CAPBridgedPlugin {
             try engine.start()
             self.engine = engine
         } catch {
-            CAPLog.print("CoreHaptics: could not start the engine: \(error)")
+            CAPLog.print("CupHaptics: could not start the engine: \(error)")
         }
     }
 

@@ -36,8 +36,8 @@ describe('deviceHaptics', () => {
 })
 
 describe('NativeBackend', () => {
-  it('talks to the plugin by the jsName the Swift side registers', () => {
-    expect(native.pluginName).toBe('CoreHaptics')
+  it('talks to the plugin by the jsName the native side registers', () => {
+    expect(native.pluginName).toBe('CupHaptics')
   })
 
   it('passes the intensity and the sharpness to the plugin', () => {

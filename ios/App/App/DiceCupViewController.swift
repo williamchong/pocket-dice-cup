@@ -9,7 +9,7 @@ class DiceCupViewController: CAPBridgeViewController {
     override open func capacitorDidLoad() {
         // The plugin lives in the app rather than in a package, so Capacitor
         // does not find it on its own.
-        bridge?.registerPluginInstance(CoreHapticsPlugin())
+        bridge?.registerPluginInstance(CupHapticsPlugin())
         coverUntilReady()
     }
 
