@@ -21,7 +21,11 @@ export class VibrateBackend implements HapticsBackend {
   }
 }
 
-/** The custom Core Haptics plugin in the iOS shell (ios/App/App/CupHapticsPlugin.swift). */
+/**
+ * The custom haptics plugin in the native shells: Core Haptics on iOS
+ * (ios/App/App/CupHapticsPlugin.swift), the vibrator on Android
+ * (android/app/src/main/java/cloud/williamchong/pocketdicecup/CupHapticsPlugin.java).
+ */
 interface CupHapticsPlugin {
   playTransient(options: { intensity: number, sharpness: number }): Promise<unknown>
 }
@@ -29,8 +33,9 @@ interface CupHapticsPlugin {
 const CupHaptics = registerPlugin<CupHapticsPlugin>('CupHaptics')
 
 /**
- * Taps from the Taptic Engine through Core Haptics, in the iOS app. The call
- * goes out without waiting for a reply, so the frame is not held up.
+ * Taps from the Taptic Engine through Core Haptics in the iOS app, and from
+ * the vibrator, at each hit's strength where it can, in the Android app. The
+ * call goes out without waiting for a reply, so the frame is not held up.
  */
 export class NativeBackend implements HapticsBackend {
   playTransient(intensity: number, sharpness: number): void {
@@ -40,7 +45,7 @@ export class NativeBackend implements HapticsBackend {
 
 /**
  * The vibration this device can play, or null where it has none: every
- * browser on iOS, which is WebKit, and desktops. The iOS app has Core Haptics.
+ * browser on iOS, which is WebKit, and desktops. The apps have their own plugin.
  */
 export function deviceHaptics(): HapticsBackend | null {
   if (Capacitor.isNativePlatform()) return new NativeBackend()

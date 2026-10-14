@@ -38,6 +38,28 @@ jobs:
         with:
           path: .output/public
 
+  # The Android shell is built here so it cannot quietly stop building; the
+  # iOS one needs a macOS runner and Xcode, and is built locally.
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      # Capacitor 8 builds with Java 21.
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci
+      - run: npm run generate
+      - run: npx cap sync android
+      - run: ./gradlew assembleDebug
+        working-directory: android
+
   deploy:
     if: github.event_name != 'pull_request'
     needs: build

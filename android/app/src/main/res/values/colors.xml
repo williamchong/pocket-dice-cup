@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The felt of the cup, as in capacitor.config.ts and the page. -->
+    <color name="felt">#12241B</color>
+</resources>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The cream die of public/favicon.svg, as large in the icon's mask as there. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#F4EFE3"
+        android:pathData="M42,32H66A10,10 0,0 1,76 42V66A10,10 0,0 1,66 76H42A10,10 0,0 1,32 66V42A10,10 0,0 1,42 32Z" />
+    <path
+        android:fillColor="#12241B"
+        android:pathData="M40,44a4,4 0,1 0,8 0a4,4 0,1 0,-8 0ZM60,44a4,4 0,1 0,8 0a4,4 0,1 0,-8 0ZM50,54a4,4 0,1 0,8 0a4,4 0,1 0,-8 0ZM40,64a4,4 0,1 0,8 0a4,4 0,1 0,-8 0ZM60,64a4,4 0,1 0,8 0a4,4 0,1 0,-8 0Z" />
+</vector>

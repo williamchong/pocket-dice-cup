@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- The name under the icon on the home screen, and in the recent apps. -->
+    <string name="app_name">口袋骰盅</string>
+    <string name="title_activity_main">口袋骰盅</string>
+</resources>

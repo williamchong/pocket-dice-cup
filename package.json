@@ -16,10 +16,12 @@
     "test": "vitest",
     "test:fairness": "FAIRNESS=1 vitest run tests/engine/fairness.test.ts --testTimeout=300000",
     "typecheck": "nuxt typecheck",
-    "ios": "nuxt generate && cap sync ios && cap open ios"
+    "ios": "nuxt generate && cap sync ios && cap open ios",
+    "android": "nuxt generate && cap sync android && cap open android"
   },
   "dependencies": {
-    "@capacitor/core": "^8.5.2",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.5.3",
     "@dimforge/rapier3d-compat": "^0.21.0",
     "@nuxt/ui": "^4.11.3",
     "nuxt": "^4.5.2",
@@ -30,8 +32,9 @@
     "vue-router": "^5.3.1"
   },
   "devDependencies": {
-    "@capacitor/cli": "^8.5.2",
-    "@capacitor/ios": "^8.5.2",
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/ios": "^8.5.3",
     "@iconify-json/lucide": "^1.2.140",
     "@nuxt/eslint": "^1.17.0",
     "@types/three": "^0.186.0",

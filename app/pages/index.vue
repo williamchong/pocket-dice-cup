@@ -233,6 +233,12 @@ const openSheet = ref<Sheet | null>(null)
 function toggle(sheet: Sheet) {
   openSheet.value = openSheet.value === sheet ? null : sheet
 }
+// Android's back gesture closes the open sheet before it leaves the app.
+useBackButton(() => {
+  if (!openSheet.value) return false
+  openSheet.value = null
+  return true
+})
 // The cup hands over a new array each time the dice settle, and null in between.
 watch(result, (values) => {
   if (!values) return

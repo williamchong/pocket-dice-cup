@@ -18,7 +18,7 @@ afterEach(() => {
 })
 
 describe('deviceHaptics', () => {
-  it('uses Core Haptics in the iOS app, even where the WebView has navigator.vibrate', () => {
+  it('uses the native plugin in the apps, even where the WebView has navigator.vibrate', () => {
     native.isNative = true
     vi.stubGlobal('navigator', { vibrate: vi.fn() })
     expect(deviceHaptics()).toBeInstanceOf(NativeBackend)
@@ -36,7 +36,7 @@ describe('deviceHaptics', () => {
 })
 
 describe('NativeBackend', () => {
-  it('talks to the plugin by the jsName the native side registers', () => {
+  it('talks to the plugin by the jsName the iOS and Android shells register', () => {
     expect(native.pluginName).toBe('CupHaptics')
   })
 
