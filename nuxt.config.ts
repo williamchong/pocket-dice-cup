@@ -37,6 +37,9 @@ export default defineNuxtConfig({
   },
 
   app: {
+    // No id, so Nuxt leaves the loading screen (app/spa-loading-template.html)
+    // in place as the app mounts; the page fades it out once the dice are ready.
+    spaLoaderAttrs: { id: '' },
     head: {
       title: 'Pocket Dice Cup',
       // `dark` selects Nuxt UI's dark theme, as there is no color-mode module.

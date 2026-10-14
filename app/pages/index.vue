@@ -99,10 +99,6 @@
       :kinds="pool"
     />
 
-    <Transition name="cup__splash">
-      <CupSplash v-if="!ready && !failed" />
-    </Transition>
-
     <div
       v-if="debug"
       class="cup__debug"
@@ -229,6 +225,12 @@ watch(result, (values) => {
 // unnoticed as the splash fades out.
 watch(ready, (now) => {
   if (now) drawDieIcons(skin.value)
+})
+// The loading screen is the static page's (app/spa-loading-template.html),
+// so its animation runs on unbroken from before any script. It fades out once
+// the dice are ready, or once they never will be.
+watch(() => ready.value || failed.value, (done) => {
+  if (done) hideSplash()
 })
 // Shaking with a sheet open would hide the roll behind it.
 watch(rolling, (now) => {
@@ -420,14 +422,6 @@ if (debug) {
   .cup__message--pulse {
     animation: none;
   }
-}
-
-.cup__splash-leave-active {
-  transition: opacity 0.4s ease;
-}
-
-.cup__splash-leave-to {
-  opacity: 0;
 }
 
 .cup__footer {

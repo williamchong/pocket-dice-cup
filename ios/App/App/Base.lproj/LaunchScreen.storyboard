@@ -15,13 +15,19 @@
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView userInteractionEnabled="NO" contentMode="center" image="Splash" translatesAutoresizingMaskIntoConstraints="NO" id="snD-IY-ifK">
+                            <imageView userInteractionEnabled="NO" tag="1" contentMode="center" image="Splash" translatesAutoresizingMaskIntoConstraints="NO" id="snD-IY-ifK">
                                 <rect key="frame" x="139.5" y="285.5" width="96" height="96"/>
                             </imageView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Pocket Dice Cup" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="nmL-bl-1aa">
                                 <rect key="frame" x="98" y="405.5" width="179" height="29"/>
                                 <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="24"/>
                                 <color key="textColor" red="0.95686274509803926" green="0.93725490196078431" blue="0.8901960784313725" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Loading…" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ldL-bl-2bb">
+                                <rect key="frame" x="157" y="446.5" width="61" height="19.5"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="16"/>
+                                <color key="textColor" red="0.95686274509803926" green="0.93725490196078431" blue="0.8901960784313725" alpha="0.69999999999999996" colorSpace="custom" customColorSpace="sRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
                         </subviews>
@@ -31,6 +37,8 @@
                             <constraint firstItem="snD-IY-ifK" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="cY1-aa-bb2"/>
                             <constraint firstItem="nmL-bl-1aa" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="cX2-aa-bb3"/>
                             <constraint firstItem="nmL-bl-1aa" firstAttribute="top" secondItem="Ze5-6b-2t3" secondAttribute="centerY" constant="72" id="tY2-aa-bb4"/>
+                            <constraint firstItem="ldL-bl-2bb" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="cX3-aa-bb5"/>
+                            <constraint firstItem="ldL-bl-2bb" firstAttribute="top" secondItem="nmL-bl-1aa" secondAttribute="bottom" constant="12" id="tY3-aa-bb6"/>
                         </constraints>
                     </view>
                 </viewController>
