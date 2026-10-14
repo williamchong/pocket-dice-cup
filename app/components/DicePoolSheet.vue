@@ -16,7 +16,7 @@
       @change="count => emit('change', withCount(pool, kind, count))"
     />
     <UButton
-      class="self-end"
+      class="min-h-11 self-end"
       label="Done"
       @click="emit('close')"
     />

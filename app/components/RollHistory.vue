@@ -31,12 +31,14 @@
     </ol>
     <div class="history__buttons">
       <UButton
+        class="min-h-11"
         label="Clear"
         :disabled="rolls.length === 0"
         @click="emit('clear')"
       />
       <UButton
-        label="Close"
+        class="min-h-11"
+        label="Done"
         @click="emit('close')"
       />
     </div>
