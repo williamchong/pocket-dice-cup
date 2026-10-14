@@ -230,6 +230,20 @@ Phases
 7. **PWA polish.** Offline, installable, fullscreen, rendering paused while the
    phone is face-down.
 
+Languages
+---------
+
+English, simplified Chinese and Hong Kong traditional
+Chinese, by vue-i18n with every language in the bundle, chosen from the
+system's language with no switcher. The iOS app lists them in
+`CFBundleLocalizations`, so its WebView reports the language iOS picked
+for the app and Settings offers a per-app language. The debug overlay
+stays in English. The app's name is 口袋骰盅 in both kinds of Chinese,
+on the home screen (`InfoPlist.strings`), the launch screen
+(`LaunchScreen.strings`), the web splash and the page title. Checked in
+the iOS simulator launched in zh-HK and zh-Hans; not yet checked on the
+iPhone.
+
 Verification
 ------------
 

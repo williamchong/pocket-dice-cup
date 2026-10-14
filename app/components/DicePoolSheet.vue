@@ -1,7 +1,7 @@
 <template>
   <section
     class="pool"
-    aria-label="Dice"
+    :aria-label="$t('pool.label')"
   >
     <!-- The last die left cannot be taken out, and the cup holds MAX_DICE in all. -->
     <DiceCountStepper
@@ -17,7 +17,7 @@
     />
     <UButton
       class="min-h-11 self-end"
-      label="Done"
+      :label="$t('sheet.done')"
       @click="emit('close')"
     />
   </section>

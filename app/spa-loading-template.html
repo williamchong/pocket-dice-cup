@@ -99,4 +99,21 @@
     <p class="splash__name">Pocket Dice Cup</p>
     <p class="splash__status">Loading…</p>
   </div>
+  <!-- In the reader's language, chosen as pickLocale chooses (app/utils/locale.ts),
+       which loads only with the app; tests/locale.test.ts checks the two agree. -->
+  <script>
+    (function () {
+      var languages = navigator.languages || [navigator.language]
+      for (var i = 0; i < languages.length; i++) {
+        var parts = languages[i].toLowerCase().split(/[-_]/)
+        if (parts[0] === 'en') return
+        if (parts[0] === 'zh') {
+          var traditional = parts.some(function (part) { return ['hant', 'hk', 'mo', 'tw'].indexOf(part) >= 0 })
+          document.querySelector('#splash .splash__name').textContent = '口袋骰盅'
+          document.querySelector('#splash .splash__status').textContent = traditional ? '載入中…' : '加载中…'
+          return
+        }
+      }
+    })()
+  </script>
 </div>

@@ -39,6 +39,20 @@ JSON, for replaying in tests. The Haptics and Sound buttons open sliders for
 tuning the feel and the clacks live; "Copy tuning" copies the values, to make
 them the new defaults.
 
+## Languages
+
+The app is in English, simplified Chinese (`zh-CN`) and Hong Kong
+traditional Chinese (`zh-HK`), following the browser's or the phone's
+language; traditional Chinese from anywhere reads the Hong Kong text. The
+text is in `app/locales/`, one JSON file per language, and
+`tests/locale.test.ts` checks they all have the same keys. To add a
+language, add its file, its code to `LOCALES` and `pickLocale` in
+`app/utils/locale.ts`, its Nuxt UI locale in `app/app.vue`, its line in the
+splash screen (`app/spa-loading-template.html`), its code to
+`CFBundleLocalizations` in `ios/App/App/Info.plist`, and an `.lproj` folder
+in `ios/App/App` with the app's name and the launch screen's text, added to
+the Xcode project. Dice notation stays "3d6" in every language.
+
 ## iPhone app
 
 The iOS app is the web build in a [Capacitor](https://capacitorjs.com) shell,

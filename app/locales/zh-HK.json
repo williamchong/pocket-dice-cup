@@ -1,0 +1,38 @@
+{
+  "app": {
+    "name": "口袋骰盅"
+  },
+  "cup": {
+    "failed": "此瀏覽器無法啟動 3D 圖像。",
+    "begin": "輕按開始",
+    "settle": "放低",
+    "history": "紀錄",
+    "style": "款式",
+    "denied": "未獲准存取動作感應器，請輕按搖骰。如想搖動手機，請重新開啟頁面並允許存取動作感應器。",
+    "unsupported": "此瀏覽器沒有動作感應器，請點按、輕按或按空白鍵搖骰。"
+  },
+  "sheet": {
+    "done": "完成"
+  },
+  "pool": {
+    "label": "骰子",
+    "fewer": "減少 {kind}",
+    "more": "增加 {kind}"
+  },
+  "history": {
+    "label": "擲骰紀錄",
+    "empty": "未有紀錄。",
+    "clear": "清除",
+    "confirmClear": "全部清除？"
+  },
+  "skin": {
+    "label": "骰子款式",
+    "ivory": "象牙白",
+    "ebony": "烏木黑",
+    "casino": "賭場紅",
+    "sapphire": "藍寶石",
+    "emerald": "祖母綠",
+    "amethyst": "紫水晶",
+    "gold": "金色"
+  }
+}

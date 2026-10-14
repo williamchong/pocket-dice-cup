@@ -28,6 +28,16 @@ export default defineNuxtConfig({
     clientBundle: { scan: true },
   },
 
+  vite: {
+    // vue-i18n's build flags: the Composition API and `$t` only, without its
+    // <i18n-t> components and v-t directive, and no devtools hooks in production.
+    define: {
+      __VUE_I18N_FULL_INSTALL__: false,
+      __VUE_I18N_LEGACY_API__: false,
+      __INTLIFY_PROD_DEVTOOLS__: false,
+    },
+  },
+
   runtimeConfig: {
     public: {
       // The debug overlay without `?debug` in the URL, for the iOS app, which
@@ -41,6 +51,7 @@ export default defineNuxtConfig({
     // in place as the app mounts; the page fades it out once the dice are ready.
     spaLoaderAttrs: { id: '' },
     head: {
+      // In the reader's language once the app starts (app.vue).
       title: 'Pocket Dice Cup',
       // `dark` selects Nuxt UI's dark theme, as there is no color-mode module.
       htmlAttrs: { lang: 'en', class: 'dark' },

@@ -3,7 +3,7 @@
     <UButton
       icon="i-lucide-minus"
       class="size-11"
-      :aria-label="`Fewer ${kind}`"
+      :aria-label="$t('pool.fewer', { kind })"
       :disabled="disabled || count <= min"
       @click="emit('change', count - 1)"
     />
@@ -21,7 +21,7 @@
     <UButton
       icon="i-lucide-plus"
       class="size-11"
-      :aria-label="`More ${kind}`"
+      :aria-label="$t('pool.more', { kind })"
       :disabled="disabled || count >= max"
       @click="emit('change', count + 1)"
     />

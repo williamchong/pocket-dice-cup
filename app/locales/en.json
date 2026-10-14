@@ -1,0 +1,38 @@
+{
+  "app": {
+    "name": "Pocket Dice Cup"
+  },
+  "cup": {
+    "failed": "3D graphics could not start in this browser.",
+    "begin": "Tap to begin",
+    "settle": "Settle",
+    "history": "History",
+    "style": "Style",
+    "denied": "Motion access was refused, so tap to shake. To shake the phone instead, open the page again and allow motion access.",
+    "unsupported": "This browser has no motion sensor, so click, tap or press space to shake."
+  },
+  "sheet": {
+    "done": "Done"
+  },
+  "pool": {
+    "label": "Dice",
+    "fewer": "Fewer {kind}",
+    "more": "More {kind}"
+  },
+  "history": {
+    "label": "Roll history",
+    "empty": "No rolls yet.",
+    "clear": "Clear",
+    "confirmClear": "Clear all?"
+  },
+  "skin": {
+    "label": "Dice style",
+    "ivory": "Ivory",
+    "ebony": "Ebony",
+    "casino": "Casino red",
+    "sapphire": "Sapphire",
+    "emerald": "Emerald",
+    "amethyst": "Amethyst",
+    "gold": "Gold"
+  }
+}

@@ -1,7 +1,7 @@
 <template>
   <section
     class="skins"
-    aria-label="Dice style"
+    :aria-label="$t('skin.label')"
   >
     <div
       class="skins__grid"
@@ -27,12 +27,12 @@
           class="skins__die skins__swatch"
           :style="{ background: option.body }"
         />
-        <span class="skins__name">{{ option.name }}</span>
+        <span class="skins__name">{{ $t(`skin.${option.id}`) }}</span>
       </button>
     </div>
     <UButton
       class="min-h-11 self-end"
-      label="Done"
+      :label="$t('sheet.done')"
       @click="emit('close')"
     />
   </section>

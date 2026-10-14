@@ -1,13 +1,13 @@
 <template>
   <section
     class="history"
-    aria-label="Roll history"
+    :aria-label="$t('history.label')"
   >
     <p
       v-if="rolls.length === 0"
       class="history__empty"
     >
-      No rolls yet.
+      {{ $t('history.empty') }}
     </p>
     <ol
       v-else
@@ -34,13 +34,13 @@
       <UButton
         class="min-h-11"
         :color="confirming ? 'error' : 'neutral'"
-        :label="confirming ? 'Clear all?' : 'Clear'"
+        :label="confirming ? $t('history.confirmClear') : $t('history.clear')"
         :disabled="rolls.length === 0"
         @click="clear"
       />
       <UButton
         class="min-h-11"
-        label="Done"
+        :label="$t('sheet.done')"
         @click="emit('close')"
       />
     </div>
@@ -48,6 +48,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { Roll } from '~/utils/rollHistory'
 
 defineProps<{
@@ -74,8 +75,10 @@ function clear() {
 }
 onBeforeUnmount(() => clearTimeout(timer))
 
-const TIME_FORMAT = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' })
-const DATE_TIME_FORMAT = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+// In the app's language rather than the device's, to match the words around them.
+const { locale } = useI18n()
+const TIME_FORMAT = new Intl.DateTimeFormat(locale.value, { hour: 'numeric', minute: '2-digit' })
+const DATE_TIME_FORMAT = new Intl.DateTimeFormat(locale.value, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 
 /** The time alone for a roll from today, with the date for older ones. */
 function formatTime(time: number): string {

@@ -4,8 +4,8 @@
  * three.js; the looks turn it into textures and materials.
  */
 interface SkinFields {
+  /** Also its name's key in the translations (app/locales). */
   id: string
-  name: string
   /** The body, as a CSS colour. */
   body: string
   /** The pips and the numbers. */
@@ -24,14 +24,14 @@ const RESIN = { roughness: 0.25, metalness: 0, clearcoat: 1 }
 /** Every skin, in the order the picker shows them. All of them come with the app. */
 export const DIE_SKINS = [
   // Ivory rather than pure white, which blows out under the lamp.
-  { id: 'ivory', name: 'Ivory', body: '#e9e2d0', ink: '#17171b', ...RESIN },
-  { id: 'ebony', name: 'Ebony', body: '#1c1c20', ink: '#f1ebdc', ...RESIN },
-  { id: 'casino', name: 'Casino red', body: '#b4202a', ink: '#f6f1e6', ...RESIN },
-  { id: 'sapphire', name: 'Sapphire', body: '#1f3f8c', ink: '#f6f1e6', ...RESIN },
-  { id: 'emerald', name: 'Emerald', body: '#1d6b3f', ink: '#f6f1e6', ...RESIN },
-  { id: 'amethyst', name: 'Amethyst', body: '#5a2d82', ink: '#e9c76a', ...RESIN },
+  { id: 'ivory', body: '#e9e2d0', ink: '#17171b', ...RESIN },
+  { id: 'ebony', body: '#1c1c20', ink: '#f1ebdc', ...RESIN },
+  { id: 'casino', body: '#b4202a', ink: '#f6f1e6', ...RESIN },
+  { id: 'sapphire', body: '#1f3f8c', ink: '#f6f1e6', ...RESIN },
+  { id: 'emerald', body: '#1d6b3f', ink: '#f6f1e6', ...RESIN },
+  { id: 'amethyst', body: '#5a2d82', ink: '#e9c76a', ...RESIN },
   // Brushed metal: no lacquer, and a little rough so the room reflects as a sheen rather than a mirror.
-  { id: 'gold', name: 'Gold', body: '#d2a23b', ink: '#2b1d08', roughness: 0.4, metalness: 0.9, clearcoat: 0 },
+  { id: 'gold', body: '#d2a23b', ink: '#2b1d08', roughness: 0.4, metalness: 0.9, clearcoat: 0 },
 ] as const satisfies readonly SkinFields[]
 
 export type DieSkin = typeof DIE_SKINS[number]

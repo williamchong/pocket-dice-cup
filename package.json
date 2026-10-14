@@ -26,6 +26,7 @@
     "tailwindcss": "^4.3.3",
     "three": "^0.186.1",
     "vue": "^3.5.43",
+    "vue-i18n": "^11.4.14",
     "vue-router": "^5.3.1"
   },
   "devDependencies": {

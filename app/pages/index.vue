@@ -16,7 +16,7 @@
       v-if="failed"
       class="cup__message"
     >
-      3D graphics could not start in this browser.
+      {{ $t('cup.failed') }}
     </p>
 
     <!-- Taps go through to the canvas, so the one that begins also rolls. -->
@@ -24,7 +24,7 @@
       v-else-if="ready && permission === 'prompt'"
       class="cup__message cup__message--pulse"
     >
-      Tap to begin
+      {{ $t('cup.begin') }}
     </p>
 
     <div
@@ -37,7 +37,7 @@
         v-if="rolling && sensing"
         class="cup__settle min-h-11 py-1.5"
         variant="solid"
-        label="Settle"
+        :label="$t('cup.settle')"
         @click="settle"
       />
       <div class="cup__controls">
@@ -52,13 +52,13 @@
         </UButton>
         <UButton
           class="min-h-11 py-1.5"
-          label="History"
+          :label="$t('cup.history')"
           :aria-pressed="openSheet === 'history'"
           @click="toggle('history')"
         />
         <UButton
           class="min-h-11 py-1.5"
-          label="Style"
+          :label="$t('cup.style')"
           :aria-pressed="openSheet === 'skin'"
           @click="toggle('skin')"
         />
@@ -67,13 +67,13 @@
         v-if="permission === 'denied'"
         class="cup__hint"
       >
-        Motion access was refused, so tap to shake. To shake the phone instead, open the page again and allow motion access.
+        {{ $t('cup.denied') }}
       </p>
       <p
         v-else-if="permission === 'unsupported'"
         class="cup__hint"
       >
-        This browser has no motion sensor, so click, tap or press space to shake.
+        {{ $t('cup.unsupported') }}
       </p>
     </div>
 
