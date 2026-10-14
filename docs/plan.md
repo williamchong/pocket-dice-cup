@@ -47,6 +47,10 @@ State machine:
 | settling | gravity steady at screen-up and the phone is still  | dice come to rest                           |
 | result   | all dice are asleep                                 | read faces, show popup, append to history   |
 
+In `result` the dice keep the pull they came to rest under instead of the
+sensor's, so picking the phone up to show the roll leaves them where they are
+and silent. Only a shake or a tap rolls them again.
+
 Stack
 -----
 

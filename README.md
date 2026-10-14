@@ -20,9 +20,11 @@ With no motion sensor, as on a desktop, click or tap the cup to shake it.
 The button at the bottom shows the dice in dice notation ("3d6 + 1d20") and
 opens a − and + row for each kind, d4 to d20, up to 12 dice in all; the
 dice are chosen between rolls and remembered for next time. When the dice
-settle, the total shows at the top; History lists the last 50 rolls, also
-kept between visits. Style picks the finish of the dice, ivory by default,
-from seven that all come with the app; it is also remembered.
+settle, the total shows at the top, and they stay where they landed while the
+phone is picked up and passed round, until the next shake or tap. History
+lists the last 50 rolls, also kept between visits. Style picks the finish of
+the dice, ivory by default, from seven that all come with the app; it is also
+remembered.
 
 Add `?debug` to the URL to see the sensor reading, the shake level, the
 current state and how long the physics takes a frame on screen. It also

@@ -138,6 +138,43 @@ describe('CupSimulation', () => {
     simulation.dispose()
   })
 
+  it('keeps the dice where they landed while the phone is picked up and tilted after a result', () => {
+    const { simulation } = roll(4, 2, 3)
+    const result = simulation.result
+    const placed = Array.from({ length: 3 }, (_, index) => ({
+      position: simulation.physics.diePosition(index),
+      rotation: simulation.physics.dieRotation(index),
+    }))
+    // Lifted slowly to 60° on its side and laid back down, over 3 s.
+    let time = 100
+    for (let i = 1; i <= 3 * 60; i++) {
+      time += FRAME
+      const angle = Math.PI / 3 * Math.sin(Math.PI * i / (3 * 60))
+      simulation.tick(FRAME, { x: REST_ACCELERATION.z * Math.sin(angle), y: 0, z: REST_ACCELERATION.z * Math.cos(angle) }, time * 1000)
+      expect(simulation.physics.impacts).toEqual([])
+    }
+    expect(simulation.state).toBe('result')
+    expect(simulation.result).toBe(result)
+    placed.forEach(({ position, rotation }, index) => {
+      expect(distance(simulation.physics.diePosition(index), position)).toBeLessThan(1e-6)
+      expect(simulation.physics.dieRotation(index)).toEqual(rotation)
+    })
+    simulation.dispose()
+  })
+
+  it('lets the dice follow the phone again once a frozen result is shaken', () => {
+    const { simulation } = roll(5)
+    const before = simulation.physics.diePosition(0)
+    let time = 100
+    for (let i = 0; i < 60; i++) {
+      time += FRAME
+      simulation.tick(FRAME, shake(i * FRAME, 6), time * 1000)
+    }
+    expect(simulation.state).toBe('shaking')
+    expect(distance(simulation.physics.diePosition(0), before)).toBeGreaterThan(D6_SIZE)
+    simulation.dispose()
+  })
+
   it('pulls the die back inside when the cup shrinks around it', () => {
     const simulation = fixedCup(boxForViewport(844, 390))
     // Slide the die to the right-hand wall of a landscape cup.
@@ -239,8 +276,12 @@ describe('impacts', () => {
     const fall = Math.sqrt(2 * 981 * (box.depth - D6_SIZE))
     expect(landing!.speed).toBeGreaterThan(fall)
     expect(landing!.speed).toBeLessThan(2 * fall)
-    expect(hold(simulation, { x: -9.8, y: 0, z: 1 }, 2)[0]?.surface).toBe('wall')
     simulation.dispose()
+    // The flip and the landing count as a roll, whose result keeps the die
+    // where it is, so the wall is tried in a fresh cup.
+    const tipped = fixedCup()
+    expect(hold(tipped, { x: -9.8, y: 0, z: 1 }, 2)[0]?.surface).toBe('wall')
+    tipped.dispose()
   })
 
   it('hears two dice hitting each other once, apart from the cup', () => {

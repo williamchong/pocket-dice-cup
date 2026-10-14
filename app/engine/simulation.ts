@@ -34,6 +34,12 @@ export class CupSimulation {
   readonly physics: PhysicsWorld
   /** A click since the last tick, which starts a roll like a shake does. */
   private tossed = false
+  /**
+   * The pull the dice feel in place of the sensor's, or null to follow it.
+   * A result keeps the pull the dice came to rest under, so they stay put
+   * while the phone is picked up and passed around, until the next roll.
+   */
+  private pinned: Vec3 | null = null
   /** Where new dice are placed at random; with none, on a fixed grid. */
   private readonly random: (() => number) | undefined
 
@@ -54,6 +60,7 @@ export class CupSimulation {
     if (this.physics.pool.join() === before) return false
     this.state = 'idle'
     this.result = null
+    this.pinned = null
     return true
   }
 
@@ -63,7 +70,7 @@ export class CupSimulation {
    */
   tick(dtSeconds: number, acceleration: Vec3, timeMs: number): boolean {
     this.analyser.update(acceleration, timeMs)
-    this.physics.setAcceleration(acceleration)
+    this.physics.setAcceleration(this.pinned ?? acceleration)
     this.physics.step(dtSeconds)
 
     const next = nextState(this.state, {
@@ -75,8 +82,14 @@ export class CupSimulation {
     if (next === this.state) return false
 
     this.state = next
-    if (next === 'shaking') this.result = null
-    if (next === 'result') this.result = this.readDice()
+    if (next === 'shaking') {
+      this.result = null
+      this.pinned = null
+    }
+    if (next === 'result') {
+      this.result = this.readDice()
+      this.pinned = { ...acceleration }
+    }
     return true
   }
 
