@@ -103,6 +103,10 @@
       :kinds="pool"
     />
 
+    <Transition name="cup__splash">
+      <CupSplash v-if="!ready && !failed" />
+    </Transition>
+
     <div
       v-if="debug"
       class="cup__debug"
@@ -226,7 +230,7 @@ watch(result, (values) => {
   saveHistory(history.value)
 })
 // The dice picker's pictures hold the page for a moment as they are drawn,
-// unnoticed while the start screen waits for a tap.
+// unnoticed as the splash fades out.
 watch(ready, (now) => {
   if (now) drawDieIcons(skin.value)
 })
@@ -416,6 +420,14 @@ if (debug) {
 .cup__gate h1 {
   font-size: 2em;
   font-weight: bold;
+}
+
+.cup__splash-leave-active {
+  transition: opacity 0.4s ease;
+}
+
+.cup__splash-leave-to {
+  opacity: 0;
 }
 
 .cup__footer {
