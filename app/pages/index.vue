@@ -472,8 +472,12 @@ if (debug) {
   padding: 1rem 1rem calc(var(--safe-inset) + 1rem);
   box-sizing: border-box;
   border-radius: 1.5rem 1.5rem 0 0;
-  /* Solid: the buttons it covers would show through. */
-  background: var(--color-felt);
+  /* Glass, but mostly felt: the dice show through as colour and movement,
+     while the buttons it covers blur away rather than showing through. */
+  background: color-mix(in srgb, var(--color-felt) 80%, transparent);
+  -webkit-backdrop-filter: blur(32px) saturate(150%);
+  backdrop-filter: blur(32px) saturate(150%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 25%), 0 -8px 24px rgb(0 0 0 / 25%);
 }
 
 .cup__sheet-enter-active,
