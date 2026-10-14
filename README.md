@@ -49,9 +49,11 @@ text is in `app/locales/`, one JSON file per language, and
 language, add its file, its code to `LOCALES` and `pickLocale` in
 `app/utils/locale.ts`, its Nuxt UI locale in `app/app.vue`, its line in the
 splash screen (`app/spa-loading-template.html`), its code to
-`CFBundleLocalizations` in `ios/App/App/Info.plist`, and an `.lproj` folder
+`CFBundleLocalizations` in `ios/App/App/Info.plist`, an `.lproj` folder
 in `ios/App/App` with the app's name and the launch screen's text, added to
-the Xcode project. Dice notation stays "3d6" in every language.
+the Xcode project, its code to `android/app/src/main/res/xml/locales_config.xml`,
+and a `values-` folder in `android/app/src/main/res` with the app's name.
+Dice notation stays "3d6" in every language.
 
 ## iPhone app
 
@@ -74,6 +76,30 @@ In Xcode, pick your Apple ID under Signing & Capabilities, plug the iPhone
 in and run. With a free Apple ID the app stops opening after 7 days, and
 running it again from Xcode renews it. Haptics only play on a real device,
 not in the simulator.
+
+## Android app
+
+The Android app is the same web build in a Capacitor shell, with a small
+plugin that plays each hit on the vibrator at its strength, where the phone
+can: a click or a soft tick on phones with those effects, a pulse of the
+hit's strength on most others. It needs Android Studio, and builds with
+the Java 21 that comes with it.
+
+```sh
+npm run android      # build, copy into android/ and open Android Studio
+NUXT_PUBLIC_DEBUG=1 npm run android   # with the debug overlay
+```
+
+In Android Studio, pick a phone with USB debugging on, or an emulator, and
+run. The debug build installs straight from there, with no account and no
+expiry. The page can be inspected from Chrome at `chrome://inspect`. In the
+emulator, Extended controls → Virtual sensors moves the phone, enough to
+check a shake and putting it down, though not the vibration. Back closes
+an open sheet, and from the cup leaves the app.
+
+`android/` keeps the versions of Gradle, the Android plugin and the SDK
+that Capacitor's template set; `npx cap migrate` moves them on with each
+Capacitor release.
 
 ## Check
 

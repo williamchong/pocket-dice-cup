@@ -115,8 +115,9 @@ Two interfaces carry most of the extras:
   slid the dice without turning them, so they mostly landed on the face they
   started on.
 - `HapticsBackend` plays a transient of a given intensity. `NativeBackend` calls
-  Core Haptics through the iOS shell, `VibrateBackend` maps it to
-  `navigator.vibrate`, and browsers with neither get no backend.
+  the `CupHaptics` plugin of the native shells, Core Haptics on iOS and the
+  vibrator on Android, `VibrateBackend` maps it to `navigator.vibrate`, and
+  browsers with neither get no backend.
 
 Dice:
 
@@ -229,6 +230,31 @@ Phases
    the focus, where it presses that instead. Not yet done: drag to throw.
 7. **PWA polish.** Offline, installable, fullscreen, rendering paused while the
    phone is face-down.
+8. **Android shell.** The same web build in a Capacitor Android shell, with a
+   `CupHaptics` plugin in Java beside the Swift one.
+   Status: built, and checked in the emulator (Pixel 7a, Android 16,
+   WebView 146), not yet on a phone. The plugin plays each hit as the best
+   the phone has: a click for the walls, the glass and the other dice and
+   a low tick for the felt, at the hit's strength, where the phone has
+   those primitives (Android 11+); a pulse of the hit's strength, shorter
+   for a crisp hit, where it controls the amplitude; or a pulse whose
+   length grows with the hit, as on the web. It vibrates as media, so the
+   phone's touch-vibration setting does not silence the dice. The shell
+   is held in portrait, keeps the screen on, and shows the die on the
+   felt as Android's launch screen until the page's own loading screen
+   takes over; unlike the iOS WebView, Android's draws that page before
+   the engine has loaded, so it needs no native cover. The page is laid
+   out under the status and navigation bars, with light icons on them,
+   and keeps clear of them by the safe-area insets as on the iPhone. Back
+   closes an open sheet, and otherwise sends the app to the background.
+   The app's name and the page follow Android 13's per-app language.
+   Checked in the emulator: the sensor sign, a shake and putting it down,
+   the plugin receiving each hit, back, the insets, the icon and the
+   Hong Kong Chinese text. Not yet checked on a phone: how the haptics
+   feel and which of the three the phone plays, the physics' frame cost
+   on a mid-range phone, and whether other apps' music carries on under
+   the clacks. Android has no mute switch; the clacks follow the media
+   volume. CI builds the debug APK on every push.
 
 Languages
 ---------
@@ -237,7 +263,9 @@ English, simplified Chinese and Hong Kong traditional
 Chinese, by vue-i18n with every language in the bundle, chosen from the
 system's language with no switcher. The iOS app lists them in
 `CFBundleLocalizations`, so its WebView reports the language iOS picked
-for the app and Settings offers a per-app language. The debug overlay
+for the app and Settings offers a per-app language. The Android app lists
+them in `locales_config.xml` for the same, and its WebView follows the
+language picked there. The debug overlay
 stays in English. The app's name is 口袋骰盅 in both kinds of Chinese,
 on the home screen (`InfoPlist.strings`), the launch screen
 (`LaunchScreen.strings`), the web splash and the page title. Checked in
@@ -251,9 +279,11 @@ Verification
   shake/stillness detection against recorded sensor traces.
 - Distribution test per die type (phase 3).
 - Phases 1, 2 and 6 are checked on the iPhone and a desktop browser.
-- No Android device is available. The Android web path (`VibrateBackend`,
-  sensor sign convention) is written from the spec and stays untested until
-  someone can try it on a device.
+- No Android device is available. The Android app is checked in the
+  emulator, whose virtual sensors cover the sign convention and the
+  shake and put-down; the vibration, in the app (`CupHaptics`) and on the
+  web (`VibrateBackend`), stays untested until someone can try it on a
+  device.
 
 Native vs web tactile feedback
 ------------------------------
@@ -275,8 +305,10 @@ custom Core Haptics plugin (roughly 100 lines of Swift). The stock
 `@capacitor/haptics` plugin is too coarse. A full native rewrite is not
 justified, because rendering and physics would stay in a WebView either way.
 The web/PWA build still ships for desktop and as the no-install Android
-version. An Android shell with a Kotlin plugin is deferred until there is a
-device to test on.
+version. The Android shell (phase 8) followed the same way, with a Java
+plugin, as Capacitor's Android template is Java; both shells still read the
+sensor through the WebView, at its rate. It is built and checked in the
+emulator while there is no Android device to tune its feel on.
 
 Distribution: the iOS build starts personal, installed from Xcode with a free
 Apple ID (builds expire after 7 days). If the result is good enough, publish to
