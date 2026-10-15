@@ -2,12 +2,13 @@ import {
   BufferGeometry,
   CanvasTexture,
   Float32BufferAttribute,
-  type InstancedMesh,
+  InstancedMesh,
   Matrix4,
   Mesh,
   MeshStandardMaterial,
   NeutralToneMapping,
   PerspectiveCamera,
+  PlaneGeometry,
   PMREMGenerator,
   Quaternion,
   RepeatWrapping,
@@ -38,6 +39,14 @@ const FELT_COLOUR = 0x0d6b3c
 const WALL_COLOUR = 0x2a160c
 /** World units covered by one tile of the felt's speckle. */
 const FELT_TILE = 1
+/**
+ * Height (cm) of the marks under dice that did not roll over: on the felt,
+ * which is at 0, without fighting it for depth.
+ */
+const MARK_HEIGHT = 0.01
+/** How strong a mark is once faded in, and how far out it reaches from a die's centre, in footprint radii. */
+const MARK_OPACITY = 0.35
+const MARK_REACH = 1.45
 /**
  * Radius (cm) of the cove where the felt curves up into the walls, and of the
  * cup's corners seen from above. The colliders keep the corners square, so a
@@ -139,6 +148,29 @@ function feltTexture(): CanvasTexture {
 }
 
 /**
+ * A soft ring, as if chalked on the cloth: clear in the middle, where the die
+ * stands, palest across its band and fading to nothing at both edges. It fills
+ * a square two units wide, the ring's outer edge at 1.
+ */
+function markTexture(): CanvasTexture {
+  const size = 128
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = size
+  const context = canvas.getContext('2d')!
+  const centre = size / 2
+  const gradient = context.createRadialGradient(centre, centre, 0, centre, centre, centre)
+  gradient.addColorStop(0, 'rgb(255 255 255 / 0)')
+  gradient.addColorStop(0.6, 'rgb(255 255 255 / 0)')
+  gradient.addColorStop(0.8, 'rgb(255 255 255 / 1)')
+  gradient.addColorStop(1, 'rgb(255 255 255 / 0)')
+  context.fillStyle = gradient
+  context.fillRect(0, 0, size, size)
+  const texture = new CanvasTexture(canvas)
+  texture.colorSpace = SRGBColorSpace
+  return texture
+}
+
+/**
  * Glossy surfaces need surroundings to reflect. This room is generated, so
  * there is no image to download. Returns the room's map, for the caller to
  * dispose of.
@@ -191,10 +223,14 @@ export class DiceScene {
   private readonly meshes: Record<DieKind, InstancedMesh>
   /** Each die's mesh, and its instance in that mesh. */
   private slots: { mesh: InstancedMesh, instance: number }[] = []
+  /** Rings on the felt under the dice that did not roll over; see setMarks. */
+  private readonly marks: InstancedMesh
+  private readonly markMaterial: MeshStandardMaterial
   /** Reused for every die's transform, rather than made anew each frame. */
   private readonly matrix = new Matrix4()
   private readonly position = new Vector3()
   private readonly quaternion = new Quaternion()
+  private readonly scale = new Vector3()
 
   /** `capacity` is the most dice of one kind it will ever be asked to draw. */
   constructor(canvas: HTMLCanvasElement, capacity: number, skin: DieSkin) {
@@ -217,7 +253,15 @@ export class DiceScene {
     this.tray.receiveShadow = true
     this.looks = createDieLooks(skin)
     this.meshes = Object.fromEntries(DIE_KINDS.map(kind => [kind, createDiceMesh(this.looks[kind], capacity)])) as Record<DieKind, InstancedMesh>
-    this.scene.add(this.tray, ...Object.values(this.meshes))
+    // Lit and shaded like the felt, so it reads as a mark on the cloth rather
+    // than a light over it, and drawn after the dice, which hide its middle.
+    this.markMaterial = new MeshStandardMaterial({ color: LAMP_COLOUR, map: markTexture(), roughness: 1, transparent: true, depthWrite: false })
+    this.marks = new InstancedMesh(new PlaneGeometry(2, 2), this.markMaterial, capacity)
+    this.marks.count = 0
+    this.marks.visible = false
+    this.marks.receiveShadow = true
+    this.marks.frustumCulled = false
+    this.scene.add(this.tray, ...Object.values(this.meshes), this.marks)
 
     // The pool of light comes from the soft edge of the cone, not from
     // distance, so the brightness does not change with the size of the table.
@@ -295,6 +339,27 @@ export class DiceScene {
     mesh.instanceMatrix.needsUpdate = true
   }
 
+  /**
+   * Rings the felt round each of `marks`, a die's centre and footprint radius
+   * (cm), `shown` of the way faded in, from 0 to 1; none hides them. A die
+   * resting against a wall has part of its ring hidden where the felt curves
+   * up into it.
+   */
+  setMarks(marks: readonly { x: number, y: number, footprintRadius: number }[], shown: number): void {
+    if (marks.length === 0 && !this.marks.visible) return
+    this.marks.count = marks.length
+    this.marks.visible = marks.length > 0
+    this.quaternion.identity()
+    marks.forEach(({ x, y, footprintRadius }, index) => {
+      const radius = footprintRadius * MARK_REACH
+      this.position.set(x, y, MARK_HEIGHT)
+      this.scale.set(radius, radius, 1)
+      this.marks.setMatrixAt(index, this.matrix.compose(this.position, this.quaternion, this.scale))
+    })
+    this.marks.instanceMatrix.needsUpdate = true
+    this.markMaterial.opacity = MARK_OPACITY * shown
+  }
+
   render(): void {
     this.renderer.render(this.scene, this.camera)
   }
@@ -302,6 +367,8 @@ export class DiceScene {
   dispose(): void {
     for (const look of [{ geometry: this.tray.geometry, materials: this.tray.material as Material[] }, ...Object.values(this.looks)]) disposeLook(look)
     for (const mesh of Object.values(this.meshes)) mesh.dispose()
+    disposeLook({ geometry: this.marks.geometry, materials: [this.markMaterial] })
+    this.marks.dispose()
     this.lamp.dispose()
     this.environment.dispose()
     this.renderer.dispose()

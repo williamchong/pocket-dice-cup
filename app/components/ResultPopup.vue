@@ -8,9 +8,10 @@
       v-if="rollBreakdown(values, kinds)"
       class="result__dice"
     >{{ rollBreakdown(values, kinds) }}</span>
+    <!-- Shown by rings on the felt under the dice; said only to screen readers. -->
     <span
       v-if="slid"
-      class="result__slid"
+      class="sr-only"
     >{{ $t('cup.slid', slid) }}</span>
   </div>
 </template>
@@ -49,13 +50,6 @@ defineProps<{
   max-width: 16rem;
   text-align: center;
   opacity: 0.8;
-}
-
-.result__slid {
-  max-width: 16rem;
-  text-align: center;
-  font-size: 0.875rem;
-  opacity: 0.6;
 }
 
 @keyframes result-in {

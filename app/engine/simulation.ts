@@ -46,12 +46,12 @@ export class CupSimulation {
   /** One value per die once they have settled, otherwise null. */
   result: number[] | null = null
   /**
-   * How many dice of the result never turned over in the roll: each ended on
-   * the face it began with, which never tipped past sideways, so it slid,
-   * rocked or stood still. A real cup slid gently does the same, and the
-   * trick is left to work, so it is only pointed out.
+   * The dice of the result, by index, that never turned over in the roll:
+   * each ended on the face it began with, which never tipped past sideways,
+   * so it slid, rocked or stood still. A real cup slid gently does the same,
+   * and the trick is left to work, so they are only pointed out.
    */
-  slid = 0
+  slid: number[] = []
 
   readonly analyser = new MotionAnalyser()
   readonly physics: PhysicsWorld
@@ -91,7 +91,7 @@ export class CupSimulation {
     if (this.physics.pool.join() === before) return false
     this.state = 'idle'
     this.result = null
-    this.slid = 0
+    this.slid = []
     this.pinned = null
     this.rollStart = []
     return true
@@ -126,13 +126,13 @@ export class CupSimulation {
     // must hold.
     if (next === 'shaking') {
       this.result = null
-      this.slid = 0
+      this.slid = []
       this.pinned = null
     }
     if (next === 'result') {
       const faces = this.readFaces()
       this.result = faces.map(face => face.value)
-      this.slid = this.rollStart.filter(({ face, lowest }, index) => face === faces[index] && lowest > 0).length
+      this.slid = this.rollStart.flatMap(({ face, lowest }, index) => face === faces[index] && lowest > 0 ? [index] : [])
       this.pinned ??= { ...acceleration }
     }
     return true

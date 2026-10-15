@@ -54,9 +54,12 @@ and silent. Only a shake or a tap rolls them again.
 A gentle shake can slide a die about on one face, as it would in a real cup:
 the recorded gentle iPhone shake left a d6 on its face in 600 rolls in a row,
 and a d20 on its face about half the time, rocking onto a neighbour and back.
-The trick is left to work, and the result card says how many dice did not
-roll over: those that ended on the face they began the roll with, which never
-tipped past sideways. Hard shakes flag no dice; with the flagged ones left
+The trick is left to work, and a faint ring on the felt marks each die that
+did not roll over: one that ended on the face it began the roll with, which
+never tipped past sideways. The ring is lit and shaded like the felt, fades in
+with the result (at once under reduced motion) and goes with the next roll;
+the result card says the count to screen readers only. A die against a wall
+has part of its ring hidden where the felt curves up into it. Hard shakes flag no dice; with the flagged ones left
 out, the rest repeat their last face about as often as fair dice do.
 
 A phone held in the hand is never put down flat enough to reach `settling`,

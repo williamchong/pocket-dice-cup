@@ -166,7 +166,7 @@ describe('recorded iPhone traces', () => {
         let timeMs = load(name).samples.at(-1)![0]
         while (simulation.state !== 'result' && timeMs < 30_000) simulation.tick(1 / 60, REST_ACCELERATION, timeMs += 1000 / 60)
         expect(simulation.state).toBe('result')
-        count += simulation.slid
+        count += simulation.slid.length
         simulation.dispose()
       }
       return count

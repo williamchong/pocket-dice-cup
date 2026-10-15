@@ -15,7 +15,7 @@ import { CupSimulation, type CupOptions } from './simulation'
 export interface CupSnapshot {
   state: CupState
   result: number[] | null
-  /** How many dice of the result slid without turning over; see CupSimulation.slid. */
+  /** How many dice of the result did not roll over; see CupSimulation.slid. */
   slid: number
   /** Frames have stopped while the phone lies screen-down; see CupSimulation.dormant. */
   dormant: boolean
@@ -39,6 +39,8 @@ export interface DiceCupOptions extends CupOptions {
 const MAX_FRAME_SECONDS = 0.1
 /** How much each frame moves the average of physicsMs. */
 const PHYSICS_MS_SMOOTHING = 1 / 60
+/** How long the marks under dice that did not roll over take to fade in (ms), about the result card's own pop. */
+const MARK_FADE_MS = 300
 
 /**
  * The dice cup in a browser: runs the simulation from a motion source every
@@ -54,6 +56,8 @@ export class DiceCup {
   private physicsMs = 0
   /** Dormant: no frame is asked for until a reading disturbs the stillness. */
   private framesStopped = false
+  /** When the marks under the dice that did not roll over began to fade in. */
+  private marksShownAt = -Infinity
   private readonly resizeObserver: ResizeObserver
 
   private constructor(
@@ -169,7 +173,7 @@ export class DiceCup {
   }
 
   private notifyChange(): void {
-    this.onChange({ state: this.simulation.state, result: this.simulation.result, slid: this.simulation.slid, dormant: this.framesStopped })
+    this.onChange({ state: this.simulation.state, result: this.simulation.result, slid: this.simulation.slid.length, dormant: this.framesStopped })
   }
 
   /**
@@ -216,7 +220,13 @@ export class DiceCup {
     const started = performance.now()
     const changed = simulation.tick(dt, this.source.acceleration, timeMs)
     this.physicsMs += (performance.now() - started - this.physicsMs) * PHYSICS_MS_SMOOTHING
-    if (changed) this.notifyChange()
+    if (changed) {
+      this.notifyChange()
+      // The dice are often asleep by the time the result is read, and what
+      // goes with a new state, such as the marks, still has to be drawn.
+      this.stale = true
+      if (simulation.state === 'result') this.marksShownAt = prefersReducedMotion() ? -Infinity : timeMs
+    }
     this.feedback.play(simulation.physics.impacts, timeMs)
 
     // Screen-down, the dice still roll and are heard and felt, but no one
@@ -234,13 +244,24 @@ export class DiceCup {
     // A result can sit on screen for minutes with the screen kept awake, so
     // do not redraw an unchanged picture 60 times a second.
     const moving = !simulation.physics.asleep
-    if (!moving && !this.stale) return
+    const markShown = Math.min(1, (timeMs - this.marksShownAt) / MARK_FADE_MS)
+    const fading = markShown < 1 && simulation.slid.length > 0
+    if (!moving && !this.stale && !fading) return
     this.stale = moving
     for (let index = 0; index < simulation.physics.dieCount; index++) {
       scene.setDieTransform(index, simulation.physics.diePosition(index), simulation.physics.dieRotation(index))
     }
+    // Read from where the dice lie each time, so a resize that pulls one in takes its mark along.
+    scene.setMarks(simulation.slid.map((index) => {
+      const { x, y } = simulation.physics.diePosition(index)
+      return { x, y, footprintRadius: simulation.physics.dieShape(index).footprintRadius }
+    }), markShown)
     scene.render()
   }
+}
+
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
 /**
