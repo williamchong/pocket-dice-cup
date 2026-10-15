@@ -10,13 +10,15 @@
     <span class="stepper__count">
       <!-- A fixed width, so the dice line up from 0 to 12. -->
       <span class="stepper__number">{{ count }}</span>
+      <!-- Named as well as pictured: at this size a d8, a d10 and a d12
+           are hard to tell apart. The name is what a screen reader says. -->
       <img
         v-if="icon"
         class="stepper__die"
         :src="icon"
-        :alt="kind"
+        alt=""
       >
-      <template v-else>{{ kind }}</template>
+      <span class="stepper__kind">{{ kind }}</span>
     </span>
     <UButton
       icon="i-lucide-plus"
@@ -33,7 +35,7 @@ import type { DieKind } from '~/engine/dice/shapes'
 
 defineProps<{
   kind: DieKind
-  /** A picture of the die, shown in place of its name once there is one. */
+  /** A picture of the die, shown beside its name once there is one. */
   icon?: string
   count: number
   min: number
@@ -57,13 +59,18 @@ const emit = defineEmits<{ change: [count: number] }>()
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  min-width: 4.5rem;
+  min-width: 7rem;
   font-variant-numeric: tabular-nums;
 }
 
 .stepper__number {
   min-width: 1.25em;
   text-align: right;
+}
+
+.stepper__kind {
+  min-width: 2.25em;
+  opacity: 0.8;
 }
 
 .stepper__die {

@@ -190,7 +190,8 @@ Phases
    cup. The dice are 12 mm: at 16 mm a dozen jammed against the walls. The
    dice are chosen between rolls from a button at the bottom of the screen
    that shows them in dice notation ("3d6 + 1d20") and opens a − and + row
-   per kind, up to 12 in all. The pool is kept in `localStorage` as
+   per kind, up to 12 in all, each named beside its picture, as a d8, a d10
+   and a d12 are hard to tell apart at that size. The pool is kept in `localStorage` as
    notation, and `?dice=` takes notation too. Each shape is one table of
    vertices, faces and values (`dice/shapes.ts`), from which come the
    collider (a rounded convex hull; the d6 keeps its rounded box), the face
