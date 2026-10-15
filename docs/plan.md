@@ -222,6 +222,13 @@ Phases
    a history of the last 50 rolls, kept in `localStorage` and opened from a
    History button beside the dice count; a shake closes it. Not yet checked
    on the iPhone.
+   A die could come to rest under the card, where it could not be seen to
+   check the total. When the card would hide one, its centre under the card
+   or within half its radius of an edge, the card goes down above the
+   buttons, unless it would hide more there. Clipping only a corner does not
+   count: with a full cup of eight both places nearly always clip one. In 16
+   tosses of four d6 in the browser it went down three times, each for a
+   die under the top, and hid no die in any. Not yet checked on the iPhone.
 5. **Skins.** 3-4 dice skins and 3-4 table skins to start.
    Status: dice skins done, all free. A skin is a data object
    (`engine/render/skins.ts`): body and ink colours plus roughness,

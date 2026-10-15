@@ -1,5 +1,6 @@
 import type { ShallowRef } from 'vue'
 import type { DicePool } from '~/engine/core/pool'
+import type { ScreenCircle } from '~/engine/box'
 import type { CupState } from '~/engine/core/stateMachine'
 import type { CupDebugInfo, DiceCup, DiceCupOptions } from '~/engine/diceCup'
 import type { SoundTuning } from '~/engine/feedback/clackSound'
@@ -30,6 +31,8 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
   const slid = ref(0)
   /** The phone has been shaken since the page opened, not only tapped. */
   const shaken = ref(false)
+  /** Where the dice of the result lie on screen; empty with no result. */
+  const dice = shallowRef<readonly ScreenCircle[]>([])
   const pool = shallowRef<DicePool>(['d6'])
   /**
    * The sensor has sent a reading, as of the last change of state. Desktop
@@ -67,6 +70,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
         result.value = snapshot.result
         slid.value = snapshot.slid
         shaken.value = snapshot.shaken
+        dice.value = snapshot.dice
         sensing.value = source.active
         screenAwake?.setWanted(!snapshot.dormant)
       }, options, recorder)
@@ -157,5 +161,5 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     cup?.settle()
   }
 
-  return { ready, failed, state, result, slid, shaken, pool, sensing, permission, start, toss, settle, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit }
+  return { ready, failed, state, result, slid, shaken, dice, pool, sensing, permission, start, toss, settle, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit }
 }

@@ -42,3 +42,18 @@ export function boxForViewport(widthPx: number, heightPx: number): BoxSize {
   const scale = height / screenHeight
   return { width: screenWidth * scale, height, depth: DEPTH }
 }
+
+/** A die as drawn on screen, in CSS pixels: the circle it covers on the felt. */
+export interface ScreenCircle { x: number, y: number, r: number }
+
+/**
+ * Where a point in the cup is drawn, in CSS pixels from the viewport's top
+ * left, with the pixels per centimetre at its height: the camera of
+ * DiceScene.setBox, which draws the glass across the whole viewport and
+ * anything below it a little smaller.
+ */
+export function toScreen(box: BoxSize, widthPx: number, heightPx: number, point: { x: number, y: number, z: number }): { x: number, y: number, pxPerCm: number } {
+  const distance = box.height * CAMERA_DISTANCE
+  const pxPerCm = heightPx / box.height * distance / (distance + box.depth - point.z)
+  return { x: widthPx / 2 + point.x * pxPerCm, y: heightPx / 2 - point.y * pxPerCm, pxPerCm }
+}

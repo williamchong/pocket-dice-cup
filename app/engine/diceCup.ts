@@ -1,4 +1,4 @@
-import { boxForViewport } from './box'
+import { boxForViewport, toScreen, type ScreenCircle } from './box'
 import { MAX_DICE, type DicePool } from './core/pool'
 import type { CupState } from './core/stateMachine'
 import { ClackSound, type SoundTuning } from './feedback/clackSound'
@@ -19,6 +19,11 @@ export interface CupSnapshot {
   slid: number
   /** Whether the phone has been shaken yet; see CupSimulation.shaken. */
   shaken: boolean
+  /**
+   * Where each die of the result lies on the canvas, in CSS pixels, for the
+   * result card to keep off; empty with no result.
+   */
+  dice: ScreenCircle[]
   /** Frames have stopped while the phone lies screen-down; see CupSimulation.dormant. */
   dormant: boolean
 }
@@ -175,7 +180,17 @@ export class DiceCup {
   }
 
   private notifyChange(): void {
-    this.onChange({ state: this.simulation.state, result: this.simulation.result, slid: this.simulation.slid.length, shaken: this.simulation.shaken, dormant: this.framesStopped })
+    const { simulation } = this
+    this.onChange({ state: simulation.state, result: simulation.result, slid: simulation.slid.length, shaken: simulation.shaken, dice: simulation.result ? this.diceOnScreen() : [], dormant: this.framesStopped })
+  }
+
+  private diceOnScreen(): ScreenCircle[] {
+    const { physics } = this.simulation
+    const box = boxForViewport(this.width, this.height)
+    return Array.from({ length: physics.dieCount }, (_, index) => {
+      const { x, y, pxPerCm } = toScreen(box, this.width, this.height, physics.diePosition(index))
+      return { x, y, r: physics.dieShape(index).footprintRadius * pxPerCm }
+    })
   }
 
   /**

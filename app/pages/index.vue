@@ -29,6 +29,7 @@
 
     <div
       v-if="ready"
+      ref="footer"
       class="cup__footer"
     >
       <!-- Held in the hand, the phone is never put down flat enough to end
@@ -120,7 +121,9 @@
     <!-- Taps go through to the canvas, so a shown result is re-rolled with a tap like any other. -->
     <ResultPopup
       v-if="state === 'result' && result"
+      ref="card"
       class="cup__result"
+      :style="cardTop === null ? undefined : { top: `${cardTop}px` }"
       :values="result"
       :kinds="pool"
       :slid="slid"
@@ -197,6 +200,7 @@
 </template>
 
 <script setup lang="ts">
+import type { ComponentPublicInstance } from 'vue'
 import { formatPool, type DicePool } from '~/engine/core/pool'
 import { isRolling } from '~/engine/core/stateMachine'
 import { DEFAULT_SOUND_TUNING, type SoundTuning, type VoiceName } from '~/engine/feedback/clackSound'
@@ -219,7 +223,7 @@ const canvas = useTemplateRef('canvas')
 // Shaking tips the phone far enough for the browser to rotate the page; the
 // cup stays put in the phone's own frame instead.
 const counterRotationStyle = useCounterRotation()
-const { ready, failed, state, result, slid, shaken, pool, sensing, permission, start, toss, settle, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value })
+const { ready, failed, state, result, slid, shaken, dice, pool, sensing, permission, start, toss, settle, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value })
 const rolling = computed(() => isRolling(state.value))
 // Kept across visits, so the hint to shake goes for good after one shake.
 const everShaken = ref(loadShaken())
@@ -241,6 +245,29 @@ function changeSkin(next: DieSkin) {
   // The dice picker's pictures of the new skin, drawn now rather than as it opens.
   drawDieIcons(next)
 }
+
+// The result card goes down above the buttons when it would hide a die at
+// the top, as a die there can be cocked or read wrong and should be seen.
+const card = useTemplateRef<ComponentPublicInstance>('card')
+const footer = useTemplateRef('footer')
+const cardTop = ref<number | null>(null)
+// After the card is laid out at the top and before it is painted, so it
+// never shows over the die first. On the result, not the dice, which come
+// again when the phone goes screen-down and back with the card already
+// moved. Offsets, not getBoundingClientRect, are in the cup's own frame, as
+// the dice are, however the page is turned.
+watch(result, () => {
+  const element = card.value?.$el as HTMLElement | undefined
+  if (!dice.value.length || !element || !footer.value) {
+    cardTop.value = null
+    return
+  }
+  // offsetLeft is the left edge before the translate, at the cup's centre line.
+  const top = { left: element.offsetLeft - element.offsetWidth / 2, top: element.offsetTop, width: element.offsetWidth, height: element.offsetHeight }
+  const low = { ...top, top: footer.value.offsetTop - top.height }
+  const places = [top, low]
+  cardTop.value = places[placeCard(dice.value, places)] === low ? low.top : null
+}, { flush: 'post' })
 
 const history = shallowRef(loadHistory())
 /** The sheet open above the controls, if any. */
