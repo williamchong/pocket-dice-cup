@@ -175,4 +175,27 @@ describe('recorded iPhone traces', () => {
     expect(slid('shake-gentle')).toBeGreaterThanOrEqual(kind === 'd6' ? 20 : 2)
     expect(slid('shake-vertical')).toBe(0)
   })
+
+  it('mark which dice of a mixed cup ended on the face they began the gentle shake with', () => {
+    const trace = load('shake-gentle')
+    let marked = 0
+    for (let seed = 1; seed <= 10; seed++) {
+      vi.spyOn(Math, 'random').mockImplementation(seededRandom(seed))
+      const simulation = new CupSimulation(RAPIER, boxForViewport(390, 844), { pool: ['d4', 'd6', 'd8', 'd20'] })
+      vi.restoreAllMocks()
+      const faces = () => Array.from({ length: simulation.physics.dieCount }, (_, index) => readFace(simulation.physics.dieShape(index), simulation.physics.dieRotation(index)).face.value)
+      let before: number[] = faces()
+      let started: number[] | null = null
+      replay(simulation, trace, Infinity, () => {
+        if (!started && simulation.state === 'shaking') started = before
+        before = faces()
+      })
+      let timeMs = trace.samples.at(-1)![0]
+      while (simulation.state !== 'result' && timeMs < 30_000) simulation.tick(1 / 60, REST_ACCELERATION, timeMs += 1000 / 60)
+      expect(simulation.slid.every(index => simulation.result![index] === started![index]), `seed ${seed}`).toBe(true)
+      marked += simulation.slid.length
+      simulation.dispose()
+    }
+    expect(marked).toBeGreaterThan(0)
+  })
 })
