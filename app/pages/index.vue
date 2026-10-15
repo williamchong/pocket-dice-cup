@@ -68,9 +68,10 @@
            what the app is for. -->
       <p
         v-if="sensing && !everShaken && !rolling"
-        class="cup__hint"
+        class="cup__hint cup__hint--shake"
       >
-        {{ $t('cup.shakeHint') }}
+        <ShakeHintIcon />
+        <span>{{ $t('cup.shakeHint') }}</span>
       </p>
       <p
         v-else-if="permission === 'denied'"
@@ -574,6 +575,13 @@ if (debug) {
   margin: 0;
   text-align: center;
   text-wrap: balance;
+}
+
+.cup__hint--shake {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: start;
 }
 
 .cup__debug {

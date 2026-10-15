@@ -260,7 +260,10 @@ Phases
    on iOS now says to shake afterwards, and once the sensor is sending
    readings, a line under the buttons says to shake the phone like a dice
    cup and lay it flat whenever the cup is still, until the first roll the
-   phone was shaken for; that one shake is kept in `localStorage`. Not yet
+   phone was shaken for; that one shake is kept in `localStorage`. Beside
+   it a drawn hand shakes a phone, its dice rattling, in five bursts each
+   time the hint comes, then stops: SVG is not animated on the compositor,
+   so a loop kept the page drawing while the dice were asleep. Not yet
    checked on the iPhone.
 7. **PWA polish.** Offline, installable, fullscreen, rendering paused while the
    phone is face-down.
