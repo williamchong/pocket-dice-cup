@@ -247,6 +247,13 @@ Phases
    about 30% of the time, against 25%, once the phone is tilted 40° or
    more. Not yet checked on the iPhone: how the harder throw looks and
    sounds. Not yet done: drag to throw.
+   Nothing on screen said to shake the phone, so a first-time user tapped
+   and took it for a plain dice roller. The tap that grants motion access
+   on iOS now says to shake afterwards, and once the sensor is sending
+   readings, a line under the buttons says to shake the phone like a dice
+   cup and lay it flat whenever the cup is still, until the first roll the
+   phone was shaken for; that one shake is kept in `localStorage`. Not yet
+   checked on the iPhone.
 7. **PWA polish.** Offline, installable, fullscreen, rendering paused while the
    phone is face-down.
    Status: screen-down, the dice still roll and are heard and felt, but are

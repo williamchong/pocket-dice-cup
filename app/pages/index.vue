@@ -63,8 +63,16 @@
           @click="toggle('skin')"
         />
       </div>
+      <!-- Until the first shake, for anyone who only taps: the shake is
+           what the app is for. -->
       <p
-        v-if="permission === 'denied'"
+        v-if="sensing && !everShaken && !rolling"
+        class="cup__hint"
+      >
+        {{ $t('cup.shakeHint') }}
+      </p>
+      <p
+        v-else-if="permission === 'denied'"
         class="cup__hint"
       >
         {{ $t('cup.denied') }}
@@ -211,8 +219,15 @@ const canvas = useTemplateRef('canvas')
 // Shaking tips the phone far enough for the browser to rotate the page; the
 // cup stays put in the phone's own frame instead.
 const counterRotationStyle = useCounterRotation()
-const { ready, failed, state, result, slid, pool, sensing, permission, start, toss, settle, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value })
+const { ready, failed, state, result, slid, shaken, pool, sensing, permission, start, toss, settle, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value })
 const rolling = computed(() => isRolling(state.value))
+// Kept across visits, so the hint to shake goes for good after one shake.
+const everShaken = ref(loadShaken())
+watch(shaken, (now) => {
+  if (!now || everShaken.value) return
+  everShaken.value = true
+  saveShaken()
+})
 
 function changePool(next: DicePool) {
   if (setPool(next)) savePool(pool.value)
@@ -531,6 +546,7 @@ if (debug) {
 .cup__hint {
   margin: 0;
   text-align: center;
+  text-wrap: balance;
 }
 
 .cup__debug {

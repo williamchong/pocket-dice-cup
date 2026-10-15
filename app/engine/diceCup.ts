@@ -17,6 +17,8 @@ export interface CupSnapshot {
   result: number[] | null
   /** How many dice of the result did not roll over; see CupSimulation.slid. */
   slid: number
+  /** Whether the phone has been shaken yet; see CupSimulation.shaken. */
+  shaken: boolean
   /** Frames have stopped while the phone lies screen-down; see CupSimulation.dormant. */
   dormant: boolean
 }
@@ -173,7 +175,7 @@ export class DiceCup {
   }
 
   private notifyChange(): void {
-    this.onChange({ state: this.simulation.state, result: this.simulation.result, slid: this.simulation.slid.length, dormant: this.framesStopped })
+    this.onChange({ state: this.simulation.state, result: this.simulation.result, slid: this.simulation.slid.length, shaken: this.simulation.shaken, dormant: this.framesStopped })
   }
 
   /**

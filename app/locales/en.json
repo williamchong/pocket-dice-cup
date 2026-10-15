@@ -4,7 +4,8 @@
   },
   "cup": {
     "failed": "3D graphics could not start in this browser.",
-    "begin": "Tap to begin",
+    "begin": "Tap to begin, then shake the phone",
+    "shakeHint": "Shake the phone like a dice cup, then lay it flat",
     "settle": "Settle",
     "history": "History",
     "style": "Style",

@@ -52,6 +52,8 @@ export class CupSimulation {
    * and the trick is left to work, so they are only pointed out.
    */
   slid: number[] = []
+  /** Whether the phone has been shaken since the cup was made, rather than only tapped. */
+  shaken = false
 
   readonly analyser = new MotionAnalyser()
   readonly physics: PhysicsWorld
@@ -103,6 +105,7 @@ export class CupSimulation {
    */
   tick(dtSeconds: number, acceleration: Vec3, timeMs: number): boolean {
     this.analyser.update(acceleration, timeMs)
+    if (this.analyser.shaking) this.shaken = true
     // Read before the step, so a toss's first frame of spin is counted.
     if (!isRolling(this.state) && (this.analyser.shaking || this.tossed)) {
       this.rollStart = this.readFaces().map(face => ({ face, lowest: 1 }))

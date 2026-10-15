@@ -106,6 +106,7 @@ describe('CupSimulation', () => {
     expect(simulation.result![0]).toBeGreaterThanOrEqual(1)
     expect(simulation.result![0]).toBeLessThanOrEqual(6)
     expect(settleSeconds).toBeLessThan(5)
+    expect(simulation.shaken).toBe(true)
     simulation.dispose()
   })
 
@@ -270,6 +271,8 @@ describe('CupSimulation', () => {
       expect(states).toEqual(['idle', 'shaking', 'settling', 'result'])
       // Its centre at least a die's width up, so it is in the air, not sliding.
       expect(peakHeight).toBeGreaterThan(D6_SIZE)
+      // A tap is not a shake, so the hint to shake the phone stays up.
+      expect(simulation.shaken).toBe(false)
       counts[simulation.result![0]! - 1]!++
       simulation.dispose()
     }

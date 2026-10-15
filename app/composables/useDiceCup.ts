@@ -28,6 +28,8 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
   const result = ref<number[] | null>(null)
   /** How many dice of the result slid without turning over. */
   const slid = ref(0)
+  /** The phone has been shaken since the page opened, not only tapped. */
+  const shaken = ref(false)
   const pool = shallowRef<DicePool>(['d6'])
   /**
    * The sensor has sent a reading, as of the last change of state. Desktop
@@ -64,6 +66,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
         state.value = snapshot.state
         result.value = snapshot.result
         slid.value = snapshot.slid
+        shaken.value = snapshot.shaken
         sensing.value = source.active
         screenAwake?.setWanted(!snapshot.dormant)
       }, options, recorder)
@@ -154,5 +157,5 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     cup?.settle()
   }
 
-  return { ready, failed, state, result, slid, pool, sensing, permission, start, toss, settle, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit }
+  return { ready, failed, state, result, slid, shaken, pool, sensing, permission, start, toss, settle, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit }
 }
