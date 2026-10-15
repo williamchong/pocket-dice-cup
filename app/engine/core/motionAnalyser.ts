@@ -117,6 +117,11 @@ export class MotionAnalyser {
     return this.agitation > SHAKE_THRESHOLD || this.reversalTimesMs.length >= REVERSALS_TO_SHAKE
   }
 
+  /** Steady gravity as the device feels it, with jolts filtered out, or null before the first sample. */
+  get steadyGravity(): Vec3 | null {
+    return this.gravity && { ...this.gravity }
+  }
+
   /** How long the device has been still, in ms; 0 while it moves. */
   get stillMs(): number {
     return this.stillSinceMs === null ? 0 : this.lastTimeMs - this.stillSinceMs

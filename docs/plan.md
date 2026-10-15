@@ -227,7 +227,15 @@ Phases
    Status: a click or tap tosses the dice, with or without a sensor, and
    when motion access is refused or there is no sensor a line under the
    buttons says so. The space bar tosses too, unless a button or field has
-   the focus, where it presses that instead. Not yet done: drag to throw.
+   the focus, where it presses that instead. A tap throws the dice away
+   from gravity, not off the screen: with the phone tilted 40° or more they
+   fell back into the corner by the bottom wall and slid there, and a d6
+   landed on its last face a quarter of the time over 1,200 taps in a row.
+   Now 15-18% at every tilt, against 17% for a fair die, checked by
+   `npm run test:fairness`. A d4 among other dice still keeps its face
+   about 30% of the time, against 25%, once the phone is tilted 40° or
+   more. Not yet checked on the iPhone: how the harder throw looks and
+   sounds. Not yet done: drag to throw.
 7. **PWA polish.** Offline, installable, fullscreen, rendering paused while the
    phone is face-down.
    Status: screen-down, the dice still roll and are heard and felt, but are

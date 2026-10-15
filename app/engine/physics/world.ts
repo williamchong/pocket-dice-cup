@@ -4,7 +4,7 @@ import { countKinds, MAX_DICE, normalisePool, type DicePool } from '../core/pool
 import { D6_SIZE } from '../dice/d6'
 import { COCKED_ALIGNMENT, faceTowards, TOWARDS_FLOOR } from '../dice/faces'
 import { compareKinds, DIE_KINDS, DIE_SHAPES, type DieShape } from '../dice/shapes'
-import { axisAngle, distance, dot, length, multiply, rotationBetween, type Quat, type Vec3 } from '../math'
+import { axisAngle, distance, dot, length, multiply, rotate, rotationBetween, type Quat, type Vec3 } from '../math'
 
 /** The Rapier module, passed in so that only the caller decides when its WASM is loaded. */
 export type Rapier = typeof import('@dimforge/rapier3d-compat').default
@@ -21,6 +21,9 @@ const UNITS_PER_METRE = 100
 const FIXED_DT = 1 / 480
 /** Cap on catch-up steps after a slow frame (50 ms worth), so one hitch cannot snowball. */
 const MAX_STEPS_PER_FRAME = 24
+
+/** Out of the screen, towards the glass: up with the phone lying screen-up. */
+const SCREEN_UP: Vec3 = { x: 0, y: 0, z: 1 }
 
 const WALL_THICKNESS = 4
 /**
@@ -408,15 +411,17 @@ export class PhysicsWorld {
   }
 
   /**
-   * Launches every die up at `lift` and sideways at `push` (cm/s) in a random
-   * direction, spinning at `spin` (rad/s) about a random axis, so it tumbles
-   * whatever face it starts on.
+   * Launches every die at `lift` along `up` (a unit vector, away from gravity)
+   * and at `push` (cm/s) square to it in a random direction, spinning at
+   * `spin` (rad/s) about a random axis, so it tumbles whatever face it starts
+   * on.
    */
-  launchDice({ lift, push, spin }: { lift: number, push: number, spin: number }, random: () => number): void {
+  launchDice({ lift, push, spin }: { lift: number, push: number, spin: number }, random: () => number, up: Vec3 = SCREEN_UP): void {
     this.startRoll()
+    const turn = rotationBetween(SCREEN_UP, up)
     for (const { body: die } of this.dice) {
       const heading = 2 * Math.PI * random()
-      die.setLinvel({ x: push * Math.cos(heading), y: push * Math.sin(heading), z: lift }, true)
+      die.setLinvel(rotate({ x: push * Math.cos(heading), y: push * Math.sin(heading), z: lift }, turn), true)
       const axis = randomDirection(random)
       die.setAngvel({ x: spin * axis.x, y: spin * axis.y, z: spin * axis.z }, true)
     }

@@ -4,11 +4,24 @@ import type { DicePool } from './core/pool'
 import { isRolling, nextState, type CupState } from './core/stateMachine'
 import { readFace } from './dice/faces'
 import { REST_ACCELERATION } from './input/motionSource'
-import type { Vec3 } from './math'
+import { length, normalise, type Vec3 } from './math'
 import { PhysicsWorld, type Rapier } from './physics/world'
 
-/** How hard a click hits the dice: up and sideways in cm/s, spin in rad/s. */
-const TOSS = { lift: 100, push: 80, spin: 50 }
+/**
+ * How hard a click hits the dice: up and sideways in cm/s, spin in rad/s.
+ * Thrown off the screen at 100 cm/s and 50 rad/s, a d6 tapped in 1,200 rolls
+ * in a row with the phone tilted 40° to upright landed on the face it had
+ * 25-26% of the time, where a fair die does it 17%. Thrown away from gravity
+ * at these, it did 15-18% at every tilt. A d4 among other dice still keeps
+ * its face about 30% of the time, against 25%, once the phone is tilted 40°
+ * or more; spinning it at 120 rad/s did not change that.
+ */
+const TOSS = { lift: 150, push: 80, spin: 80 }
+/**
+ * Steady gravity (m/s²) below which it gives no direction to toss the dice
+ * away from, as in free fall, and they are thrown off the screen instead.
+ */
+const MIN_TOSS_GRAVITY = 1
 /** How long the phone lies still screen-down, its dice asleep, before the cup goes dormant. */
 const DORMANT_AFTER_MS = 2000
 
@@ -103,11 +116,15 @@ export class CupSimulation {
   }
 
   /**
-   * Rolls from a click or tap: hits the dice up into the air with a
-   * random push and spin, and starts a roll on the next tick.
+   * Rolls from a click or tap: hits the dice up, away from gravity, with a
+   * random push and spin, and starts a roll on the next tick. Up comes from
+   * the analyser's steady gravity, which the jolt of a finger on the screen
+   * barely moves, not from the pinned pull of a shown result.
    */
   toss(random: () => number = Math.random): void {
-    this.physics.launchDice(TOSS, random)
+    const gravity = this.analyser.steadyGravity
+    const up = gravity && length(gravity) > MIN_TOSS_GRAVITY ? normalise(gravity) : undefined
+    this.physics.launchDice(TOSS, random, up)
     this.tossed = true
   }
 

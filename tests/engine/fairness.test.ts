@@ -23,6 +23,21 @@ interface Roll {
   frameMs: number
 }
 
+/** Runs `simulation` a frame at a time, counting the frames run so far. */
+function stepper(simulation: CupSimulation) {
+  let time = 0
+  const stepper = {
+    frames: 0,
+    /** Ticks for `seconds` with readings from `sample`, which takes the time since the call, or until `until`. */
+    run(seconds: number, sample: (t: number) => typeof REST_ACCELERATION, until?: () => boolean) {
+      for (const start = time; time - start < seconds && !until?.(); time += FRAME, stepper.frames++) {
+        simulation.tick(FRAME, sample(time - start), time * 1000)
+      }
+    },
+  }
+  return stepper
+}
+
 /**
  * Shakes a cup of `pool` for 1 to 2 seconds and puts it down, waiting up to
  * `settleSeconds` for a result. The dice start at random places and faces
@@ -34,18 +49,13 @@ function roll(pool: DicePool, seed: number, settleSeconds = 10): Roll {
   vi.restoreAllMocks()
   const phase = seed * 2.399
   const shakeSeconds = 1 + (seed * 0.618) % 1
-  let time = 0
-  let frames = 0
+  const steps = stepper(simulation)
+  const { run } = steps
   const started = performance.now()
-  const run = (seconds: number, sample: (t: number) => typeof REST_ACCELERATION, until?: () => boolean) => {
-    for (const start = time; time - start < seconds && !until?.(); time += FRAME, frames++) {
-      simulation.tick(FRAME, sample(time - start), time * 1000)
-    }
-  }
   run(0.5, () => REST_ACCELERATION)
   run(shakeSeconds, t => shake(t, phase))
   run(settleSeconds, () => REST_ACCELERATION, () => simulation.state === 'result')
-  const frameMs = (performance.now() - started) / frames
+  const frameMs = (performance.now() - started) / steps.frames
   let cocked = 0
   for (let index = 0; index < simulation.physics.dieCount; index++) {
     if (readFace(simulation.physics.dieShape(index), simulation.physics.dieRotation(index)).alignment < COCKED_ALIGNMENT) cocked++
@@ -118,6 +128,38 @@ describe.runIf(process.env.FAIRNESS)('the distribution of each kind of die', () 
     for (let seed = 1; seed <= ROLLS; seed++) cocked += roll([kind], seed).cocked
     console.log(`${kind}: ${cocked} cocked of ${ROLLS}`)
     expect(cocked / ROLLS).toBeLessThan(0.05)
+  })
+
+  // A tap with the phone tilted used to throw the dice off the screen, and
+  // they fell back into the corner by the bottom wall and slid there (see
+  // TOSS). In this run of 400 taps in a row at 60°, each from where the d6
+  // last landed, the old throw left it on its last face 29% of the time and
+  // the new one 19%, where a fair die does 17%; the limit sits between.
+  it('rarely leaves a tapped d6 on its last face with the phone tilted', () => {
+    const g = REST_ACCELERATION.z
+    const tilted = (degrees: number) => ({ x: 0, y: g * Math.sin(degrees * Math.PI / 180), z: g * Math.cos(degrees * Math.PI / 180) })
+    const random = seededRandom(11)
+    vi.spyOn(Math, 'random').mockImplementation(random)
+    const simulation = new CupSimulation(RAPIER, box, { pool: ['d6'] })
+    vi.restoreAllMocks()
+    const { run } = stepper(simulation)
+    let repeats = 0
+    let last: number | undefined
+    for (let toss = 0; toss < 400; toss++) {
+      // Tilted to 60° and held, tapped, then laid flat for the result.
+      run(0.6, t => tilted(60 * Math.min(1, t / 0.6)))
+      run(0.5 + random(), () => tilted(60))
+      simulation.toss(random)
+      run(1 + random(), () => tilted(60))
+      run(0.6, t => tilted(60 * Math.max(0, 1 - t / 0.6)))
+      run(20, () => REST_ACCELERATION, () => simulation.state === 'result')
+      const value = simulation.result![0]
+      if (value === last) repeats++
+      last = value
+    }
+    simulation.dispose()
+    console.log(`tilted tap: ${repeats} repeats of 399`)
+    expect(repeats / 399).toBeLessThan(0.21)
   })
 
   // A full cup piles up against a wall, where a fifth of the dice came to
