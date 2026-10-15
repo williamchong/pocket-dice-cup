@@ -8,6 +8,10 @@
       v-if="rollBreakdown(values, kinds)"
       class="result__dice"
     >{{ rollBreakdown(values, kinds) }}</span>
+    <span
+      v-if="slid"
+      class="result__slid"
+    >{{ $t('cup.slid', slid) }}</span>
   </div>
 </template>
 
@@ -17,6 +21,8 @@ import type { DieKind } from '~/engine/dice/shapes'
 defineProps<{
   values: readonly number[]
   kinds: readonly DieKind[]
+  /** How many of the dice slid without turning over, which a gentle shake can leave. */
+  slid: number
 }>()
 </script>
 
@@ -43,6 +49,13 @@ defineProps<{
   max-width: 16rem;
   text-align: center;
   opacity: 0.8;
+}
+
+.result__slid {
+  max-width: 16rem;
+  text-align: center;
+  font-size: 0.875rem;
+  opacity: 0.6;
 }
 
 @keyframes result-in {

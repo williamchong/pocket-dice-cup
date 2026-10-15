@@ -9,7 +9,8 @@
     "history": "History",
     "style": "Style",
     "denied": "Motion access was refused, so tap to shake. To shake the phone instead, open the page again and allow motion access.",
-    "unsupported": "This browser has no motion sensor, so click, tap or press space to shake."
+    "unsupported": "This browser has no motion sensor, so click, tap or press space to shake.",
+    "slid": "1 die didn’t roll over | {n} dice didn’t roll over"
   },
   "sheet": {
     "done": "Done"

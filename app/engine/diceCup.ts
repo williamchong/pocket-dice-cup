@@ -15,6 +15,8 @@ import { CupSimulation, type CupOptions } from './simulation'
 export interface CupSnapshot {
   state: CupState
   result: number[] | null
+  /** How many dice of the result slid without turning over; see CupSimulation.slid. */
+  slid: number
   /** Frames have stopped while the phone lies screen-down; see CupSimulation.dormant. */
   dormant: boolean
 }
@@ -167,7 +169,7 @@ export class DiceCup {
   }
 
   private notifyChange(): void {
-    this.onChange({ state: this.simulation.state, result: this.simulation.result, dormant: this.framesStopped })
+    this.onChange({ state: this.simulation.state, result: this.simulation.result, slid: this.simulation.slid, dormant: this.framesStopped })
   }
 
   /**

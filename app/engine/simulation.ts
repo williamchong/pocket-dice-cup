@@ -2,7 +2,7 @@ import type { BoxSize } from './box'
 import { MotionAnalyser } from './core/motionAnalyser'
 import type { DicePool } from './core/pool'
 import { isRolling, nextState, type CupState } from './core/stateMachine'
-import { readFace } from './dice/faces'
+import { readAlignment, readFace, type DieFace } from './dice/faces'
 import { REST_ACCELERATION } from './input/motionSource'
 import { length, normalise, type Vec3 } from './math'
 import { PhysicsWorld, type Rapier } from './physics/world'
@@ -45,6 +45,13 @@ export class CupSimulation {
   state: CupState = 'idle'
   /** One value per die once they have settled, otherwise null. */
   result: number[] | null = null
+  /**
+   * How many dice of the result never turned over in the roll: each ended on
+   * the face it began with, which never tipped past sideways, so it slid,
+   * rocked or stood still. A real cup slid gently does the same, and the
+   * trick is left to work, so it is only pointed out.
+   */
+  slid = 0
 
   readonly analyser = new MotionAnalyser()
   readonly physics: PhysicsWorld
@@ -58,6 +65,12 @@ export class CupSimulation {
    * phone lying flat.
    */
   private pinned: Vec3 | null = null
+  /**
+   * The face each die showed as the roll began, and the least its alignment
+   * with the way the die is read has been since: below 0 it has tipped past
+   * sideways.
+   */
+  private rollStart: { face: DieFace, lowest: number }[] = []
   /** Where new dice are placed at random; with none, on a fixed grid. */
   private readonly random: (() => number) | undefined
 
@@ -78,7 +91,9 @@ export class CupSimulation {
     if (this.physics.pool.join() === before) return false
     this.state = 'idle'
     this.result = null
+    this.slid = 0
     this.pinned = null
+    this.rollStart = []
     return true
   }
 
@@ -88,6 +103,10 @@ export class CupSimulation {
    */
   tick(dtSeconds: number, acceleration: Vec3, timeMs: number): boolean {
     this.analyser.update(acceleration, timeMs)
+    // Read before the step, so a toss's first frame of spin is counted.
+    if (!isRolling(this.state) && (this.analyser.shaking || this.tossed)) {
+      this.rollStart = this.readFaces().map(face => ({ face, lowest: 1 }))
+    }
     this.physics.setAcceleration(this.pinned ?? acceleration)
     this.physics.step(dtSeconds)
 
@@ -98,6 +117,7 @@ export class CupSimulation {
       diceAtRest: this.physics.diceAtRest,
     })
     this.tossed = false
+    if (isRolling(next)) this.trackTurns()
     if (next === this.state) return false
 
     this.state = next
@@ -106,10 +126,13 @@ export class CupSimulation {
     // must hold.
     if (next === 'shaking') {
       this.result = null
+      this.slid = 0
       this.pinned = null
     }
     if (next === 'result') {
-      this.result = this.readDice()
+      const faces = this.readFaces()
+      this.result = faces.map(face => face.value)
+      this.slid = this.rollStart.filter(({ face, lowest }, index) => face === faces[index] && lowest > 0).length
       this.pinned ??= { ...acceleration }
     }
     return true
@@ -152,10 +175,23 @@ export class CupSimulation {
     this.physics.dispose()
   }
 
-  private readDice(): number[] {
+  private readFaces(): DieFace[] {
     return Array.from(
       { length: this.physics.dieCount },
-      (_, index) => readFace(this.physics.dieShape(index), this.physics.dieRotation(index)).face.value,
+      (_, index) => readFace(this.physics.dieShape(index), this.physics.dieRotation(index)).face,
     )
+  }
+
+  /**
+   * Once a frame: a die that rocks onto a neighbouring face and back, as a d20
+   * does in a gentle shake, ends where it began, so the face it shows is not
+   * enough to tell it turned over.
+   */
+  private trackTurns(): void {
+    this.rollStart.forEach((start, index) => {
+      if (start.lowest <= 0) return
+      const alignment = readAlignment(this.physics.dieShape(index), start.face, this.physics.dieRotation(index))
+      start.lowest = Math.min(start.lowest, alignment)
+    })
   }
 }

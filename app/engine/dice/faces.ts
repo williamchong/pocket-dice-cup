@@ -33,5 +33,14 @@ export function faceTowards(faces: readonly DieFace[], rotation: Quat, direction
 
 /** The face that counts on a die of `shape`: the top one, or for a d4 the one it lies on. */
 export function readFace(shape: DieShape, rotation: Quat): { face: DieFace, alignment: number } {
-  return faceTowards(shape.faces, rotation, shape.reads === 'down' ? TOWARDS_FLOOR : TOWARDS_VIEWER)
+  return faceTowards(shape.faces, rotation, readDirection(shape))
+}
+
+/** How directly `face` points the way the die of `shape` is read: 1 when it counts lying flat, 0 when it faces sideways. */
+export function readAlignment(shape: DieShape, face: DieFace, rotation: Quat): number {
+  return dot(rotate(face.normal, rotation), readDirection(shape))
+}
+
+function readDirection(shape: DieShape): Vec3 {
+  return shape.reads === 'down' ? TOWARDS_FLOOR : TOWARDS_VIEWER
 }

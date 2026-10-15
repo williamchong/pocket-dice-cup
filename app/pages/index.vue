@@ -115,6 +115,7 @@
       class="cup__result"
       :values="result"
       :kinds="pool"
+      :slid="slid"
     />
 
     <div
@@ -210,7 +211,7 @@ const canvas = useTemplateRef('canvas')
 // Shaking tips the phone far enough for the browser to rotate the page; the
 // cup stays put in the phone's own frame instead.
 const counterRotationStyle = useCounterRotation()
-const { ready, failed, state, result, pool, sensing, permission, start, toss, settle, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value })
+const { ready, failed, state, result, slid, pool, sensing, permission, start, toss, settle, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value })
 const rolling = computed(() => isRolling(state.value))
 
 function changePool(next: DicePool) {

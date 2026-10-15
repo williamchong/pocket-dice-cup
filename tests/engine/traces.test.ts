@@ -7,6 +7,7 @@ import { readFace } from '../../app/engine/dice/faces'
 import { DIE_KINDS } from '../../app/engine/dice/shapes'
 import type { MotionTrace } from '../../app/engine/input/motionTrace'
 import { CupSimulation } from '../../app/engine/simulation'
+import { REST_ACCELERATION } from '../../app/engine/input/motionSource'
 import { seededRandom } from './seededRandom'
 
 // Sensor readings recorded on an iPhone with ?debug and "Copy trace". Each one
@@ -149,5 +150,29 @@ describe('recorded iPhone traces', () => {
     }
     expect(keptFace).toBeLessThan(starts / 3)
     expect(faceChanges / starts).toBeGreaterThan(1.5)
+  })
+
+  // The gentle shake slides a d6 about on the face it starts on, every time,
+  // where a hard one never leaves a die so. The die is left there, as in a
+  // real cup, and only pointed out.
+  it.each(['d6', 'd20'] as const)('point out a %s a gentle shake leaves on its face, and not one shaken hard', (kind) => {
+    const slid = (name: string) => {
+      let count = 0
+      for (let seed = 1; seed <= 20; seed++) {
+        vi.spyOn(Math, 'random').mockImplementation(seededRandom(seed))
+        const simulation = new CupSimulation(RAPIER, boxForViewport(390, 844), { pool: [kind] })
+        vi.restoreAllMocks()
+        replay(simulation, load(name))
+        let timeMs = load(name).samples.at(-1)![0]
+        while (simulation.state !== 'result' && timeMs < 30_000) simulation.tick(1 / 60, REST_ACCELERATION, timeMs += 1000 / 60)
+        expect(simulation.state).toBe('result')
+        count += simulation.slid
+        simulation.dispose()
+      }
+      return count
+    }
+    // A d20 rocks onto a neighbouring face and back in 4 of the 20.
+    expect(slid('shake-gentle')).toBeGreaterThanOrEqual(kind === 'd6' ? 20 : 2)
+    expect(slid('shake-vertical')).toBe(0)
   })
 })
