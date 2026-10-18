@@ -62,6 +62,11 @@ describe('translations', () => {
     expect(keys(messages).sort()).toEqual(keys(en).sort())
   })
 
+  it('describes the app in the page head as it does in English', () => {
+    const config = readFileSync(new URL('../nuxt.config.ts', import.meta.url), 'utf8')
+    expect(config).toContain(`const DESCRIPTION = '${en.about.tagline}'`)
+  })
+
   it('names every skin', () => {
     for (const skin of DIE_SKINS) expect(en.skin).toHaveProperty(skin.id)
   })

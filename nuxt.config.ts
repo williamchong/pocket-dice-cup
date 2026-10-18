@@ -1,4 +1,11 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+
+// The GitHub Pages build serves the site from the project path (CLAUDE.md).
+const baseURL = process.env.NUXT_APP_BASE_URL ?? '/'
+// In the page itself, for search engines and link previews that run no script;
+// the app sets it in the reader's language once it starts (app.vue).
+const DESCRIPTION = 'A dice cup in your phone: shake it, hear the dice rattle, lay it down and read the roll.'
+
 export default defineNuxtConfig({
   modules: ['@nuxt/eslint', '@nuxt/ui'],
 
@@ -38,6 +45,15 @@ export default defineNuxtConfig({
     },
   },
 
+  nitro: {
+    prerender: {
+      // The about page as a file of its own, which GitHub Pages serves for
+      // its address; otherwise it would get the 404 page, with a 404 status
+      // that keeps it out of search results.
+      routes: ['/about'],
+    },
+  },
+
   runtimeConfig: {
     public: {
       // The debug overlay without `?debug` in the URL, for the iOS app, which
@@ -61,11 +77,16 @@ export default defineNuxtConfig({
         // handled while being shaken.
         { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover' },
         { name: 'theme-color', content: '#12241b' },
+        { name: 'description', content: DESCRIPTION },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:title', content: 'Pocket Dice Cup' },
+        { property: 'og:description', content: DESCRIPTION },
       ],
-      // Relative, so they resolve under the GitHub Pages project path too.
+      // From the base URL rather than relative, so they also resolve from
+      // the about page's address, a folder deeper.
       link: [
-        { rel: 'icon', type: 'image/svg+xml', href: 'favicon.svg' },
-        { rel: 'apple-touch-icon', href: 'apple-touch-icon.png' },
+        { rel: 'icon', type: 'image/svg+xml', href: `${baseURL}favicon.svg` },
+        { rel: 'apple-touch-icon', href: `${baseURL}apple-touch-icon.png` },
       ],
     },
   },

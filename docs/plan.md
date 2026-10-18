@@ -265,6 +265,14 @@ Phases
    time the hint comes, then stops: SVG is not animated on the compositor,
    so a loop kept the page drawing while the dice were asleep. Not yet
    checked on the iPhone.
+   A ? button beside Style opens an about page at `/about`, which says what
+   the app is and how each part works, in the reader's language. It is a
+   child route of the cup's page, so the dice stay loaded behind it, and has
+   an address of its own for search engines: the static build writes it out
+   as `about/index.html`, as GitHub Pages would otherwise serve the 404
+   page, with a 404 status, for it. The page's head also carries an English
+   description for crawlers and link previews that run no script. Not yet
+   checked on the iPhone, or with Android's back gesture.
 7. **PWA polish.** Offline, installable, fullscreen, rendering paused while the
    phone is face-down.
    Status: screen-down, the dice still roll and are heard and felt, but are

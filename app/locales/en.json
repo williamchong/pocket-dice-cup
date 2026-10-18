@@ -36,5 +36,46 @@
     "emerald": "Emerald",
     "amethyst": "Amethyst",
     "gold": "Gold"
+  },
+  "about": {
+    "label": "About and help",
+    "tagline": "A dice cup in your phone: shake it, hear the dice rattle, lay it down and read the roll.",
+    "intro": "Pocket Dice Cup turns your phone into a dice cup for board games, tabletop RPGs and dice games. The dice are real 3D physics inside the phone: they rattle against the screen’s edges as you shake it, with a clack and a tap of vibration on every hit, and come to rest when you lay it down. The result is read from the faces the dice land on, never from a random number.",
+    "shake": {
+      "title": "Shake to roll",
+      "body": "Hold the phone like a dice cup and shake it. The dice tumble the way the phone moves, so a hard shake rolls them hard and a gentle one barely turns them. Then lay the phone flat on the table, screen up, and the total shows once the dice stop."
+    },
+    "settle": {
+      "title": "Settle",
+      "body": "A phone held in the hand is never quite flat or still, so the dice slide into its lowest edge. While a roll is under way, Settle lets them drop as if the phone lay flat on the table, and the roll ends with a result."
+    },
+    "tap": {
+      "title": "Tap, click or press space",
+      "body": "On a computer, or where the browser has no motion sensor or motion access was refused, tap the table, click it or press the space bar to throw the dice. A tap is also a quick way to roll again on the phone."
+    },
+    "dice": {
+      "title": "Choose your dice",
+      "body": "The dice button shows what is in the cup, such as 3d6 or 2d6 + d20. Tap it to add or take out dice: up to {dice} at once, mixing d4, d6, d8, d10, d12 and d20. The result card shows the total and each die’s value."
+    },
+    "rolledOver": {
+      "title": "Dice that did not roll over",
+      "body": "A gentle shake can slide a die about on one face without turning it, as in a real cup. A faint ring on the table marks each die that ended on the face it started with; shake harder for a fair roll."
+    },
+    "history": {
+      "title": "History",
+      "body": "History keeps your last {history} rolls, with each die and the time, on this device. Clear removes them."
+    },
+    "style": {
+      "title": "Style",
+      "body": "Style changes the dice’s finish: ivory, ebony, casino red, sapphire, emerald, amethyst or gold."
+    },
+    "feel": {
+      "title": "Sound and vibration",
+      "body": "Each hit plays a clack, louder for a harder hit, once you have tapped the screen. The phone also taps with each hit in the iPhone and Android apps and in Android browsers; iPhone browsers cannot vibrate. The iPhone’s silent switch mutes the sound, as it does in games."
+    },
+    "privacy": {
+      "title": "Privacy",
+      "body": "Everything runs on your device. The motion sensor’s readings, your dice and your history stay on it, and there are no accounts, ads or tracking."
+    }
   }
 }

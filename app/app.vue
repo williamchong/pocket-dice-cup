@@ -18,5 +18,9 @@ const UI_LOCALES = {
 }
 
 const { locale, t } = useI18n<object, AppLocale>()
-useHead({ htmlAttrs: { lang: locale }, title: t('app.name') })
+useHead({
+  htmlAttrs: { lang: locale },
+  title: t('app.name'),
+  meta: [{ name: 'description', content: t('about.tagline') }],
+})
 </script>

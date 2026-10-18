@@ -63,6 +63,13 @@
           :aria-pressed="openSheet === 'skin'"
           @click="toggle('skin')"
         />
+        <!-- A link rather than a button, so search engines follow it to the about page. -->
+        <UButton
+          class="min-h-11 min-w-11 justify-center"
+          to="/about"
+          icon="i-lucide-circle-help"
+          :aria-label="$t('about.label')"
+        />
       </div>
       <!-- Until the first shake, for anyone who only taps: the shake is
            what the app is for. -->
@@ -129,6 +136,9 @@
       :kinds="pool"
       :slid="slid"
     />
+
+    <!-- The about page (index/about.vue), over the cup. -->
+    <NuxtPage />
 
     <div
       v-if="debug"
@@ -277,8 +287,17 @@ const openSheet = ref<Sheet | null>(null)
 function toggle(sheet: Sheet) {
   openSheet.value = openSheet.value === sheet ? null : sheet
 }
-// Android's back gesture closes the open sheet before it leaves the app.
+const backToCup = useBackToCup()
+const aboutOpen = computed(() => route.name === 'index-about')
+watch(aboutOpen, (now) => {
+  if (now) openSheet.value = null
+}, { immediate: true })
+// Android's back gesture closes the about page or the open sheet before it leaves the app.
 useBackButton(() => {
+  if (aboutOpen.value) {
+    backToCup()
+    return true
+  }
   if (!openSheet.value) return false
   openSheet.value = null
   return true
@@ -307,7 +326,8 @@ watch(rolling, (now) => {
 
 // The space bar rolls, as a click does; a key press also lets the sound start.
 function onKeydown(event: KeyboardEvent) {
-  if (!isRollKey(event)) return
+  // On the about page, the space bar scrolls the text instead.
+  if (!isRollKey(event) || aboutOpen.value) return
   // Space would otherwise scroll the page.
   event.preventDefault()
   toss()
