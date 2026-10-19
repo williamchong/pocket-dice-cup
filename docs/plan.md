@@ -205,11 +205,11 @@ Phases
    would not match them. Readings stop while the app is in the background.
    Checked on the iPhone, from the app's console: the plugin starts at
    launch with no tap, the page never asks for motion access, and readings
-   arrive at about 62 a second, reading 1 g lying still. Checked by hand on
-   the iPhone: a shake rolls the dice and putting the phone down ends in a
-   result, as through the WebView. A trace recorded through Core Motion
-   (`shake-core-motion.json`) matches the WebView's: about 60 readings a
-   second, 9.79 m/s² still, and a shake peaking at 33 m/s², as hard as
+   arrive at about 62 a second, reading 1 g lying still. By hand, a shake
+   rolls the dice and putting the phone down ends in a result, as through
+   the WebView. A trace recorded through Core Motion
+   (`shake-core-motion.json`) matches the WebView's: a reading every 17 ms,
+   9.79 m/s² still, and a shake peaking at 33 m/s², as hard as
    `shake-face-down`; replayed, it rolls through to a result. Core Motion's
    filtered gravity is steadier, varying by about 0.01 m/s² still where the
    WebView's varied by 0.08 to 1.7, which only makes stillness easier to
