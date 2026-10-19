@@ -73,7 +73,15 @@ let go of that pull, so with the phone still in the hand the dice slid into
 the low wall again and waited there for Settle. Now a tap with the phone
 neither resting screen-up nor being shaken lays the dice flat in the same
 way, and one lying still on a table, even tilted up to 45°, keeps its pull.
-Not yet checked on the iPhone.
+While the dice are laid flat either way, the floor's bounce drops from 0.8
+to 0.35, so they land on the screen and stay there instead of bouncing off
+it again. Over 20 shakes of 3 d6 held upright, a die rose up to 0.6 cm off
+the screen again after landing at the dice's own bounce and 0.1 cm at the
+floor's low one, and the result came about 0.1 s sooner.
+It left the dice as fair: 400 taps in the hand at 60° repeated the last face
+14% of the time (20% before, 17% for a fair die), and 60 cups of 12 dice
+laid flat mid-shake gave χ² 9.4 of 20.5 on the d6 and 7.6 of 43.8 on the
+d20. Not yet checked on the iPhone.
 
 Stack
 -----

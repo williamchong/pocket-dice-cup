@@ -111,6 +111,7 @@ export class CupSimulation {
       this.rollStart = this.readFaces().map(face => ({ face, lowest: 1 }))
     }
     this.physics.setAcceleration(this.pinned ?? acceleration)
+    this.physics.setLayingFlat(this.layingFlat)
     this.physics.step(dtSeconds)
 
     const next = nextState(this.state, {
@@ -167,9 +168,10 @@ export class CupSimulation {
 
   /**
    * Lays the dice down during a roll as if the phone were flat and still,
-   * however it is held: they fall straight onto the screen and the roll
-   * goes on to a result. A shake starts a new roll. Returns whether it did
-   * anything.
+   * however it is held: they fall straight onto the screen, which bounces
+   * them less until the result (see PhysicsWorld.setLayingFlat) so they
+   * stay on it, and the roll goes on to a result. A shake starts a new roll.
+   * Returns whether it did anything.
    */
   settle(): boolean {
     if (!isRolling(this.state)) return false

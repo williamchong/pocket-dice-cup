@@ -185,7 +185,7 @@ describe('CupSimulation', () => {
     })
 
     /** Shakes three dice, then holds the phone in the hand, settling after `settleAfter` s if given. */
-    function holdAfterShake(seconds: number, settleAfter?: number) {
+    function holdAfterShake(seconds: number, settleAfter?: number, seed = 7) {
       const simulation = fixedCup(box, 3)
       let time = 0
       const run = (frames: number, sample: (t: number) => Vec3) => {
@@ -195,7 +195,7 @@ describe('CupSimulation', () => {
         }
       }
       run(30, () => REST_ACCELERATION)
-      run(2 * 60, t => shake(t, 7))
+      run(2 * 60, t => shake(t, seed))
       run(Math.round((settleAfter ?? seconds) * 60), inHand)
       if (settleAfter !== undefined) {
         expect(simulation.settle()).toBe(true)
@@ -224,6 +224,32 @@ describe('CupSimulation', () => {
       const offWall = [0, 1, 2].filter(index => simulation.physics.diePosition(index).x > -box.width / 2 + D6_SIZE)
       expect(offWall.length).toBeGreaterThan(0)
       simulation.dispose()
+    })
+
+    it('drops the dice onto the screen and keeps them there, rather than bouncing them back up', () => {
+      // Held, the dice lie against the low wall, anywhere between the screen
+      // and the glass. Over these 20 shakes, at the dice's own bounce, one
+      // rose 0.08 cm off the screen again after reaching it; at the floor's
+      // low bounce while laying flat, none did.
+      let highest = 0
+      for (let seed = 1; seed <= 20; seed++) {
+        const simulation = holdAfterShake(1.5, undefined, seed)
+        simulation.settle()
+        const landed = [false, false, false]
+        let time = 100
+        while (simulation.state !== 'result' && time < 120) {
+          time += FRAME
+          simulation.tick(FRAME, inHand(time), time * 1000)
+          for (let index = 0; index < 3; index++) {
+            const height = simulation.physics.diePosition(index).z - D6_SIZE / 2
+            if (height < 0.05 * D6_SIZE) landed[index] = true
+            else if (landed[index]) highest = Math.max(highest, height)
+          }
+        }
+        expect(simulation.state).toBe('result')
+        simulation.dispose()
+      }
+      expect(highest).toBeLessThan(0.03)
     })
 
     it('says the roll is ending while it waits for the dice', () => {

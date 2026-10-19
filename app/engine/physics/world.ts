@@ -38,6 +38,13 @@ const RESTITUTION = 0.8
  * at the dice's bounce it sank a die visibly into a wall.
  */
 const SIDE_WALL_RESTITUTION = 0.35
+/**
+ * Bounce of the floor while the dice are laid flat by Settle or a tap in the
+ * hand, when it wins a contact (the Min rule). Dropped onto the screen at the
+ * dice's own bounce, a die held upright rose up to 0.6 cm off it again; at
+ * this, the bounce that slapped a tipping die flat (see RESTITUTION), 0.1.
+ */
+const LAYING_FLAT_RESTITUTION = 0.35
 /** Tuned with the bounce, so a die rolls on a little before it stops. */
 const FRICTION = 0.4
 
@@ -135,6 +142,13 @@ interface Die {
 export class PhysicsWorld {
   private readonly world: World
   private walls: Collider[] = []
+  /** The floor, the first of the walls. */
+  private get floor(): Collider {
+    return this.walls[0]!
+  }
+
+  /** Whether the floor has its low bounce (see LAYING_FLAT_RESTITUTION). */
+  private layingFlat = false
   /** In the pool's order, smallest kind first. */
   private dice: Die[] = []
   /** Each die's index by its body's handle, to tell which die a contact is with. */
@@ -294,6 +308,25 @@ export class PhysicsWorld {
       this.wakeAcceleration = { ...acceleration }
       for (const die of this.dice) die.body.wakeUp()
       this.startRoll()
+    }
+  }
+
+  /** Gives the floor its low bounce while the dice are laid flat, and its own back after. */
+  setLayingFlat(layingFlat: boolean): void {
+    if (layingFlat === this.layingFlat) return
+    this.layingFlat = layingFlat
+    this.setFloorBounce()
+  }
+
+  private setFloorBounce(): void {
+    const { CoefficientCombineRule } = this.rapier
+    if (this.layingFlat) {
+      this.floor.setRestitution(LAYING_FLAT_RESTITUTION)
+      this.floor.setRestitutionCombineRule(CoefficientCombineRule.Min)
+    }
+    else {
+      this.floor.setRestitution(RESTITUTION)
+      this.floor.setRestitutionCombineRule(CoefficientCombineRule.Average)
     }
   }
 
@@ -466,6 +499,7 @@ export class PhysicsWorld {
     const hy = height / 2
     const hz = depth / 2
     // The side walls overlap the floor and the glass so no corner is left open.
+    // The floor comes first, where the floor getter finds it.
     const slabs: Slab[] = [
       { half: { x: hx + 2 * t, y: hy + 2 * t, z: t }, centre: { x: 0, y: 0, z: -t }, side: false },
       { half: { x: hx + 2 * t, y: hy + 2 * t, z: t }, centre: { x: 0, y: 0, z: depth + t }, side: false },
@@ -495,6 +529,7 @@ export class PhysicsWorld {
       if (side) desc.setRestitutionCombineRule(CoefficientCombineRule.Min)
       return this.world.createCollider(desc)
     })
+    this.setFloorBounce()
   }
 }
 
