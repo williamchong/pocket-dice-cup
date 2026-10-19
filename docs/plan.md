@@ -194,9 +194,11 @@ Phases
    WebKit turns into `accelerationIncludingGravity` at the same rate, so the
    shake tuning and the recorded traces still hold; the raw accelerometer
    would not match them. Readings stop while the app is in the background.
-   Checked on the iPhone: the readings arrive at about 60 a second and lying
-   still read 1 g. Not yet checked on the iPhone: that no prompt or start
-   screen shows, and a shake, put-down and trace compared with the fixtures.
+   Checked on the iPhone, from the app's console: the plugin starts at
+   launch with no tap, the page never asks for motion access, and readings
+   arrive at about 62 a second, reading 1 g lying still. Not yet checked on
+   the iPhone: a shake, putting it down, and a trace compared with the
+   fixtures.
 3. **Dice set and pool.** All geometries, mixed pools, the notation parser.
    A headless Node test rolls each die thousands of times and checks the
    distribution is roughly uniform.
