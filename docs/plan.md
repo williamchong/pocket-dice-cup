@@ -295,9 +295,14 @@ Phases
    Nothing on screen said to shake the phone, so a first-time user tapped
    and took it for a plain dice roller. The tap that grants motion access
    on iOS now says to shake afterwards, and once the sensor is sending
-   readings, a line under the buttons says to shake the phone like a dice
-   cup and lay it flat whenever the cup is still, until the first roll the
-   phone was shaken for; that one shake is kept in `localStorage`. Beside
+   readings, a line above the buttons says to shake the phone like a dice
+   cup and lay it flat, until a roll starts while it shows, once a launch,
+   and never again once the phone has been shaken; that one shake is kept in
+   `localStorage`. In a mobile browser the tap that gives motion access also
+   rolls, so the hint first shows as that roll lands, as checked in Chromium
+   with Safari's gesture-only permission faked. It sits where Settle goes
+   during a roll, so the buttons, anchored to the bottom, stay put as it
+   comes and goes; under them it pushed them up and down. Beside
    it a drawn hand shakes a phone, its dice rattling, in five bursts each
    time the hint comes, then stops: SVG is not animated on the compositor,
    so a loop kept the page drawing while the dice were asleep. Not yet

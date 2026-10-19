@@ -32,6 +32,29 @@
       ref="footer"
       class="cup__footer"
     >
+      <!-- For anyone who has never shaken the phone, until a roll starts
+           while it shows: the shake is what the app is for. Above the buttons, where Settle
+           goes during a roll, so the bottom-anchored buttons stay put as the
+           hint comes and goes. -->
+      <p
+        v-if="sensing && !everShaken && !hintDismissed && !rolling"
+        class="cup__hint cup__hint--shake"
+      >
+        <ShakeHintIcon />
+        <span>{{ $t('cup.shakeHint') }}</span>
+      </p>
+      <p
+        v-else-if="permission === 'denied'"
+        class="cup__hint"
+      >
+        {{ $t('cup.denied') }}
+      </p>
+      <p
+        v-else-if="permission === 'unsupported'"
+        class="cup__hint"
+      >
+        {{ $t('cup.unsupported') }}
+      </p>
       <!-- Held in the hand, the phone is never put down flat enough to end
            the roll, so this ends it as if it were. Once asked, it spins
            until the dice come to rest, so the wait reads as the roll ending. -->
@@ -73,27 +96,6 @@
           :aria-label="$t('about.label')"
         />
       </div>
-      <!-- Until the first shake, for anyone who only taps: the shake is
-           what the app is for. -->
-      <p
-        v-if="sensing && !everShaken && !rolling"
-        class="cup__hint cup__hint--shake"
-      >
-        <ShakeHintIcon />
-        <span>{{ $t('cup.shakeHint') }}</span>
-      </p>
-      <p
-        v-else-if="permission === 'denied'"
-        class="cup__hint"
-      >
-        {{ $t('cup.denied') }}
-      </p>
-      <p
-        v-else-if="permission === 'unsupported'"
-        class="cup__hint"
-      >
-        {{ $t('cup.unsupported') }}
-      </p>
     </div>
 
     <!-- A sheet comes up from the bottom edge over the buttons, as on iOS.
@@ -240,6 +242,14 @@ const { ready, failed, state, result, slid, shaken, layingFlat, dice, pool, sens
 const rolling = computed(() => isRolling(state.value))
 // Kept across visits, so the hint to shake goes for good after one shake.
 const everShaken = ref(loadShaken())
+// Shown once a launch: a roll that starts while the hint shows puts it away
+// until the next launch. Not any roll: in a mobile browser the tap that
+// grants the sensor also rolls, before the hint could show. The cup's state
+// cannot tell either, as changing the dice puts it back to idle.
+const hintDismissed = ref(false)
+watch(rolling, (now) => {
+  if (now && sensing.value) hintDismissed.value = true
+})
 watch(shaken, (now) => {
   if (!now || everShaken.value) return
   everShaken.value = true
