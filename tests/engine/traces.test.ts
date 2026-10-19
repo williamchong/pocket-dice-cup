@@ -6,13 +6,15 @@ import { MotionAnalyser } from '../../app/engine/core/motionAnalyser'
 import { readFace } from '../../app/engine/dice/faces'
 import { DIE_KINDS } from '../../app/engine/dice/shapes'
 import type { MotionTrace } from '../../app/engine/input/motionTrace'
+import type { CupState } from '../../app/engine/core/stateMachine'
 import { CupSimulation } from '../../app/engine/simulation'
 import { REST_ACCELERATION } from '../../app/engine/input/motionSource'
 import { seededRandom } from './seededRandom'
 
 // Sensor readings recorded on an iPhone with ?debug and "Copy trace". Each one
-// starts with the phone lying screen-up on a table and ends with the tap on
-// the copy button.
+// read through the WebView starts with the phone lying screen-up on a table;
+// shake-core-motion, from the iOS app, starts in the hand. All end with the
+// tap on the copy button.
 
 beforeAll(() => RAPIER.init())
 afterEach(() => vi.restoreAllMocks())
@@ -55,9 +57,9 @@ function replay(simulation: CupSimulation, trace: MotionTrace, untilMs = Infinit
 }
 
 /** The states a replay of the whole trace passes through, from the dice's fixed start. */
-function statesThrough(trace: MotionTrace): string[] {
+function statesThrough(trace: MotionTrace): CupState[] {
   const simulation = new CupSimulation(RAPIER, boxForViewport(390, 844), { randomStart: false })
-  const states: string[] = [simulation.state]
+  const states: CupState[] = [simulation.state]
   replay(simulation, trace, Infinity, () => {
     if (states.at(-1) !== simulation.state) states.push(simulation.state)
   })
@@ -104,9 +106,8 @@ describe('recorded iPhone traces', () => {
   })
 
   it('roll and read the dice from a shake read through Core Motion in the iOS app', () => {
-    // Recorded held in the hand, not lying on a table, so it starts tilted.
-    // Core Motion's gravity is filtered: still, its readings vary by about
-    // 0.01 m/s², where the WebView's varied by 0.08 to 1.7.
+    // Held tilted in the hand, it starts off +z, so check its scale instead:
+    // Core Motion reads in g, which NativeMotionSource turns into m/s².
     const trace = load('shake-core-motion')
     const [, x, y, z] = trace.samples[0]!
     expect(Math.hypot(x, y, z)).toBeCloseTo(REST_ACCELERATION.z, 0)
