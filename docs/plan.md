@@ -335,7 +335,15 @@ Phases
    not drawn. Left still screen-down for 2 s with the dice asleep, the frames
    stop and the web wake lock is let go, until a reading moves the phone.
    This works in the shells too, though they keep the screen on natively, so
-   there it stays lit. Not yet done: offline, installable, fullscreen.
+   there it stays lit. A screen shown elsewhere, as through iPhone Mirroring
+   with the phone face down on a desk, looked frozen: the result changed
+   with each tap and Settle while the dice never moved. Screen-down, a panel
+   now says the dice are not drawn and that a tap shows them; that tap only
+   shows them, so they are seen where they lie before the next throw, and
+   they stay drawn until the phone is turned back up. Checked in Chromium
+   with faked readings: the panel comes screen-down, goes at a tap, and
+   comes back after the phone is turned up and down again. Not yet checked
+   on the iPhone. Not yet done: offline, installable, fullscreen.
 8. **Android shell.** The same web build in a Capacitor Android shell, with a
    `CupHaptics` plugin in Java beside the Swift one.
    Status: built, and checked in the emulator (Pixel 7a, Android 16,

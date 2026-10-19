@@ -30,6 +30,8 @@ export interface CupSnapshot {
   dormant: boolean
   /** Whether the sensor has sent a reading yet. */
   sensing: boolean
+  /** The dice are not drawn, the phone lying screen-down; a tap shows them. */
+  hidden: boolean
 }
 
 export interface CupDebugInfo extends FeedbackStats {
@@ -71,6 +73,14 @@ export class DiceCup {
   private framesStopped = false
   /** Whether the sensor has sent a reading yet; see onReading. */
   private measured = false
+  /** Whether the last frame left the dice undrawn, screen-down. */
+  private hidden = false
+  /**
+   * A tap with the phone screen-down draws the dice anyway, until it is
+   * turned back up: someone is watching the screen, as through iPhone
+   * Mirroring with the phone face down on a desk.
+   */
+  private shownScreenDown = false
   /** When the marks under the dice that did not roll over began to fade in. */
   private marksShownAt = -Infinity
   private readonly resizeObserver: ResizeObserver
@@ -168,9 +178,14 @@ export class DiceCup {
     this.wake()
   }
 
-  /** Throws the dice for a click; see CupSimulation.toss. */
+  /**
+   * Throws the dice for a click; see CupSimulation.toss. With the dice
+   * hidden screen-down, the click only shows them, so that they are seen
+   * where they lie before the next throw.
+   */
   toss(): void {
     this.wake()
+    if (this.showScreenDown()) return
     const wasLayingFlat = this.simulation.layingFlat
     this.simulation.toss()
     // A tap mid-roll can lay the dice flat, or let them go, with no change of
@@ -179,9 +194,21 @@ export class DiceCup {
     if (this.simulation.layingFlat !== wasLayingFlat) this.notifyChange()
   }
 
-  /** Lays the dice down as if the phone were flat; see CupSimulation.settle. */
+  /**
+   * Lays the dice down as if the phone were flat; see CupSimulation.settle.
+   * Screen-down it shows them too, so they are seen to fall.
+   */
   settle(): void {
+    if (this.showScreenDown()) this.wake()
     if (this.simulation.settle()) this.notifyChange()
+  }
+
+  /** Draws the dice screen-down until the phone is turned up, if they were hidden. */
+  private showScreenDown(): boolean {
+    if (!this.hidden) return false
+    this.shownScreenDown = true
+    this.stale = true
+    return true
   }
 
   dispose(): void {
@@ -195,7 +222,7 @@ export class DiceCup {
 
   private notifyChange(): void {
     const { simulation } = this
-    this.onChange({ state: simulation.state, result: simulation.result, slid: simulation.slid.length, shaken: simulation.shaken, layingFlat: simulation.layingFlat, dice: simulation.result ? this.diceOnScreen() : [], dormant: this.framesStopped, sensing: this.source.active })
+    this.onChange({ state: simulation.state, result: simulation.result, slid: simulation.slid.length, shaken: simulation.shaken, layingFlat: simulation.layingFlat, dice: simulation.result ? this.diceOnScreen() : [], dormant: this.framesStopped, sensing: this.source.active, hidden: this.hidden })
   }
 
   private diceOnScreen(): ScreenCircle[] {
@@ -230,6 +257,13 @@ export class DiceCup {
     // reads a quieter sample, and the cup does not go straight back.
     analyser.update(this.source.acceleration, performance.now())
     this.wake()
+  }
+
+  /** Asks for no frame until a reading disturbs the stillness; see onReading. */
+  private stopFrames(): void {
+    cancelAnimationFrame(this.frame)
+    this.framesStopped = true
+    this.notifyChange()
   }
 
   private wake(): void {
@@ -274,13 +308,22 @@ export class DiceCup {
 
     // Screen-down, the dice still roll and are heard and felt, but no one
     // sees them; the first frame back up draws where they are.
-    if (simulation.analyser.faceDown) {
+    const { faceDown } = simulation.analyser
+    if (!faceDown) this.shownScreenDown = false
+    const hidden = faceDown && !this.shownScreenDown
+    if (hidden !== this.hidden) {
+      this.hidden = hidden
+      this.notifyChange()
+    }
+    if (hidden) {
       this.stale = true
-      if (simulation.dormant) {
-        cancelAnimationFrame(this.frame)
-        this.framesStopped = true
-        this.notifyChange()
-      }
+      if (simulation.dormant) this.stopFrames()
+      return
+    }
+    // Shown screen-down by a tap, the cup still goes dormant once the dice
+    // are drawn at rest, or the screen would be kept awake face down for good.
+    if (faceDown && simulation.dormant && !this.stale) {
+      this.stopFrames()
       return
     }
 

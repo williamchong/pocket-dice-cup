@@ -27,6 +27,15 @@
       {{ $t('cup.begin') }}
     </p>
 
+    <!-- Seen only on a screen shown elsewhere, as through iPhone Mirroring:
+         the dice have stopped moving on it, and this says why. -->
+    <p
+      v-else-if="ready && hidden"
+      class="cup__message cup__message--panel"
+    >
+      {{ $t('cup.hidden') }}
+    </p>
+
     <div
       v-if="ready"
       ref="footer"
@@ -37,7 +46,7 @@
            goes during a roll, so the bottom-anchored buttons stay put as the
            hint comes and goes. -->
       <p
-        v-if="sensing && !everShaken && !hintDismissed && !rolling"
+        v-if="sensing && !everShaken && !hintDismissed && !rolling && !hidden"
         class="cup__hint cup__hint--shake"
       >
         <ShakeHintIcon />
@@ -238,7 +247,7 @@ const canvas = useTemplateRef('canvas')
 // Shaking tips the phone far enough for the browser to rotate the page; the
 // cup stays put in the phone's own frame instead.
 const counterRotationStyle = useCounterRotation()
-const { ready, failed, state, result, slid, shaken, layingFlat, dice, pool, sensing, permission, start, toss, settle, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value })
+const { ready, failed, state, result, slid, shaken, layingFlat, hidden, dice, pool, sensing, permission, start, toss, settle, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value })
 const rolling = computed(() => isRolling(state.value))
 // Kept across visits, so the hint to shake goes for good after one shake.
 const everShaken = ref(loadShaken())
@@ -516,6 +525,17 @@ if (debug) {
   font-size: 1.25rem;
   text-shadow: 0 1px 4px rgb(0 0 0 / 60%);
   pointer-events: none;
+}
+
+.cup__message--panel {
+  /* It lies over the dice, which go on showing where they last were. */
+  right: 1.5rem;
+  left: 1.5rem;
+  padding: 1rem 1.25rem;
+  border-radius: 1rem;
+  background: rgb(0 0 0 / 60%);
+  text-shadow: none;
+  text-wrap: balance;
 }
 
 .cup__message--pulse {

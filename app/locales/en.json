@@ -11,7 +11,8 @@
     "style": "Style",
     "denied": "Motion access was refused, so tap to shake. To shake the phone instead, open the page again and allow motion access.",
     "unsupported": "This browser has no motion sensor, so click, tap or press space to shake.",
-    "slid": "1 die didn’t roll over | {n} dice didn’t roll over"
+    "slid": "1 die didn’t roll over | {n} dice didn’t roll over",
+    "hidden": "The screen is facing down, so the dice are not drawn. Tap to show them."
   },
   "sheet": {
     "done": "Done"
