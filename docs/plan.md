@@ -344,8 +344,8 @@ Phases
    with faked readings: the panel comes screen-down, goes at a tap, and
    comes back after the phone is turned up and down again. Checked on the
    iPhone through iPhone Mirroring: laid face down, reading z = -9.1, the
-   panel shows. Not yet checked there: the tap that shows the dice. Not yet
-   done: offline, installable, fullscreen.
+   panel shows, and a tap takes it away and draws the die where it lies,
+   against the glass. Not yet done: offline, installable, fullscreen.
 8. **Android shell.** The same web build in a Capacitor Android shell, with a
    `CupHaptics` plugin in Java beside the Swift one.
    Status: built, and checked in the emulator (Pixel 7a, Android 16,
