@@ -284,7 +284,12 @@ Phases
    it a drawn hand shakes a phone, its dice rattling, in five bursts each
    time the hint comes, then stops: SVG is not animated on the compositor,
    so a loop kept the page drawing while the dice were asleep. Not yet
-   checked on the iPhone.
+   checked on the iPhone. Until the first reading the cup runs on a
+   placeholder of a phone lying flat, and a phone held tipped back past
+   upright, as in bed, strays from it by over 15 m/s² at once, which read
+   as a shake, started a roll and put the hint away for good; the motion
+   analysis now starts afresh at the first reading. Held at 30-90°, the
+   usual ways, the jump was never a shake.
    A ? button beside Style opens an about page at `/about`, which says what
    the app is and how each part works, in the reader's language. It is a
    child route of the cup's page, so the dice stay loaded behind it, and has

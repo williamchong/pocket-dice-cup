@@ -60,6 +60,20 @@ export class MotionAnalyser {
   /** Oldest first, so expired entries come off the front. */
   private reversalTimesMs: number[] = []
 
+  /**
+   * Starts over as if no sample had come, so the next one is taken as steady
+   * gravity rather than as a jolt away from the last.
+   */
+  forget(): void {
+    this.agitation = 0
+    this.faceDown = false
+    this.gravity = null
+    this.stillSinceMs = null
+    this.swingPeak = null
+    this.lastSwing = null
+    this.reversalTimesMs = []
+  }
+
   update(sample: Vec3, timeMs: number): void {
     if (!this.gravity) {
       this.gravity = { ...sample }

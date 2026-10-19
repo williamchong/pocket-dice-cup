@@ -73,6 +73,21 @@ describe('MotionAnalyser', () => {
     expect(analyser.restingFaceUp).toBe(true)
   })
 
+  it('takes the first reading after forget as steady gravity, not as a jolt', () => {
+    // Tipped back past upright, as held lying in bed: 120° from screen-up.
+    const tipped = (): Vec3 => ({ x: 0, y: 9.81 * Math.sin(2 * Math.PI / 3), z: 9.81 * Math.cos(2 * Math.PI / 3) })
+    const jolted = new MotionAnalyser()
+    let time = feed(jolted, 0, 0.3, () => REST_ACCELERATION)
+    feed(jolted, time, 1 / 60, tipped)
+    expect(jolted.shaking).toBe(true)
+
+    const analyser = new MotionAnalyser()
+    time = feed(analyser, 0, 0.3, () => REST_ACCELERATION)
+    analyser.forget()
+    feed(analyser, time, 1 / 60, tipped)
+    expect(analyser.shaking).toBe(false)
+  })
+
   it('does not count a device lying screen-down as put down', () => {
     const analyser = new MotionAnalyser()
     feed(analyser, 0, 2, () => ({ x: 0, y: 0, z: -9.81 }))

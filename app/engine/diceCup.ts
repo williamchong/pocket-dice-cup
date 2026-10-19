@@ -67,6 +67,8 @@ export class DiceCup {
   private physicsMs = 0
   /** Dormant: no frame is asked for until a reading disturbs the stillness. */
   private framesStopped = false
+  /** Whether the sensor has sent a reading yet; see onReading. */
+  private measured = false
   /** When the marks under the dice that did not roll over began to fade in. */
   private marksShownAt = -Infinity
   private readonly resizeObserver: ResizeObserver
@@ -204,11 +206,20 @@ export class DiceCup {
   }
 
   /**
-   * While dormant, the sensor still reads at its own rate. A reading that
-   * moves the phone starts the frames again, before the next hit is due.
+   * Starts the motion analysis afresh at the first reading. While dormant,
+   * the sensor still reads at its own rate, and a reading that moves the
+   * phone starts the frames again, before the next hit is due.
    */
   private readonly onReading = (): void => {
     const { analyser } = this.simulation
+    // Until the first reading the cup runs on the source's placeholder, a
+    // phone lying flat. Held tipped back past upright, as lying in bed, the
+    // first real reading strays from it by over 15 m/s², which read as a
+    // shake: it started a roll and put the shake hint away for good.
+    if (!this.measured) {
+      this.measured = true
+      analyser.forget()
+    }
     if (!this.framesStopped || !analyser.disturbedBy(this.source.acceleration)) return
     // Taken in now, so the stillness ends here even if the first frame
     // reads a quieter sample, and the cup does not go straight back.
