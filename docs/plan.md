@@ -196,9 +196,10 @@ Phases
    would not match them. Readings stop while the app is in the background.
    Checked on the iPhone, from the app's console: the plugin starts at
    launch with no tap, the page never asks for motion access, and readings
-   arrive at about 62 a second, reading 1 g lying still. Not yet checked on
-   the iPhone: a shake, putting it down, and a trace compared with the
-   fixtures.
+   arrive at about 62 a second, reading 1 g lying still. Checked by hand on the iPhone: a shake rolls
+   the dice and putting the phone down ends in a result, as through the
+   WebView. Not yet checked: a trace recorded through Core Motion compared
+   with the fixtures.
 3. **Dice set and pool.** All geometries, mixed pools, the notation parser.
    A headless Node test rolls each die thousands of times and checks the
    distribution is roughly uniform.
