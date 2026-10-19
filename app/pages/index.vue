@@ -465,7 +465,7 @@ if (debug) {
     debugText.value = [
       `state     ${state.value}`,
       `result    ${result.value?.join(', ') ?? '-'}`,
-      `sensor    ${info.sensorActive ? 'active' : 'no readings'}`,
+      `sensor    ${info.sensorActive ? 'active' : 'no readings'} (${info.sensorName})`,
       `accel     ${format(x)}${format(y)}${format(z)}`,
       `agitation ${format(info.agitation)}`,
       `physics   ${format(info.physicsMs)} ms`,

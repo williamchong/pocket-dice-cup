@@ -185,6 +185,18 @@ Phases
    including after the app has been idle or in the background. The haptic
    strength, sharpness and pulse gap are still at their first values; the
    debug overlay has sliders for tuning them and the sound on the phone.
+   WebKit only gives a page motion access from a tap, so the app opened on
+   a "tap to begin" screen and showed the system's motion prompt. The app
+   now reads the sensor through Core Motion instead, in a second plugin
+   (`CupMotionPlugin.swift`, `NativeMotionSource`), which needs no
+   permission: the cup senses a shake from launch. It sends Core Motion's
+   gravity plus the hand's acceleration, 60 times a second, which is what
+   WebKit turns into `accelerationIncludingGravity` at the same rate, so the
+   shake tuning and the recorded traces still hold; the raw accelerometer
+   would not match them. Readings stop while the app is in the background.
+   Checked on the iPhone: the readings arrive at about 60 a second and lying
+   still read 1 g. Not yet checked on the iPhone: that no prompt or start
+   screen shows, and a shake, put-down and trace compared with the fixtures.
 3. **Dice set and pool.** All geometries, mixed pools, the notation parser.
    A headless Node test rolls each die thousands of times and checks the
    distribution is roughly uniform.
@@ -364,8 +376,11 @@ custom Core Haptics plugin (roughly 100 lines of Swift). The stock
 justified, because rendering and physics would stay in a WebView either way.
 The web/PWA build still ships for desktop and as the no-install Android
 version. The Android shell (phase 8) followed the same way, with a Java
-plugin, as Capacitor's Android template is Java; both shells still read the
-sensor through the WebView, at its rate. It is built and checked in the
+plugin, as Capacitor's Android template is Java. The iOS app reads the
+sensor through Core Motion, so it needs no tap to begin (phase 2); the
+Android app still reads it through the WebView, which asks no permission,
+and the engine only takes one reading a frame, so a faster native rate
+would gain it nothing. It is built and checked in the
 emulator while there is no Android device to tune its feel on.
 
 Distribution: the iOS build starts personal, installed from Xcode with a free

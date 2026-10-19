@@ -36,6 +36,8 @@ export interface CupDebugInfo extends FeedbackStats {
   /** What the simulation takes a frame, in ms, averaged over about the last 60 frames. */
   physicsMs: number
   sensorActive: boolean
+  /** What reads the sensor; see MotionSource.name. */
+  sensorName: string
   sound: string
 }
 
@@ -115,6 +117,7 @@ export class DiceCup {
       agitation: this.simulation.analyser.agitation,
       physicsMs: this.physicsMs,
       sensorActive: this.source.active,
+      sensorName: this.source.name,
       sound: this.feedback.soundState,
       ...this.feedback.stats,
     }

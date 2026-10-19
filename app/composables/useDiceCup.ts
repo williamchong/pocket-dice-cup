@@ -7,7 +7,8 @@ import type { SoundTuning } from '~/engine/feedback/clackSound'
 import type { HapticTuning } from '~/engine/feedback/cupFeedback'
 import type { Surface } from '~/engine/physics/world'
 import type { DieSkin } from '~/engine/render/skins'
-import { DeviceMotionSource, type MotionPermission } from '~/engine/input/motionSource'
+import type { MotionPermission } from '~/engine/input/motionSource'
+import { deviceMotionSource } from '~/engine/input/nativeMotionSource'
 import { TraceRecorder, type MotionTrace } from '~/engine/input/motionTrace'
 import type { ScreenAwake } from '~/utils/wakeLock'
 
@@ -44,7 +45,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
   /** Null until the first attempt to start the sensor, on mount, has settled. */
   const permission = ref<MotionPermission | null>(null)
 
-  const source = new DeviceMotionSource()
+  const source = deviceMotionSource()
   const recorder = recordTrace ? new TraceRecorder() : null
   let cup: DiceCup | null = null
   let screenAwake: ScreenAwake | null = null
@@ -52,7 +53,8 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
   let unmounted = false
 
   onMounted(async () => {
-    // Only iOS waits for a tap, and only until access is given.
+    // Only Safari on iOS waits for a tap, and only until access is given;
+    // the iOS app reads the sensor natively.
     void start()
     const element = canvas.value!
     try {
@@ -100,8 +102,9 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
   })
 
   /**
-   * Starts the sensor, and the sound. On iOS both need a tap the first time:
-   * it only shows the motion prompt, and starts audio, from a user gesture.
+   * Starts the sensor, and the sound. In Safari on iOS both need a tap the
+   * first time: it only shows the motion prompt, and starts audio, from a
+   * user gesture.
    */
   async function start() {
     void cup?.unlockSound()

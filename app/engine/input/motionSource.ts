@@ -13,6 +13,8 @@ export interface MotionSource {
   readonly acceleration: Vec3
   /** Whether any reading has arrived yet. */
   readonly active: boolean
+  /** What reads the sensor, for the debug overlay. */
+  readonly name: string
   /** Called on each reading, after `acceleration` has taken it. */
   onReading: (() => void) | null
   /**
@@ -32,6 +34,7 @@ type PermissionRequester = { requestPermission?: () => Promise<'granted' | 'deni
 export class DeviceMotionSource implements MotionSource {
   acceleration: Vec3 = { ...REST_ACCELERATION }
   active = false
+  readonly name = 'DeviceMotionEvent'
   onReading: (() => void) | null = null
 
   private readonly sign: number
