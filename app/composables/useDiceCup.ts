@@ -76,7 +76,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
         shaken.value = snapshot.shaken
         layingFlat.value = snapshot.layingFlat
         dice.value = snapshot.dice
-        sensing.value = source.active
+        sensing.value = snapshot.sensing
         screenAwake?.setWanted(!snapshot.dormant)
       }, options, recorder)
       pool.value = cup.pool

@@ -28,6 +28,8 @@ export interface CupSnapshot {
   dice: ScreenCircle[]
   /** Frames have stopped while the phone lies screen-down; see CupSimulation.dormant. */
   dormant: boolean
+  /** Whether the sensor has sent a reading yet. */
+  sensing: boolean
 }
 
 export interface CupDebugInfo extends FeedbackStats {
@@ -193,7 +195,7 @@ export class DiceCup {
 
   private notifyChange(): void {
     const { simulation } = this
-    this.onChange({ state: simulation.state, result: simulation.result, slid: simulation.slid.length, shaken: simulation.shaken, layingFlat: simulation.layingFlat, dice: simulation.result ? this.diceOnScreen() : [], dormant: this.framesStopped })
+    this.onChange({ state: simulation.state, result: simulation.result, slid: simulation.slid.length, shaken: simulation.shaken, layingFlat: simulation.layingFlat, dice: simulation.result ? this.diceOnScreen() : [], dormant: this.framesStopped, sensing: this.source.active })
   }
 
   private diceOnScreen(): ScreenCircle[] {
@@ -219,6 +221,9 @@ export class DiceCup {
     if (!this.measured) {
       this.measured = true
       analyser.forget()
+      // The page shows the shake hint once the sensor is reading, and with
+      // the phone still no change of state would send a snapshot to say so.
+      this.notifyChange()
     }
     if (!this.framesStopped || !analyser.disturbedBy(this.source.acceleration)) return
     // Taken in now, so the stillness ends here even if the first frame

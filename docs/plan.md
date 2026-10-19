@@ -305,7 +305,12 @@ Phases
    upright, as in bed, strays from it by over 15 m/s² at once, which read
    as a shake, started a roll and put the hint away for good; the motion
    analysis now starts afresh at the first reading. Held at 30-90°, the
-   usual ways, the jump was never a shake.
+   usual ways, the jump was never a shake. The page learnt that the sensor
+   was reading only from the cup's snapshots, sent on a change of state,
+   so with no tap to begin in the iOS app the hint never came for a phone
+   left still at launch, flat or held; the first reading now sends one.
+   Checked in Chromium with faked readings, lying flat and held tipped
+   back: the hint shows at launch and goes after a shake.
    A ? button beside Style opens an about page at `/about`, which says what
    the app is and how each part works, in the reader's language. It is a
    child route of the cup's page, so the dice stay loaded behind it, and has
