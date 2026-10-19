@@ -310,7 +310,9 @@ Phases
    so with no tap to begin in the iOS app the hint never came for a phone
    left still at launch, flat or held; the first reading now sends one.
    Checked in Chromium with faked readings, lying flat and held tipped
-   back: the hint shows at launch and goes after a shake.
+   back: the hint shows at launch and goes after a shake. Checked on the
+   iPhone after a fresh install: with the phone resting still and tilted,
+   the hint shows at launch with no tap, read through Core Motion.
    A ? button beside Style opens an about page at `/about`, which says what
    the app is and how each part works, in the reader's language. It is a
    child route of the cup's page, so the dice stay loaded behind it, and has
