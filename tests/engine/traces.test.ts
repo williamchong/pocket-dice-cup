@@ -54,6 +54,17 @@ function replay(simulation: CupSimulation, trace: MotionTrace, untilMs = Infinit
   }
 }
 
+/** The states a replay of the whole trace passes through, from the dice's fixed start. */
+function statesThrough(trace: MotionTrace): string[] {
+  const simulation = new CupSimulation(RAPIER, boxForViewport(390, 844), { randomStart: false })
+  const states: string[] = [simulation.state]
+  replay(simulation, trace, Infinity, () => {
+    if (states.at(-1) !== simulation.state) states.push(simulation.state)
+  })
+  simulation.dispose()
+  return states
+}
+
 describe('recorded iPhone traces', () => {
   it('read a phone lying screen-up as +z, so the iOS sign flip is right', () => {
     for (const name of ['pickup', ...SHAKES]) {
@@ -89,13 +100,17 @@ describe('recorded iPhone traces', () => {
   })
 
   it('roll and read the dice from a real shake and put-down', () => {
-    const simulation = new CupSimulation(RAPIER, boxForViewport(390, 844), { randomStart: false })
-    const states: string[] = [simulation.state]
-    replay(simulation, load('shake-horizontal'), Infinity, () => {
-      if (states.at(-1) !== simulation.state) states.push(simulation.state)
-    })
-    simulation.dispose()
-    expect(states).toEqual(['idle', 'shaking', 'settling', 'result'])
+    expect(statesThrough(load('shake-horizontal'))).toEqual(['idle', 'shaking', 'settling', 'result'])
+  })
+
+  it('roll and read the dice from a shake read through Core Motion in the iOS app', () => {
+    // Recorded held in the hand, not lying on a table, so it starts tilted.
+    // Core Motion's gravity is filtered: still, its readings vary by about
+    // 0.01 m/s², where the WebView's varied by 0.08 to 1.7.
+    const trace = load('shake-core-motion')
+    const [, x, y, z] = trace.samples[0]!
+    expect(Math.hypot(x, y, z)).toBeCloseTo(REST_ACCELERATION.z, 0)
+    expect(statesThrough(trace)).toEqual(['idle', 'shaking', 'settling', 'result'])
   })
 
   it('rattle the die against the cup through a real shake, and fall quiet once it is read', () => {
