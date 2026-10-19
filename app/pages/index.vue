@@ -33,12 +33,14 @@
       class="cup__footer"
     >
       <!-- Held in the hand, the phone is never put down flat enough to end
-           the roll, so this ends it as if it were. -->
+           the roll, so this ends it as if it were. Once asked, it spins
+           until the dice come to rest, so the wait reads as the roll ending. -->
       <UButton
         v-if="rolling && sensing"
         class="cup__settle min-h-11 py-1.5"
         variant="solid"
         :label="$t('cup.settle')"
+        :loading="layingFlat"
         @click="settle"
       />
       <div class="cup__controls">
@@ -234,7 +236,7 @@ const canvas = useTemplateRef('canvas')
 // Shaking tips the phone far enough for the browser to rotate the page; the
 // cup stays put in the phone's own frame instead.
 const counterRotationStyle = useCounterRotation()
-const { ready, failed, state, result, slid, shaken, dice, pool, sensing, permission, start, toss, settle, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value })
+const { ready, failed, state, result, slid, shaken, layingFlat, dice, pool, sensing, permission, start, toss, settle, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value })
 const rolling = computed(() => isRolling(state.value))
 // Kept across visits, so the hint to shake goes for good after one shake.
 const everShaken = ref(loadShaken())

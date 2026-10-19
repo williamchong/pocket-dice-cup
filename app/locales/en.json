@@ -47,11 +47,11 @@
     },
     "settle": {
       "title": "Settle",
-      "body": "A phone held in the hand is never quite flat or still, so the dice slide into its lowest edge. While a roll is under way, Settle lets them drop as if the phone lay flat on the table, and the roll ends with a result."
+      "body": "A phone held in the hand is never quite flat or still, so the dice slide into its lowest edge. While a roll is under way, Settle lets them drop as if the phone lay flat on the table, and the button spins until the roll ends with a result."
     },
     "tap": {
       "title": "Tap, click or press space",
-      "body": "On a computer, or where the browser has no motion sensor or motion access was refused, tap the table, click it or press the space bar to throw the dice. A tap is also a quick way to roll again on the phone."
+      "body": "On a computer, or where the browser has no motion sensor or motion access was refused, tap the table, click it or press the space bar to throw the dice. A tap is also a quick way to roll again on the phone; with the phone in the hand, the dice then drop as if Settle were pressed."
     },
     "dice": {
       "title": "Choose your dice",

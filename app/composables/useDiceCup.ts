@@ -31,6 +31,8 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
   const slid = ref(0)
   /** The phone has been shaken since the page opened, not only tapped. */
   const shaken = ref(false)
+  /** The roll will end by itself, laid flat by Settle or a tap in the hand. */
+  const layingFlat = ref(false)
   /** Where the dice of the result lie on screen; empty with no result. */
   const dice = shallowRef<readonly ScreenCircle[]>([])
   const pool = shallowRef<DicePool>(['d6'])
@@ -70,6 +72,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
         result.value = snapshot.result
         slid.value = snapshot.slid
         shaken.value = snapshot.shaken
+        layingFlat.value = snapshot.layingFlat
         dice.value = snapshot.dice
         sensing.value = source.active
         screenAwake?.setWanted(!snapshot.dormant)
@@ -161,5 +164,5 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     cup?.settle()
   }
 
-  return { ready, failed, state, result, slid, shaken, dice, pool, sensing, permission, start, toss, settle, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit }
+  return { ready, failed, state, result, slid, shaken, layingFlat, dice, pool, sensing, permission, start, toss, settle, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit }
 }

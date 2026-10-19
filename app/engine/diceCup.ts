@@ -19,6 +19,8 @@ export interface CupSnapshot {
   slid: number
   /** Whether the phone has been shaken yet; see CupSimulation.shaken. */
   shaken: boolean
+  /** Whether the roll will end by itself; see CupSimulation.layingFlat. */
+  layingFlat: boolean
   /**
    * Where each die of the result lies on the canvas, in CSS pixels, for the
    * result card to keep off; empty with no result.
@@ -162,12 +164,17 @@ export class DiceCup {
   /** Throws the dice for a click; see CupSimulation.toss. */
   toss(): void {
     this.wake()
+    const wasLayingFlat = this.simulation.layingFlat
     this.simulation.toss()
+    // A tap mid-roll can lay the dice flat, or let them go, with no change of
+    // state. From a result the next frame's change of state tells instead,
+    // as the dice have only just been thrown from where the card was placed.
+    if (this.simulation.layingFlat !== wasLayingFlat) this.notifyChange()
   }
 
   /** Lays the dice down as if the phone were flat; see CupSimulation.settle. */
   settle(): void {
-    this.simulation.settle()
+    if (this.simulation.settle()) this.notifyChange()
   }
 
   dispose(): void {
@@ -181,7 +188,7 @@ export class DiceCup {
 
   private notifyChange(): void {
     const { simulation } = this
-    this.onChange({ state: simulation.state, result: simulation.result, slid: simulation.slid.length, shaken: simulation.shaken, dice: simulation.result ? this.diceOnScreen() : [], dormant: this.framesStopped })
+    this.onChange({ state: simulation.state, result: simulation.result, slid: simulation.slid.length, shaken: simulation.shaken, layingFlat: simulation.layingFlat, dice: simulation.result ? this.diceOnScreen() : [], dormant: this.framesStopped })
   }
 
   private diceOnScreen(): ScreenCircle[] {

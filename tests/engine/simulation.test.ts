@@ -226,6 +226,14 @@ describe('CupSimulation', () => {
       simulation.dispose()
     })
 
+    it('says the roll is ending while it waits for the dice', () => {
+      const simulation = holdAfterShake(0.1)
+      expect(simulation.layingFlat).toBe(false)
+      expect(simulation.settle()).toBe(true)
+      expect(simulation.layingFlat).toBe(true)
+      simulation.dispose()
+    })
+
     it('does nothing between rolls', () => {
       const idle = fixedCup()
       expect(idle.settle()).toBe(false)
@@ -244,6 +252,59 @@ describe('CupSimulation', () => {
       }
       expect(simulation.state).toBe('shaking')
       // The dice follow the phone again: held in the hand, there is no result.
+      for (let i = 0; i < 5 * 60; i++) {
+        time += FRAME
+        simulation.tick(FRAME, inHand(i * FRAME), time * 1000)
+      }
+      expect(simulation.state).toBe('shaking')
+      simulation.dispose()
+    })
+
+    it('lays the dice flat for a tap in the hand, so the roll still ends', () => {
+      // A tap after the result used to let go of the pin, and the dice slid
+      // into the low wall with no result until Settle was pressed again.
+      const simulation = holdAfterShake(6, 0)
+      expect(simulation.state).toBe('result')
+      expect(simulation.layingFlat).toBe(false)
+      simulation.toss(seededRandom(5))
+      let time = 100
+      for (let i = 0; i < 6 * 60; i++) {
+        time += FRAME
+        simulation.tick(FRAME, inHand(i * FRAME), time * 1000)
+        if (i === 0) expect(simulation.layingFlat).toBe(true)
+      }
+      expect(simulation.state).toBe('result')
+      expect(simulation.layingFlat).toBe(false)
+      simulation.dispose()
+    })
+
+    it('gives way to a shake after a tap in the hand', () => {
+      const simulation = holdAfterShake(1)
+      expect(simulation.state).toBe('shaking')
+      simulation.toss(seededRandom(5))
+      let time = 100
+      for (let i = 0; i < 60; i++) {
+        time += FRAME
+        simulation.tick(FRAME, i < 6 ? inHand(i * FRAME) : shake(i * FRAME, 9), time * 1000)
+      }
+      expect(simulation.layingFlat).toBe(false)
+      for (let i = 0; i < 5 * 60; i++) {
+        time += FRAME
+        simulation.tick(FRAME, inHand(i * FRAME), time * 1000)
+      }
+      expect(simulation.state).toBe('shaking')
+      simulation.dispose()
+    })
+
+    it('leaves a tap during a shake to follow the phone', () => {
+      const simulation = fixedCup(box, 3)
+      let time = 0
+      for (let i = 0; i < 2 * 60; i++) {
+        time += FRAME
+        if (i === 60) simulation.toss(seededRandom(5))
+        simulation.tick(FRAME, shake(time, 7), time * 1000)
+      }
+      expect(simulation.layingFlat).toBe(false)
       for (let i = 0; i < 5 * 60; i++) {
         time += FRAME
         simulation.tick(FRAME, inHand(i * FRAME), time * 1000)

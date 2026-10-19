@@ -135,6 +135,9 @@ describe.runIf(process.env.FAIRNESS)('the distribution of each kind of die', () 
   // TOSS). In this run of 400 taps in a row at 60°, each from where the d6
   // last landed, the old throw left it on its last face 29% of the time and
   // the new one 19%, where a fair die does 17%; the limit sits between.
+  // Past 45° a tap now counts as one in the hand and lays the dice flat
+  // (14% at 60°), so the run is at 40°, a phone resting tilted on a table,
+  // where they still fall away from gravity: 18%.
   it('rarely leaves a tapped d6 on its last face with the phone tilted', () => {
     const g = REST_ACCELERATION.z
     const tilted = (degrees: number) => ({ x: 0, y: g * Math.sin(degrees * Math.PI / 180), z: g * Math.cos(degrees * Math.PI / 180) })
@@ -146,12 +149,12 @@ describe.runIf(process.env.FAIRNESS)('the distribution of each kind of die', () 
     let repeats = 0
     let last: number | undefined
     for (let toss = 0; toss < 400; toss++) {
-      // Tilted to 60° and held, tapped, then laid flat for the result.
-      run(0.6, t => tilted(60 * Math.min(1, t / 0.6)))
-      run(0.5 + random(), () => tilted(60))
+      // Tilted to 40° and held, tapped, then laid flat for the result.
+      run(0.6, t => tilted(40 * Math.min(1, t / 0.6)))
+      run(0.5 + random(), () => tilted(40))
       simulation.toss(random)
-      run(1 + random(), () => tilted(60))
-      run(0.6, t => tilted(60 * Math.max(0, 1 - t / 0.6)))
+      run(1 + random(), () => tilted(40))
+      run(0.6, t => tilted(40 * Math.max(0, 1 - t / 0.6)))
       run(20, () => REST_ACCELERATION, () => simulation.state === 'result')
       const value = simulation.result![0]
       if (value === last) repeats++

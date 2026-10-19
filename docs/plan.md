@@ -65,7 +65,15 @@ out, the rest repeat their last face about as often as fair dice do.
 A phone held in the hand is never put down flat enough to reach `settling`,
 and its dice slide into the low wall. While a roll is under way and the sensor
 is sending readings, a Settle button gives the dice a straight-down pull, as
-if the phone lay flat and still, and the roll goes on to a result.
+if the phone lay flat and still, and the roll goes on to a result. It spins
+until the dice come to rest, so the wait reads as the roll ending; in Chinese
+it is 開盅 (开盅), "open the cup", as said when a real 骰盅 is lifted, since
+放低 (put it down) read as an instruction rather than a button. A tap used to
+let go of that pull, so with the phone still in the hand the dice slid into
+the low wall again and waited there for Settle. Now a tap with the phone
+neither resting screen-up nor being shaken lays the dice flat in the same
+way, and one lying still on a table, even tilted up to 45°, keeps its pull.
+Not yet checked on the iPhone.
 
 Stack
 -----

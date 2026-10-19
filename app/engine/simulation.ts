@@ -63,8 +63,8 @@ export class CupSimulation {
    * The pull the dice feel in place of the sensor's, or null to follow it.
    * A result keeps the pull the dice came to rest under, so they stay put
    * while the phone is picked up and passed around, until the next roll.
-   * During a roll it is only set by settle(), so it also stands for the
-   * phone lying flat.
+   * During a roll it is only set by settle() or a tap in the hand, so it
+   * also stands for the phone lying flat.
    */
   private pinned: Vec3 | null = null
   /**
@@ -115,7 +115,7 @@ export class CupSimulation {
 
     const next = nextState(this.state, {
       shaking: this.analyser.shaking || this.tossed,
-      // Pinned during a roll means settle() was asked for.
+      // Pinned during a roll means settle() was asked for, or a tap in the hand.
       restingFaceUp: this.analyser.restingFaceUp || this.pinned !== null,
       diceAtRest: this.physics.diceAtRest,
     })
@@ -124,13 +124,14 @@ export class CupSimulation {
     if (next === this.state) return false
 
     this.state = next
-    // Only a new roll lets go of the pin. The analyser still calls the phone
-    // shaken for up to a second after it stops, and a settle asked for then
-    // must hold.
+    // Only a shake lets go of the pin: toss() has already set or cleared it
+    // for a tap. The analyser still calls the phone shaken for up to a second
+    // after it stops, but the state is still shaking then, with no change to
+    // come through here, so a settle asked for then holds.
     if (next === 'shaking') {
       this.result = null
       this.slid = []
-      this.pinned = null
+      if (this.analyser.shaking) this.pinned = null
     }
     if (next === 'result') {
       const faces = this.readFaces()
@@ -146,9 +147,19 @@ export class CupSimulation {
    * random push and spin, and starts a roll on the next tick. Up comes from
    * the analyser's steady gravity, which the jolt of a finger on the screen
    * barely moves, not from the pinned pull of a shown result.
+   *
+   * A phone held in the hand is never flat and still, so a roll that
+   * followed it would never end: the dice slid into the low edge and waited
+   * there until Settle was pressed again. A tap with the sensor reading a
+   * phone neither resting screen-up nor being shaken lays the dice flat, as
+   * settle() does, and throws them straight off the screen. One lying still
+   * on a table, even tilted up to 45°, keeps its pull.
    */
   toss(random: () => number = Math.random): void {
-    const gravity = this.analyser.steadyGravity
+    const { analyser } = this
+    const held = analyser.steadyGravity !== null && !analyser.restingFaceUp && !analyser.shaking
+    this.pinned = held ? { ...REST_ACCELERATION } : null
+    const gravity = this.pinned ?? analyser.steadyGravity
     const up = gravity && length(gravity) > MIN_TOSS_GRAVITY ? normalise(gravity) : undefined
     this.physics.launchDice(TOSS, random, up)
     this.tossed = true
@@ -164,6 +175,14 @@ export class CupSimulation {
     if (!isRolling(this.state)) return false
     this.pinned = { ...REST_ACCELERATION }
     return true
+  }
+
+  /**
+   * A roll is under way that will end by itself however the phone is held,
+   * as settle() was asked for or a tap in the hand laid the dice flat.
+   */
+  get layingFlat(): boolean {
+    return isRolling(this.state) && this.pinned !== null
   }
 
   /**
