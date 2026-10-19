@@ -302,7 +302,9 @@ Phases
    rolls, so the hint first shows as that roll lands, as checked in Chromium
    with Safari's gesture-only permission faked. It sits where Settle goes
    during a roll, so the buttons, anchored to the bottom, stay put as it
-   comes and goes; under them it pushed them up and down. Beside
+   comes and goes; under them it pushed them up and down. Checked on the
+   iPhone after a fresh install: the hint shows above the buttons, which sit
+   where they do with no hint. Beside
    it a drawn hand shakes a phone, its dice rattling, in five bursts each
    time the hint comes, then stops: SVG is not animated on the compositor,
    so a loop kept the page drawing while the dice were asleep. Not yet
