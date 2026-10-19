@@ -81,7 +81,8 @@ floor's low one, and the result came about 0.1 s sooner.
 It left the dice as fair: 400 taps in the hand at 60° repeated the last face
 14% of the time (20% before, 17% for a fair die), and 60 cups of 12 dice
 laid flat mid-shake gave χ² 9.4 of 20.5 on the d6 and 7.6 of 43.8 on the
-d20. Not yet checked on the iPhone.
+d20. Checked by hand on the iPhone: held upright, the dice stay down on the
+screen after 開盅.
 
 Stack
 -----
