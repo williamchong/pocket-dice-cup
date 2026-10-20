@@ -289,9 +289,14 @@ Phases
    on its floor. The choice is kept in `localStorage` (`?table=`
    overrides it), and the debug sliders follow the table. Checked in
    Chromium: both tables, switching between them during a result, and the
-   setting. Not yet checked on the iPhone: the mat's sound and feel, which
-   are first guesses, and whether its longer clack drops voices with a full
-   cup. Not yet done: anything paid. If skins are ever sold, add a `locked`
+   setting. Its longer floor clack drops no more than the felt's: in five
+   synthetic two-second shakes of 12 d6, and of a mixed 12, replayed in
+   Node, the 8-voice cap let the same clacks through on both tables (55%
+   and 57% dropped, as on a hard shake it is meant to). Hits come a frame,
+   16.7 ms, apart, and both floor voices, 22 and 25 ms, end in the next.
+   Not yet checked on the iPhone: the mat's sound and feel, which are first
+   guesses, to be tuned by ear and hand with the debug sliders. Not yet
+   done: anything paid. If skins are ever sold, add a `locked`
    flag to the data and an entitlement check in the sheet; the renderer
    need not know.
 6. **Desktop and fallbacks.** Click or drag to throw, spacebar, and tap-to-roll
