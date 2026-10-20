@@ -17,7 +17,6 @@ import {
   SRGBColorSpace,
   Vector3,
   WebGLRenderer,
-  type Material,
   type WebGLRenderTarget,
 } from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
@@ -29,16 +28,24 @@ import { createD6Look } from './d6Mesh'
 import { createDiceMesh, disposeLook, type DieLook } from './dieLook'
 import { createPolyhedronLook } from './polyhedronMesh'
 import type { DieSkin } from './skins'
+import type { Table } from '../tables'
 
 /** Phones report 3; the extra pixels cost more than they show at this scale. */
 const MAX_PIXEL_RATIO = 2
 
 /** A warm lamp, as over a games table. */
 export const LAMP_COLOUR = 0xfff1dc
-const FELT_COLOUR = 0x0d6b3c
-const WALL_COLOUR = 0x2a160c
-/** World units covered by one tile of the felt's speckle. */
-const FELT_TILE = 1
+/**
+ * How each floor pattern is drawn: a tile of `size` pixels covering `tile`
+ * cm, speckled with greys from `darkest` up by `spread`, so the floor reads
+ * as cloth or vinyl rather than flat paint; a grid also has lines along the
+ * tile's edges.
+ */
+const FLOOR_PATTERNS: Record<Table['floor']['pattern'], { size: number, tile: number, darkest: number, spread: number, grid: boolean }> = {
+  cloth: { size: 128, tile: 1, darkest: 190, spread: 65, grid: false },
+  // A battle mat's squares are an inch, the size its figures stand on, and the cup is drawn at true size.
+  grid: { size: 256, tile: 2.54, darkest: 235, spread: 20, grid: true },
+}
 /**
  * Height (cm) of the marks under dice that did not roll over: on the felt,
  * which is at 0, without fighting it for depth.
@@ -62,8 +69,8 @@ const COVE_SEGMENTS = 8
 const UNIT_SCALE = new Vector3(1, 1, 1)
 
 /**
- * The inside of the cup with rounded corners, open at the glass: a felt floor
- * that curves up into wooden walls (the walls are material group 0, the felt 1). It is built by
+ * The inside of the cup with rounded corners, open at the glass: a floor
+ * that curves up into the walls (the walls are material group 0, the floor 1). It is built by
  * sweeping the profile of a wall, from the floor up to the glass, around a
  * rounded rectangle, with normals facing into the cup.
  */
@@ -94,8 +101,8 @@ function trayGeometry({ width, height, depth }: BoxSize): BufferGeometry {
   const addVertex = (x: number, y: number, z: number, nx: number, ny: number, nz: number) => {
     positions.push(x, y, z)
     normals.push(nx, ny, nz)
-    // The felt's speckle is laid flat from above, so it keeps its size up the cove.
-    uvs.push(x / FELT_TILE, y / FELT_TILE)
+    // In centimetres, laid flat from above, so the floor's pattern keeps its size up the cove.
+    uvs.push(x, y)
   }
   for (const { cx, cy, ox, oy } of ring) {
     for (const { inset, z, inward, up } of profile) {
@@ -128,15 +135,15 @@ function trayGeometry({ width, height, depth }: BoxSize): BufferGeometry {
   return geometry
 }
 
-/** Fine random speckle, tiled across the floor, so the felt reads as cloth rather than flat paint. */
-function feltTexture(): CanvasTexture {
-  const size = 128
+/** The floor's pattern, tiled across it, in shades of grey for the floor's colour to tint. */
+function floorTexture(pattern: Table['floor']['pattern']): CanvasTexture {
+  const { size, tile, darkest, spread, grid } = FLOOR_PATTERNS[pattern]
   const canvas = document.createElement('canvas')
   canvas.width = canvas.height = size
   const context = canvas.getContext('2d')!
   const image = context.createImageData(size, size)
   for (let i = 0; i < image.data.length; i += 4) {
-    const shade = 190 + Math.random() * 65
+    const shade = darkest + Math.random() * spread
     image.data[i] = image.data[i + 1] = image.data[i + 2] = shade
     image.data[i + 3] = 255
   }
@@ -144,6 +151,19 @@ function feltTexture(): CanvasTexture {
   const texture = new CanvasTexture(canvas)
   texture.colorSpace = SRGBColorSpace
   texture.wrapS = texture.wrapT = RepeatWrapping
+  texture.repeat.set(1 / tile, 1 / tile)
+  if (grid) {
+    // A square's edge is split between the tile's first and last pixels, so
+    // the tiles join into whole lines about a third of a millimetre wide.
+    const half = 2
+    context.fillStyle = 'rgb(0 0 0 / 25%)'
+    for (const at of [0, size - half]) {
+      context.fillRect(at, 0, half, size)
+      context.fillRect(0, at, size, half)
+    }
+    // A square centred in the cup, rather than lines crossing under the middle die.
+    texture.offset.set(0.5, 0.5)
+  }
   return texture
 }
 
@@ -213,9 +233,11 @@ export class DiceScene {
   private readonly scene = new Scene()
   private readonly camera = new PerspectiveCamera()
   private readonly tray: Mesh
+  /** The tray's two materials, given their looks by setTable. */
+  private readonly wall = new MeshStandardMaterial()
+  private readonly floor = new MeshStandardMaterial()
   /** A warm lamp hung over the table: bright in the middle, falling off towards the rail. */
   private readonly lamp = new SpotLight(LAMP_COLOUR, 5)
-  private readonly feltMap = feltTexture()
   private readonly environment: WebGLRenderTarget
   private looks: Record<DieKind, DieLook>
 
@@ -233,7 +255,7 @@ export class DiceScene {
   private readonly scale = new Vector3()
 
   /** `capacity` is the most dice of one kind it will ever be asked to draw. */
-  constructor(canvas: HTMLCanvasElement, capacity: number, skin: DieSkin) {
+  constructor(canvas: HTMLCanvasElement, capacity: number, skin: DieSkin, table: Table) {
     this.renderer = new WebGLRenderer({ canvas, antialias: true })
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO))
     this.renderer.shadowMap.enabled = true
@@ -246,16 +268,14 @@ export class DiceScene {
     // lighting, so the table stays dark outside its pool.
     this.scene.environmentIntensity = 0.3
 
-    // The geometry is built for each box size, in setBox.
-    const wall = new MeshStandardMaterial({ color: WALL_COLOUR, roughness: 0.45 })
-    const felt = new MeshStandardMaterial({ color: FELT_COLOUR, map: this.feltMap, roughness: 1 })
-    this.tray = new Mesh(new BufferGeometry(), [wall, felt])
+    // The geometry is built for each box size, in setBox, and the materials' looks in setTable.
+    this.tray = new Mesh(new BufferGeometry(), [this.wall, this.floor])
     this.tray.receiveShadow = true
     this.looks = createDieLooks(skin)
     this.meshes = Object.fromEntries(DIE_KINDS.map(kind => [kind, createDiceMesh(this.looks[kind], capacity)])) as Record<DieKind, InstancedMesh>
-    // Lit and shaded like the felt, so it reads as a mark on the cloth rather
-    // than a light over it, and drawn after the dice, which hide its middle.
-    this.markMaterial = new MeshStandardMaterial({ color: LAMP_COLOUR, map: markTexture(), roughness: 1, transparent: true, depthWrite: false })
+    // Lit and shaded like the floor, so it reads as a mark on it rather than
+    // a light over it, and drawn after the dice, which hide its middle.
+    this.markMaterial = new MeshStandardMaterial({ map: markTexture(), roughness: 1, transparent: true, depthWrite: false })
     this.marks = new InstancedMesh(new PlaneGeometry(2, 2), this.markMaterial, capacity)
     this.marks.count = 0
     this.marks.visible = false
@@ -271,6 +291,7 @@ export class DiceScene {
     this.lamp.shadow.mapSize.set(1024, 1024)
     this.lamp.shadow.normalBias = 0.03
     this.scene.add(this.lamp, this.lamp.target)
+    this.setTable(table)
   }
 
   /** Draws the dice of `pool`, die i of the pool being index i of setDieTransform. */
@@ -296,6 +317,17 @@ export class DiceScene {
       this.meshes[kind].material = materials
       disposeLook(old[kind])
     }
+  }
+
+  /** Lines the cup as `table`, where the dice lie; the old floor pattern is freed. */
+  setTable({ floor, wall, mark }: Table): void {
+    this.wall.color.set(wall.colour)
+    this.wall.roughness = wall.roughness
+    this.floor.map?.dispose()
+    this.floor.map = floorTexture(floor.pattern)
+    this.floor.color.set(floor.colour)
+    this.floor.roughness = floor.roughness
+    this.markMaterial.color.set(mark)
   }
 
   /** Fits the cup's opening to a viewport of the given size in CSS pixels. */
@@ -365,7 +397,7 @@ export class DiceScene {
   }
 
   dispose(): void {
-    for (const look of [{ geometry: this.tray.geometry, materials: this.tray.material as Material[] }, ...Object.values(this.looks)]) disposeLook(look)
+    for (const look of [{ geometry: this.tray.geometry, materials: [this.wall, this.floor] }, ...Object.values(this.looks)]) disposeLook(look)
     for (const mesh of Object.values(this.meshes)) mesh.dispose()
     disposeLook({ geometry: this.marks.geometry, materials: [this.markMaterial] })
     this.marks.dispose()

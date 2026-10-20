@@ -28,14 +28,17 @@ the hand without putting the phone down, tap Settle after the shake: the dice
 drop as if the phone lay flat. A tap to roll again in the hand drops them the
 same way. History lists the last 50 rolls, also kept
 between visits. Style picks the finish of the dice, ivory by default, from
-seven that all come with the app; it is also remembered.
+seven that all come with the app, and the table they land on: green felt
+or a tabletop battle mat, each with its own sound and feel. Both are
+remembered.
 
 Add `?debug` to the URL to see the sensor reading, the shake level, the
 current state and how long the physics takes a frame on screen. It also
 starts the dice on a grid out from the middle with the same face up every
 time, instead of at random places and faces. `?dice=` starts with other dice
 than the remembered ones, as a number of d6 (`?dice=3`) or in dice notation
-(`?dice=2d6+d20`), and `?skin=` starts with another finish (`?skin=ebony`).
+(`?dice=2d6+d20`), `?skin=` starts with another finish (`?skin=ebony`), and `?table=` on
+another table (`?table=battlemat`).
 "Copy trace" copies the last 30 seconds of readings as
 JSON, for replaying in tests. The Haptics and Sound buttons open sliders for
 tuning the feel and the clacks live; "Copy tuning" copies the values, to make

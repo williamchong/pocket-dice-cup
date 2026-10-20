@@ -34,7 +34,7 @@ public class CupHapticsPlugin extends Plugin {
     private static final int CRISP_PULSE_MS = 10;
     private static final int SOFT_PULSE_MS = 20;
 
-    /** From this sharpness up a tap is a click; below it, a low tick (cupFeedback.ts: floor 0.2, the rest 0.8). */
+    /** From this sharpness up a tap is a click; below it, a low tick. engine/tables.ts gives soft floors a sharpness below it and hard surfaces one above. */
     private static final float CRISP_SHARPNESS = 0.5f;
 
     /** Null where the phone has no vibrator, and then every tap is skipped. */

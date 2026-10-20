@@ -152,6 +152,12 @@ export class CupFeedback {
     }
   }
 
+  /** Sounds and feels the hits as on a table's surfaces (tables.ts). */
+  setSurfaces(sound: Readonly<SoundTuning>, sharpness: Readonly<Record<Surface, number>>): void {
+    Object.assign(this.tuning.sharpness, sharpness)
+    if (this.sound?.tuning) Object.assign(this.sound.tuning, structuredClone(sound))
+  }
+
   /** Plays a full-strength hit on `surface`, to hear and feel the tuning without a shake. */
   testHit(surface: Surface): void {
     this.sound?.play(surface, 1)

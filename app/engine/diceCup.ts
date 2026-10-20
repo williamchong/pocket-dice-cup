@@ -10,6 +10,7 @@ import type { Vec3 } from './math'
 import type { Rapier, Surface } from './physics/world'
 import { DiceScene } from './render/scene'
 import type { DieSkin } from './render/skins'
+import type { Table } from './tables'
 import { CupSimulation, type CupOptions } from './simulation'
 
 export interface CupSnapshot {
@@ -48,6 +49,8 @@ export interface CupDebugInfo extends FeedbackStats {
 export interface DiceCupOptions extends CupOptions {
   /** How the dice are finished at the start. */
   skin: DieSkin
+  /** What the cup is lined with at the start. */
+  table: Table
 }
 
 /** A frame longer than this is treated as a pause (a hidden tab), not as time to catch up on. */
@@ -107,15 +110,16 @@ export class DiceCup {
     rapier: Rapier,
     source: MotionSource,
     onChange: (snapshot: CupSnapshot) => void,
-    { skin, ...options }: DiceCupOptions,
+    { skin, table, ...options }: DiceCupOptions,
     recorder: TraceRecorder | null = null,
   ): DiceCup {
     // A canvas that is not laid out yet has no size; the first resize corrects the box.
     const simulation = new CupSimulation(rapier, boxForViewport(canvas.clientWidth || 1, canvas.clientHeight || 1), options)
     try {
-      const scene = new DiceScene(canvas, MAX_DICE, skin)
+      const scene = new DiceScene(canvas, MAX_DICE, skin, table)
       scene.setPool(simulation.physics.pool)
       const feedback = new CupFeedback(createSound(), deviceHaptics())
+      feedback.setSurfaces(table.sound, table.sharpness)
       return new DiceCup(canvas, source, simulation, scene, feedback, onChange, recorder)
     }
     catch (error) {
@@ -174,6 +178,14 @@ export class DiceCup {
   /** Recasts the dice in `skin`, at any time: it changes nothing about how they roll. */
   setSkin(skin: DieSkin): void {
     this.scene.setSkin(skin)
+    this.stale = true
+    this.wake()
+  }
+
+  /** Lines the cup as `table`, at any time: it changes how the dice look, sound and feel, never how they roll. */
+  setTable(table: Table): void {
+    this.scene.setTable(table)
+    this.feedback.setSurfaces(table.sound, table.sharpness)
     this.stale = true
     this.wake()
   }

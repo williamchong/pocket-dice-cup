@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_SOUND_TUNING } from '../../app/engine/feedback/clackSound'
 import { CupFeedback, impactStrength, type HapticsBackend, type ImpactSound } from '../../app/engine/feedback/cupFeedback'
+import { findTable } from '../../app/engine/tables'
 import type { Impact, Surface } from '../../app/engine/physics/world'
 
 class FakeSound implements ImpactSound {
   played: [Surface, number][] = []
   state = 'running'
+  tuning = structuredClone(DEFAULT_SOUND_TUNING)
   async unlock() {}
   play(surface: Surface, strength: number) {
     this.played.push([surface, strength])
@@ -141,5 +144,17 @@ describe('CupFeedback', () => {
     expect(feedback.stats).toEqual({ impactsPerSecond: 3, peakStrength: 1 })
     feedback.play([], 1200)
     expect(feedback.stats).toEqual({ impactsPerSecond: 1, peakStrength: impactStrength(100) })
+  })
+
+  it('sounds and feels a hit on the floor as the table it is set to', () => {
+    const sound = new FakeSound()
+    const haptics = new FakeHaptics()
+    const feedback = new CupFeedback(sound, haptics)
+    const { sound: matSound, sharpness } = findTable('battlemat')
+    feedback.setSurfaces(matSound, sharpness)
+    feedback.testHit('floor')
+    expect(sound.tuning).toEqual(matSound)
+    expect(sound.tuning.floor).not.toBe(matSound.floor)
+    expect(haptics.sharpnesses).toEqual([sharpness.floor])
   })
 })

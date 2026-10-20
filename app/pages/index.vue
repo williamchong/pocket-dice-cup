@@ -134,7 +134,9 @@
         v-else-if="openSheet === 'skin'"
         class="cup__sheet"
         :skin="skin"
+        :table="table"
         @change="changeSkin"
+        @change-table="changeTable"
         @close="openSheet = null"
       />
     </Transition>
@@ -227,10 +229,11 @@
 import type { ComponentPublicInstance } from 'vue'
 import { formatPool, type DicePool } from '~/engine/core/pool'
 import { isRolling } from '~/engine/core/stateMachine'
-import { DEFAULT_SOUND_TUNING, type SoundTuning, type VoiceName } from '~/engine/feedback/clackSound'
+import type { SoundTuning, VoiceName } from '~/engine/feedback/clackSound'
 import { DEFAULT_HAPTIC_TUNING, type HapticTuning } from '~/engine/feedback/cupFeedback'
 import type { Surface } from '~/engine/physics/world'
 import { findSkin, type DieSkin } from '~/engine/render/skins'
+import { findTable, type Table } from '~/engine/tables'
 
 // `?debug` shows what the sensor and the state machine are doing, for tuning
 // on a real phone where there is no console. It also starts the dice in the
@@ -242,12 +245,14 @@ const debug = 'debug' in route.query || Boolean(useRuntimeConfig().public.debug)
 const startPool = parsePoolSetting(route.query.dice) ?? loadPool() ?? undefined
 // `?skin=ebony` starts with that finish, over the one saved from last time.
 const skin = shallowRef(findSkin(parseSkinSetting(route.query.skin) ?? loadSkin()))
+// `?table=battlemat` starts on that table, over the one saved from last time.
+const table = shallowRef(findTable(parseTableSetting(route.query.table) ?? loadTable()))
 
 const canvas = useTemplateRef('canvas')
 // Shaking tips the phone far enough for the browser to rotate the page; the
 // cup stays put in the phone's own frame instead.
 const counterRotationStyle = useCounterRotation()
-const { ready, failed, state, result, slid, shaken, layingFlat, hidden, dice, pool, sensing, permission, start, toss, settle, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value })
+const { ready, failed, state, result, slid, shaken, layingFlat, hidden, dice, pool, sensing, permission, start, toss, settle, setPool, setSkin, setTable, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value, table: table.value })
 const rolling = computed(() => isRolling(state.value))
 // Kept across visits, so the hint to shake goes for good after one shake.
 const everShaken = ref(loadShaken())
@@ -276,6 +281,16 @@ function changeSkin(next: DieSkin) {
   saveSkin(next.id)
   // The dice picker's pictures of the new skin, drawn now rather than as it opens.
   drawDieIcons(next)
+}
+
+function changeTable(next: Table) {
+  if (next === table.value) return
+  table.value = next
+  setTable(next)
+  saveTable(next.id)
+  tuneTo(next)
+  // Inside the tap that chose it, so the sound can start: the new floor, heard and felt.
+  void testHit('floor')
 }
 
 // The result card goes down above the buttons when it would hide a die at
@@ -406,9 +421,18 @@ async function copyTrace() {
 }
 
 // The engine's own tuning objects stay out of Vue; the sliders change these
-// copies, and they are written through.
+// copies, and they are written through, every value at once. So they start
+// from the table's sound and feel, and follow it when it changes, or moving
+// one slider would put back another table's.
 const haptics = reactive<HapticTuning>(structuredClone(DEFAULT_HAPTIC_TUNING))
-const sound = reactive<SoundTuning>(structuredClone(DEFAULT_SOUND_TUNING))
+const sound = reactive<SoundTuning>(structuredClone(table.value.sound))
+Object.assign(haptics.sharpness, table.value.sharpness)
+function tuneTo(next: Table) {
+  // Voice by voice, as the sliders hold on to each voice's object.
+  sound.muffleHz = next.sound.muffleHz
+  for (const name of ['floor', 'side', 'die'] as const) Object.assign(sound[name], next.sound[name])
+  Object.assign(haptics.sharpness, next.sharpness)
+}
 watchEffect(() => {
   const live = ready.value ? hapticTuning() : null
   if (!live) return

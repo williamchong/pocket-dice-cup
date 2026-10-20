@@ -38,6 +38,11 @@
     "amethyst": "Amethyst",
     "gold": "Gold"
   },
+  "table": {
+    "label": "Table",
+    "felt": "Felt",
+    "battlemat": "Battle mat"
+  },
   "about": {
     "label": "About and help",
     "tagline": "A dice cup in your phone: shake it, hear the dice rattle, lay it down and read the roll.",
@@ -68,7 +73,7 @@
     },
     "style": {
       "title": "Style",
-      "body": "Style changes the dice’s finish: ivory, ebony, casino red, sapphire, emerald, amethyst or gold."
+      "body": "Style changes the dice’s finish: ivory, ebony, casino red, sapphire, emerald, amethyst or gold. It also changes the table they land on, felt or a battle mat, each with its own sound and feel; the dice roll the same on both."
     },
     "feel": {
       "title": "Sound and vibration",

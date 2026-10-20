@@ -274,8 +274,23 @@ Phases
    `MeshPhysicalMaterial`. Seven ship: ivory, ebony, casino red, sapphire,
    emerald, amethyst and gold. A Style sheet beside History shows a d6 in
    each, swaps the cup's looks in place without disturbing a roll, and the
-   choice is kept in `localStorage` (`?skin=` overrides it). Not yet done:
-   table skins, and anything paid. If skins are ever sold, add a `locked`
+   choice is kept in `localStorage` (`?skin=` overrides it).
+   Table skins: a second row in the Style sheet, chosen apart from the
+   dice. A table is a data object too (`engine/tables.ts`): the floor's
+   colour and pattern, the walls, the colour of the rings under dice that
+   did not roll over, and the clacks' voices and the haptic sharpness of
+   each surface. It never changes the physics, so the dice roll the same,
+   and as fairly, on every table; a hard floor is only heard and felt.
+   Two ship: the felt, as before, and a vinyl battle mat with one-inch
+   squares at true size, a dark ring in blue marker, a brighter slap off
+   the floor (band 1.2 kHz, low-pass 1 kHz) and a crisper floor pulse
+   (0.5, a click rather than a tick on Android). Choosing one plays a hit
+   on its floor. The choice is kept in `localStorage` (`?table=`
+   overrides it), and the debug sliders follow the table. Checked in
+   Chromium: both tables, switching between them during a result, and the
+   setting. Not yet checked on the iPhone: the mat's sound and feel, which
+   are first guesses, and whether its longer clack drops voices with a full
+   cup. Not yet done: anything paid. If skins are ever sold, add a `locked`
    flag to the data and an entitlement check in the sheet; the renderer
    need not know.
 6. **Desktop and fallbacks.** Click or drag to throw, spacebar, and tap-to-roll

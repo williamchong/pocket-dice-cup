@@ -7,6 +7,7 @@ import type { SoundTuning } from '~/engine/feedback/clackSound'
 import type { HapticTuning } from '~/engine/feedback/cupFeedback'
 import type { Surface } from '~/engine/physics/world'
 import type { DieSkin } from '~/engine/render/skins'
+import type { Table } from '~/engine/tables'
 import type { MotionPermission } from '~/engine/input/motionSource'
 import { deviceMotionSource } from '~/engine/input/nativeMotionSource'
 import { TraceRecorder, type MotionTrace } from '~/engine/input/motionTrace'
@@ -159,6 +160,11 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     cup?.setSkin(skin)
   }
 
+  /** Lines the cup as `table`, at any time. */
+  function setTable(table: Table) {
+    cup?.setTable(table)
+  }
+
   /** Rolls from a click or tap, with or without a motion sensor. */
   function toss() {
     void cup?.unlockSound()
@@ -170,5 +176,5 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     cup?.settle()
   }
 
-  return { ready, failed, state, result, slid, shaken, layingFlat, hidden, dice, pool, sensing, permission, start, toss, settle, setPool, setSkin, debugInfo, exportTrace, hapticTuning, soundTuning, testHit }
+  return { ready, failed, state, result, slid, shaken, layingFlat, hidden, dice, pool, sensing, permission, start, toss, settle, setPool, setSkin, setTable, debugInfo, exportTrace, hapticTuning, soundTuning, testHit }
 }
