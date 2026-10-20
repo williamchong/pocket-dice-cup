@@ -79,7 +79,8 @@
   height: 3rem;
   flex: none;
   overflow: visible;
-  fill: var(--color-felt);
+  /* The phone's screen; a light floor sets it cream (pages/index.vue). */
+  fill: var(--shake-screen, var(--color-felt));
   stroke: currentColor;
   stroke-width: 2;
   stroke-linecap: round;

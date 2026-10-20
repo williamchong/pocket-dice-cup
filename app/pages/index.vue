@@ -635,18 +635,24 @@ if (debug) {
 }
 
 /* Cream on a light floor, as on the battle mat, cannot be read: the glass
-   buttons go dark, as a smoked glass, and the hints go felt green. */
+   buttons go dark, as a smoked glass, a little darker pressed, and the
+   hints and messages drawn straight on the floor go felt green. The drawn phone's screen then turns cream, or its
+   dice, drawn in the hint's colour, would vanish into it. */
+.cup--light-floor {
+  --shake-screen: var(--color-cream);
+}
+
 .cup--light-floor .cup__controls > * {
-  background-color: rgb(18 36 27 / 60%);
+  background-color: color-mix(in srgb, var(--color-felt) 60%, transparent);
 }
 
-.cup--light-floor .cup__hint {
+.cup--light-floor .cup__controls > :is(:hover, :active, [aria-pressed="true"]) {
+  background-color: color-mix(in srgb, var(--color-felt) 75%, transparent);
+}
+
+.cup--light-floor :is(.cup__hint, .cup__message:not(.cup__message--panel)) {
   color: var(--color-felt);
-}
-
-/* The drawn phone's screen, felt green, would hide its dice, now drawn in felt too. */
-.cup--light-floor .shake {
-  fill: var(--color-cream);
+  text-shadow: none;
 }
 
 .cup__controls {
