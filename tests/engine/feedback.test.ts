@@ -150,11 +150,13 @@ describe('CupFeedback', () => {
     const sound = new FakeSound()
     const haptics = new FakeHaptics()
     const feedback = new CupFeedback(sound, haptics)
-    const { sound: matSound, sharpness } = findTable('battlemat')
+    const { sound: feltSound, sharpness: feltSharpness } = findTable('felt')
+    const matSound = { ...feltSound, floor: { ...feltSound.floor, band: 1200 }, muffleHz: 1000 }
+    const sharpness = { ...feltSharpness, floor: 0.5 }
     feedback.setSurfaces(matSound, sharpness)
     feedback.testHit('floor')
     expect(sound.tuning).toEqual(matSound)
     expect(sound.tuning.floor).not.toBe(matSound.floor)
-    expect(haptics.sharpnesses).toEqual([sharpness.floor])
+    expect(haptics.sharpnesses).toEqual([0.5])
   })
 })

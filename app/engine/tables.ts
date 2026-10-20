@@ -41,20 +41,15 @@ export const TABLES = [
     sharpness: DEFAULT_HAPTIC_TUNING.sharpness,
   },
   // A vinyl battle mat, as tabletop role-players roll onto, in a walnut rail.
-  // The vinyl lies on a hard table, so a die landing on it slaps rather than
-  // thuds: brighter and a little longer than the felt, and felt more crisply.
-  // The ring under a die is drawn as if in blue wet-erase marker.
+  // The ring under a die is drawn as if in blue wet-erase marker. It sounds
+  // and feels as the felt until a voice of its own is tuned on the iPhone.
   {
     id: 'battlemat',
     floor: { colour: '#c9c2b0', roughness: 0.7, pattern: 'grid' },
     wall: { colour: '#2e1d12', roughness: 0.5 },
     mark: '#1f4fa8',
-    sound: {
-      ...DEFAULT_SOUND_TUNING,
-      floor: { band: 1200, q: 1.5, knock: 260, decay: 0.025, gain: 0.6 },
-      muffleHz: 1000,
-    },
-    sharpness: { ...DEFAULT_HAPTIC_TUNING.sharpness, floor: 0.5 },
+    sound: DEFAULT_SOUND_TUNING,
+    sharpness: DEFAULT_HAPTIC_TUNING.sharpness,
   },
 ] as const satisfies readonly TableFields[]
 

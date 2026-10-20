@@ -283,19 +283,21 @@ Phases
    each surface. It never changes the physics, so the dice roll the same,
    and as fairly, on every table; a hard floor is only heard and felt.
    Two ship: the felt, as before, and a vinyl battle mat with one-inch
-   squares at true size, a dark ring in blue marker, a brighter slap off
-   the floor (band 1.2 kHz, low-pass 1 kHz) and a crisper floor pulse
-   (0.5, a click rather than a tick on Android). Choosing one plays a hit
-   on its floor. The choice is kept in `localStorage` (`?table=`
-   overrides it), and the debug sliders follow the table. Checked in
-   Chromium: both tables, switching between them during a result, and the
-   setting. Its longer floor clack drops no more than the felt's: in five
-   synthetic two-second shakes of 12 d6, and of a mixed 12, replayed in
-   Node, the 8-voice cap let the same clacks through on both tables (55%
-   and 57% dropped, as on a hard shake it is meant to). Hits come a frame,
-   16.7 ms, apart, and both floor voices, 22 and 25 ms, end in the next.
-   Not yet checked on the iPhone: the mat's sound and feel, which are first
-   guesses, to be tuned by ear and hand with the debug sliders. Not yet
+   squares at true size and a dark ring in blue marker. For now the mat
+   only looks different: it sounds and feels as the felt until a voice of
+   its own is tuned on the iPhone. A first guess, a brighter slap off the
+   floor (band 1.2 kHz, low-pass 1 kHz, 25 ms) and a crisper floor pulse
+   (0.5, a click rather than a tick on Android), was left out untried. Its
+   longer clack would drop no more than the felt's: in five synthetic
+   two-second shakes of 12 d6, and of a mixed 12, replayed in Node, the
+   8-voice cap let the same clacks through with either voice (55% and 57%
+   dropped, as on a hard shake it is meant to), since hits come a frame,
+   16.7 ms, apart and both floor voices, 22 and 25 ms, end in the next.
+   Choosing a table plays a hit on its floor. The choice is kept in
+   `localStorage` (`?table=` overrides it), and the debug sliders follow
+   the table. Checked in Chromium: both tables, switching between them
+   during a result, and the setting. Not yet checked on the iPhone: how
+   the mat looks. Not yet
    done: anything paid. If skins are ever sold, add a `locked`
    flag to the data and an entitlement check in the sheet; the renderer
    need not know.

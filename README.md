@@ -29,8 +29,7 @@ drop as if the phone lay flat. A tap to roll again in the hand drops them the
 same way. History lists the last 50 rolls, also kept
 between visits. Style picks the finish of the dice, ivory by default, from
 eight that all come with the app, and the table they land on: green felt
-or a tabletop battle mat, each with its own sound and feel. Both are
-remembered.
+or a tabletop battle mat. Both are remembered.
 
 Add `?debug` to the URL to see the sensor reading, the shake level, the
 current state and how long the physics takes a frame on screen. It also
