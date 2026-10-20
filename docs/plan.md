@@ -271,8 +271,9 @@ Phases
    Status: dice skins done, all free. A skin is a data object
    (`engine/render/skins.ts`): body and ink colours plus roughness,
    metalness and clearcoat, which the looks turn into face atlases and a
-   `MeshPhysicalMaterial`. Seven ship: ivory, ebony, casino red, sapphire,
-   emerald, amethyst and gold. A Style sheet beside History shows a d6 in
+   `MeshPhysicalMaterial`. Eight ship: ivory, ebony, casino red, sapphire,
+   emerald, amethyst, dragon's blood (oxblood with gold numbers, to go
+   with the battle mat) and gold. A Style sheet beside History shows a d6 in
    each, swaps the cup's looks in place without disturbing a roll, and the
    choice is kept in `localStorage` (`?skin=` overrides it).
    Table skins: a second row in the Style sheet, chosen apart from the

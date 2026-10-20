@@ -30,6 +30,8 @@ export const DIE_SKINS = [
   { id: 'sapphire', body: '#1f3f8c', ink: '#f6f1e6', ...RESIN },
   { id: 'emerald', body: '#1d6b3f', ink: '#f6f1e6', ...RESIN },
   { id: 'amethyst', body: '#5a2d82', ink: '#e9c76a', ...RESIN },
+  // Oxblood with gold numbers, as fantasy role-players' dice often are; darker than casino red, so the two tell apart.
+  { id: 'dragon', body: '#5e0f14', ink: '#e2b659', ...RESIN },
   // Brushed metal: no lacquer, and a little rough so the room reflects as a sheen rather than a mirror.
   { id: 'gold', body: '#d2a23b', ink: '#2b1d08', roughness: 0.4, metalness: 0.9, clearcoat: 0 },
 ] as const satisfies readonly SkinFields[]
