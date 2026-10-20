@@ -19,6 +19,8 @@ interface TableFields {
     roughness: number
     /** Cloth is a fine speckle; a grid is a battle mat's one-inch squares. */
     pattern: 'cloth' | 'grid'
+    /** Light enough that cream text over it cannot be read, so the buttons and hints over it go dark. */
+    light: boolean
   }
   wall: { colour: string, roughness: number }
   /** The ring under each die that did not roll over: light on a dark floor, dark on a light one. */
@@ -34,7 +36,7 @@ export const TABLES = [
   // sound and feel as tuned on the iPhone (clackSound.ts, cupFeedback.ts).
   {
     id: 'felt',
-    floor: { colour: '#0d6b3c', roughness: 1, pattern: 'cloth' },
+    floor: { colour: '#0d6b3c', roughness: 1, pattern: 'cloth', light: false },
     wall: { colour: '#2a160c', roughness: 0.45 },
     mark: '#fff1dc',
     sound: DEFAULT_SOUND_TUNING,
@@ -45,7 +47,7 @@ export const TABLES = [
   // and feels as the felt until a voice of its own is tuned on the iPhone.
   {
     id: 'battlemat',
-    floor: { colour: '#c9c2b0', roughness: 0.7, pattern: 'grid' },
+    floor: { colour: '#c9c2b0', roughness: 0.7, pattern: 'grid', light: true },
     wall: { colour: '#2e1d12', roughness: 0.5 },
     mark: '#1f4fa8',
     sound: DEFAULT_SOUND_TUNING,

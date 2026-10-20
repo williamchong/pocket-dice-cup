@@ -1,6 +1,7 @@
 <template>
   <main
     class="cup"
+    :class="{ 'cup--light-floor': table.floor.light }"
     :style="counterRotationStyle"
     @click="start"
   >
@@ -631,6 +632,21 @@ if (debug) {
   .cup__sheet-leave-active {
     transition: none;
   }
+}
+
+/* Cream on a light floor, as on the battle mat, cannot be read: the glass
+   buttons go dark, as a smoked glass, and the hints go felt green. */
+.cup--light-floor .cup__controls > * {
+  background-color: rgb(18 36 27 / 60%);
+}
+
+.cup--light-floor .cup__hint {
+  color: var(--color-felt);
+}
+
+/* The drawn phone's screen, felt green, would hide its dice, now drawn in felt too. */
+.cup--light-floor .shake {
+  fill: var(--color-cream);
 }
 
 .cup__controls {

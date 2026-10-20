@@ -296,9 +296,13 @@ Phases
    Choosing a table plays a hit on its floor. The choice is kept in
    `localStorage` (`?table=` overrides it), and the debug sliders follow
    the table. Checked in Chromium: both tables, switching between them
-   during a result, and the setting. Not yet checked on the iPhone: how
-   the mat looks. Not yet
-   done: anything paid. If skins are ever sold, add a `locked`
+   during a result, and the setting. Seen on the iPhone, the mat, its
+   grid, the rail and the dice's shadows look as in Chromium, but the
+   buttons, cream glass made for the dark felt, could hardly be read on
+   it. A table now says whether its floor is light, and on a light one the
+   buttons are a dark, smoked glass, the hints felt green, and the drawn
+   phone beside the shake hint cream, so its dice still show; checked in
+   Chromium, with the felt unchanged. Not yet done: anything paid. If skins are ever sold, add a `locked`
    flag to the data and an entitlement check in the sheet; the renderer
    need not know.
 6. **Desktop and fallbacks.** Click or drag to throw, spacebar, and tap-to-roll
