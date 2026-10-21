@@ -20,16 +20,22 @@ self-signed certificate warning, tap Start and allow motion access.
 With no motion sensor, as on a desktop, click or tap the cup to shake it,
 or press the space bar.
 The button at the bottom shows the dice in dice notation ("3d6 + 1d20") and
-opens a − and + row for each kind, d4 to d20, up to 12 dice in all; the
-dice are chosen between rolls and remembered for next time. When the dice
+opens a − and + row for each kind, d4 to d20, up to 12 dice in all, with
+an × that takes out every die of that kind and a Reset back to the lone d6
+the cup starts with; the dice are chosen between rolls and remembered for
+next time. When the dice
 settle, the total shows at the top, and they stay where they landed while the
 phone is picked up and passed round, until the next shake or tap. To roll in
 the hand without putting the phone down, tap Settle after the shake: the dice
 drop as if the phone lay flat. A tap to roll again in the hand drops them the
 same way. History lists the last 50 rolls, also kept
 between visits. Style picks the finish of the dice, ivory by default, from
-eight that all come with the app, and the table they land on: green felt
-or a tabletop battle mat. Both are remembered.
+thirteen that all come with the app, in glossy resin, translucent and metal,
+and the table they land on: green felt or a tabletop battle mat. Both are
+remembered. The ? button beside it opens an about page, at `/about`, that
+says how each part works. Lying screen-down the dice still roll and are
+heard and felt but are not drawn; a tap shows them, for a screen watched
+elsewhere, as through iPhone Mirroring.
 
 Add `?debug` to the URL to see the sensor reading, the shake level, the
 current state and how long the physics takes a frame on screen. It also

@@ -228,7 +228,10 @@ Phases
    dice are chosen between rolls from a button at the bottom of the screen
    that shows them in dice notation ("3d6 + 1d20") and opens a − and + row
    per kind, up to 12 in all, each named beside its picture, as a d8, a d10
-   and a d12 are hard to tell apart at that size. The pool is kept in `localStorage` as
+   and a d12 are hard to tell apart at that size. An × on each row takes
+   out every die of that kind, hidden when the kind fills the cup and must
+   keep one, and a Reset puts back the lone d6 the cup starts with, without
+   asking first, as a pool is quick to build again. The pool is kept in `localStorage` as
    notation, and `?dice=` takes notation too. Each shape is one table of
    vertices, faces and values (`dice/shapes.ts`), from which come the
    collider (a rounded convex hull; the d6 keeps its rounded box), the face
