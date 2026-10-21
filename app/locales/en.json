@@ -59,42 +59,50 @@
   "about": {
     "label": "About and help",
     "tagline": "A dice cup in your phone: shake it, hear the dice rattle, lay it down and read the roll.",
-    "intro": "Pocket Dice Cup turns your phone into a dice cup for board games, tabletop RPGs and dice games. The dice are real 3D physics inside the phone: they rattle against the screen’s edges as you shake it, with a clack and a tap of vibration on every hit, and come to rest when you lay it down. The result is read from the faces the dice land on, never from a random number.",
+    "intro": "Real 3D dice in your phone, for board games, tabletop RPGs and dice games. The roll is read from the faces the dice land on, never from a random number.",
+    "description": "Pocket Dice Cup turns your phone into a dice cup for board games, tabletop RPGs and dice games. The dice are real 3D physics inside the phone: they rattle against the screen’s edges as you shake it, with a clack and a tap of vibration on every hit, and come to rest when you lay it down. The result is read from the faces the dice land on, never from a random number.",
+    "steps": {
+      "shake": "Shake",
+      "flat": "Lay it flat",
+      "read": "Read the total"
+    },
     "shake": {
       "title": "Shake to roll",
-      "body": "Hold the phone like a dice cup and shake it. The dice tumble the way the phone moves, so a hard shake rolls them hard and a gentle one barely turns them. Then lay the phone flat on the table, screen up, and the total shows once the dice stop."
+      "body": "Shake the phone like a cup: a hard shake rolls the dice hard, a gentle one barely turns them. Lay it flat, screen up, to read the total."
     },
     "settle": {
       "title": "Settle",
-      "body": "A phone held in the hand is never quite flat or still, so the dice slide into its lowest edge. While a roll is under way, Settle lets them drop as if the phone lay flat on the table, and the button spins until the roll ends with a result."
+      "body": "In the hand, the dice slide to the phone’s low edge. Settle drops them as if it lay flat, and spins until the roll ends."
     },
     "tap": {
       "title": "Tap, click or press space",
-      "body": "On a computer, or where the browser has no motion sensor or motion access was refused, tap the table, click it or press the space bar to throw the dice. A tap is also a quick way to roll again on the phone; with the phone in the hand, the dice then drop as if Settle were pressed."
+      "body": "On a computer, or with no motion sensor, tap the table or press space to throw.",
+      "note": "On a phone, a tap rolls again; held in the hand, the dice then drop as with Settle."
     },
     "dice": {
       "title": "Choose your dice",
-      "body": "The dice button shows what is in the cup, such as 3d6 or 2d6 + d20. Tap it to add or take out dice: up to {dice} at once, mixing d4, d6, d8, d10, d12 and d20. The result card shows the total and each die’s value."
+      "body": "Tap the dice button to mix up to {dice} dice, from d4 to d20. The result shows the total and each die."
     },
     "rolledOver": {
       "title": "Dice that did not roll over",
-      "body": "A gentle shake can slide a die about on one face without turning it, as in a real cup. A faint ring on the table marks each die that ended on the face it started with; shake harder for a fair roll."
+      "body": "A faint ring marks a die that only slid and ended on the face it started on. Shake harder for a fair roll."
     },
     "history": {
       "title": "History",
-      "body": "History keeps your last {history} rolls, with each die and the time, on this device. Clear removes them."
+      "body": "Your last {history} rolls, kept on this device."
     },
     "style": {
       "title": "Style",
-      "body": "Style changes the dice’s finish, in glossy resin, clear tinted resin or metal, and the table they land on, felt or a battle mat. The dice roll the same in every finish and on every table."
+      "body": "Change the dice’s finish and the table. The dice roll the same in every finish and on every table."
     },
     "feel": {
       "title": "Sound and vibration",
-      "body": "Each hit plays a clack, louder for a harder hit, once you have tapped the screen. The phone also taps with each hit in the iPhone and Android apps and in Android browsers; iPhone browsers cannot vibrate. The iPhone’s silent switch mutes the sound, as it does in games."
+      "body": "Each hit clacks, louder the harder it hits, once you have tapped the screen, and the phone taps back where it can vibrate.",
+      "note": "iPhone browsers cannot vibrate, and the silent switch mutes the sound."
     },
     "privacy": {
       "title": "Privacy",
-      "body": "Everything runs on your device. The motion sensor’s readings, your dice and your history stay on it, and there are no accounts, ads or tracking."
+      "body": "Everything stays on your device: no accounts, ads or tracking."
     }
   }
 }

@@ -153,8 +153,9 @@
       :slid="slid"
     />
 
-    <!-- The about page (index/about.vue), over the cup. -->
-    <NuxtPage />
+    <!-- The about page (index/about.vue), over the cup, drawing its dice in
+         the finish chosen here. -->
+    <NuxtPage :skin="skin" />
 
     <div
       v-if="debug"

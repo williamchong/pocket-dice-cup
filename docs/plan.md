@@ -384,6 +384,14 @@ Phases
    page, with a 404 status, for it. The page's head also carries an English
    description for crawlers and link previews that run no script. Not yet
    checked on the iPhone, or with Android's back gesture.
+   The page read as a wall of text, so it now leads with three pictures,
+   shake, lay it flat and read the total, and each section has a drawing or
+   an icon beside it; the dice and Style sections show the pickers' own
+   rendered dice instead of listing their names. The text went from 448
+   words to 197, with the details for computers and iPhone browsers moved to
+   a smaller note under the section; the head's description keeps the longer
+   introduction. Checked in Chromium at iPhone size, in English and
+   traditional Chinese, on the felt and the battle mat.
 7. **PWA polish.** Offline, installable, fullscreen, rendering paused while the
    phone is face-down.
    Status: screen-down, the dice still roll and are heard and felt, but are
