@@ -20,7 +20,9 @@
   "pool": {
     "label": "Dice",
     "fewer": "Fewer {kind}",
-    "more": "More {kind}"
+    "more": "More {kind}",
+    "clear": "Remove all {kind}",
+    "reset": "Reset"
   },
   "history": {
     "label": "Roll history",

@@ -20,7 +20,9 @@
   "pool": {
     "label": "骰子",
     "fewer": "減少 {kind}",
-    "more": "增加 {kind}"
+    "more": "增加 {kind}",
+    "clear": "移除所有 {kind}",
+    "reset": "重設"
   },
   "history": {
     "label": "擲骰紀錄",

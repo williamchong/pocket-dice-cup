@@ -27,13 +27,26 @@
       :disabled="disabled || count >= max"
       @click="emit('change', count + 1)"
     />
+    <!-- Hidden rather than removed when there is nothing to take out, or
+         when the kind fills the cup and must keep a die, so the rows keep
+         lining up. -->
+    <UButton
+      icon="i-lucide-x"
+      variant="ghost"
+      color="neutral"
+      class="size-11"
+      :class="{ invisible: !clearable }"
+      :aria-label="$t('pool.clear', { kind })"
+      :disabled="disabled || !clearable"
+      @click="emit('change', 0)"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import type { DieKind } from '~/engine/dice/shapes'
 
-defineProps<{
+const props = defineProps<{
   kind: DieKind
   /** A picture of the die, shown beside its name once there is one. */
   icon?: string
@@ -45,6 +58,8 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{ change: [count: number] }>()
+
+const clearable = computed(() => props.count > 0 && props.min === 0)
 </script>
 
 <style scoped>
