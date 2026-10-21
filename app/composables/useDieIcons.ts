@@ -31,9 +31,21 @@ function draw(dice: readonly DieIconRequest[]): void {
     })
 }
 
+const kindsIn = (skin: DieSkin): DieIconRequest[] => DIE_KINDS.map(kind => ({ skin, kind }))
+const skinPicker = (): DieIconRequest[] => DIE_SKINS.map(skin => ({ skin, kind: 'd6' }))
+
 /** Draws every kind of die in `skin`, for the dice picker. */
 export function drawDieIcons(skin: DieSkin): void {
-  draw(DIE_KINDS.map(kind => ({ skin, kind })))
+  draw(kindsIn(skin))
+}
+
+/**
+ * Draws both pickers' pictures, every kind in `skin` and a d6 in each skin,
+ * in one go: the translucent skins' pictures take a second pass each, too
+ * long to leave until the Style sheet is opening.
+ */
+export function drawPickerIcons(skin: DieSkin): void {
+  draw([...kindsIn(skin), ...skinPicker()])
 }
 
 /** A picture of each kind of die in `skin` showing its highest face, each missing until drawn. */
@@ -47,6 +59,6 @@ export function useDieIcons(skin: MaybeRefOrGetter<DieSkin>) {
 
 /** A d6 in each skin, to pick one by, each missing until drawn. */
 export function useSkinIcons() {
-  draw(DIE_SKINS.map(skin => ({ skin, kind: 'd6' })))
+  draw(skinPicker())
   return computed(() => Object.fromEntries(DIE_SKINS.map(skin => [skin.id, icons.get(keyOf(skin.id, 'd6'))])) as Partial<Record<DieSkinId, string>>)
 }

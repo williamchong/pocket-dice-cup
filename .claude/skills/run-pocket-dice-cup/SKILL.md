@@ -86,7 +86,7 @@ Base URL is the first argument (default `http://localhost:3000/`).
 | `wait-result [s]` | waits for the result card (default 20 s) and prints it |
 | `states` | the states seen since the last `states`/`open` (idle, shaking, settling, result) |
 | `debug` | prints the debug overlay: state, result, sensor, accel, physics ms, impacts/s, sound |
-| `click <name>` | a button or radio by accessible name: `History`, `Style`, `Done`, `Clear`, the pool button (`2d6`), `More d8`, `Fewer d6`, skins (`Gold`, `Ebony`…) |
+| `click <name>` | a button, radio or tab by accessible name: `History`, `Style`, `Done`, `Clear`, the pool button (`2d6`), `More d8`, `Fewer d6`, skins (`Gold`, `Ebony`…), the Style sheet's `Dice` and `Table` tabs, tables (`Battle mat`) |
 | `hide-debug` | hides the debug overlay before a clean screenshot |
 | `ss [name]` | screenshot |
 | `eval <js>` | evaluates in the page and prints JSON |
@@ -132,9 +132,11 @@ replaying the same traces.
 - **The Nuxt DevTools pill sits on the History button** in dev and takes
   its clicks (the click times out after 30 s). `open` hides
   `#nuxt-devtools-container`; if you `page.goto` some other way, hide it too.
-- **Skins are `role="radio"`, not buttons**, and the steppers are
-  icon-only with aria-labels `More d8` / `Fewer d8`. `click` searches
-  buttons and radios by accessible name, so use those names.
+- **Skins are `role="radio"`, not buttons**, the Style sheet's `Dice` and
+  `Table` are `role="tab"`, and the steppers are icon-only with aria-labels
+  `More d8` / `Fewer d8`. `click` searches buttons, radios and tabs by
+  accessible name, so use those names. Tables only show once the `Table`
+  tab is clicked.
 - **`?debug` changes the roll.** It starts the dice on a fixed grid with
   the same face up instead of at random, which makes runs repeatable. It
   also covers the top-left of the felt, so `hide-debug` before a screenshot.

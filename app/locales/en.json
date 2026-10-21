@@ -29,7 +29,7 @@
     "confirmClear": "Clear all?"
   },
   "skin": {
-    "label": "Dice style",
+    "label": "Dice",
     "ivory": "Ivory",
     "ebony": "Ebony",
     "casino": "Casino red",
@@ -37,7 +37,17 @@
     "emerald": "Emerald",
     "amethyst": "Amethyst",
     "dragon": "Dragon’s blood",
-    "gold": "Gold"
+    "cherry": "Cherry",
+    "smoke": "Smoke",
+    "ice": "Ice",
+    "gold": "Gold",
+    "silver": "Silver",
+    "copper": "Copper"
+  },
+  "finish": {
+    "resin": "Resin",
+    "translucent": "Translucent",
+    "metal": "Metal"
   },
   "table": {
     "label": "Table",
@@ -74,7 +84,7 @@
     },
     "style": {
       "title": "Style",
-      "body": "Style changes the dice’s finish: ivory, ebony, casino red, sapphire, emerald, amethyst, dragon’s blood or gold. It also changes the table they land on, felt or a battle mat; the dice roll the same on both."
+      "body": "Style changes the dice’s finish, in glossy resin, clear tinted resin or metal, and the table they land on, felt or a battle mat. The dice roll the same in every finish and on every table."
     },
     "feel": {
       "title": "Sound and vibration",

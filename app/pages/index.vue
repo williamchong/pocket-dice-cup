@@ -345,10 +345,10 @@ watch(result, (values) => {
   history.value = addRoll(history.value, values, pool.value, Date.now())
   saveHistory(history.value)
 })
-// The dice picker's pictures hold the page for a moment as they are drawn,
+// The pickers' pictures hold the page for a moment as they are drawn,
 // unnoticed as the splash fades out.
 watch(ready, (now) => {
-  if (now) drawDieIcons(skin.value)
+  if (now) drawPickerIcons(skin.value)
 })
 // The loading screen is the static page's (app/spa-loading-template.html),
 // so its animation runs on unbroken from before any script. It fades out once
@@ -513,6 +513,7 @@ if (debug) {
       `accel     ${format(x)}${format(y)}${format(z)}`,
       `agitation ${format(info.agitation)}`,
       `physics   ${format(info.physicsMs)} ms`,
+      `frame     ${format(info.frameMs)} ms`,
       `impacts/s ${format(info.impactsPerSecond)}`,
       `peak hit  ${format(info.peakStrength)}`,
       `sound     ${info.sound}`,

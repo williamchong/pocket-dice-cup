@@ -271,11 +271,39 @@ Phases
    Status: dice skins done, all free. A skin is a data object
    (`engine/render/skins.ts`): body and ink colours plus roughness,
    metalness and clearcoat, which the looks turn into face atlases and a
-   `MeshPhysicalMaterial`. Eight ship: ivory, ebony, casino red, sapphire,
-   emerald, amethyst, dragon's blood (oxblood with gold numbers, to go
-   with the battle mat) and gold. A Style sheet beside History shows a d6 in
-   each, swaps the cup's looks in place without disturbing a roll, and the
-   choice is kept in `localStorage` (`?skin=` overrides it).
+   `MeshPhysicalMaterial`. Thirteen ship, in three finishes: glossy resin
+   (ivory, ebony, casino red, sapphire, emerald, amethyst, and dragon's
+   blood, oxblood with gold numbers to go with the battle mat), translucent
+   (cherry, smoke and ice) and metal (gold, silver and copper). A Style
+   sheet beside History shows a d6 in each, swaps the cup's looks in place
+   without disturbing a roll, and the choice is kept in `localStorage`
+   (`?skin=` overrides it).
+   Translucent skins use the material's transmission: three.js draws the
+   floor, walls and opaque dice into a texture once a frame, and a
+   translucent die shows that texture through it, tinted. A mask, white on
+   the body and black on the markings, keeps the pips and numbers solid
+   ink. The light through the body is filtered twice, by the body colour
+   and by the tint, so both are lighter than the colour the die should
+   look; the first tries, a dark tint over a mid red, came out nearly
+   opaque. Known limits: a translucent die does not show another
+   translucent die behind it, nor its own far side's pips, and its shadow
+   is as solid as an opaque die's. Over a plain floor the effect is
+   subtle: through ice the battle mat's grid shows plainly, while cherry
+   over the felt reads as deep red, as red plastic over green would. The
+   extra pass runs only while a translucent skin is in use. Under
+   Chromium's software renderer (the headless driver) a frame of 3d6 + d20
+   + d8 took about 98 ms translucent against 59 ms in ivory, read from the
+   new `frame` line of the `?debug` overlay, the time between frames drawn
+   one after another. That says little of a phone's GPU. Not yet checked:
+   frame times on the iPhone and an older Android phone with a full cup,
+   lowering `renderer.transmissionResolutionScale` if they drop frames,
+   and the tints, tuned in Chromium only, on the iPhone.
+   With more skins the sheet outgrew the screen, so it now has Dice and
+   Table tabs, the dice grouped under a heading per finish, at a fixed 60%
+   of the screen's height for both tabs, so the tabs stay under the thumb,
+   and the cup shows above it as a preview. The options scroll, and the
+   chosen one is scrolled into view on opening; the tab is kept while the
+   app is open. Checked in Chromium, in English and Chinese.
    Table skins: a second row in the Style sheet, chosen apart from the
    dice. A table is a data object too (`engine/tables.ts`): the floor's
    colour and pattern, the walls, the colour of the rings under dice that

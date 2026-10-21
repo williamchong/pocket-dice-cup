@@ -3,67 +3,96 @@
     class="skins"
     :aria-label="$t('cup.style')"
   >
-    <h2
-      id="skins-dice"
-      class="skins__heading"
-    >
-      {{ $t('skin.label') }}
-    </h2>
+    <!-- The dice and the table are chosen apart, so only one set of options shows at a time. -->
     <div
-      class="skins__grid"
-      role="radiogroup"
-      aria-labelledby="skins-dice"
+      class="skins__tabs"
+      role="tablist"
     >
       <button
-        v-for="option in DIE_SKINS"
-        :key="option.id"
+        v-for="{ id, label } in TABS"
+        :id="`skins-tab-${id}`"
+        :key="id"
         type="button"
-        class="skins__option"
-        role="radio"
-        :aria-checked="option.id === skin.id"
-        @click="emit('change', option)"
+        class="skins__tab"
+        role="tab"
+        :aria-selected="id === tab"
+        aria-controls="skins-panel"
+        @click="tab = id"
       >
-        <img
-          v-if="icons[option.id]"
-          class="skins__die"
-          :src="icons[option.id]"
-          alt=""
-        >
-        <span
-          v-else
-          class="skins__die skins__swatch"
-          :style="{ background: option.body }"
-        />
-        <span class="skins__name">{{ $t(`skin.${option.id}`) }}</span>
+        {{ $t(label) }}
       </button>
     </div>
-    <h2
-      id="skins-table"
-      class="skins__heading"
-    >
-      {{ $t('table.label') }}
-    </h2>
     <div
-      class="skins__grid"
-      role="radiogroup"
-      aria-labelledby="skins-table"
+      id="skins-panel"
+      ref="panel"
+      class="skins__panel"
+      role="tabpanel"
+      :aria-labelledby="`skins-tab-${tab}`"
     >
-      <button
-        v-for="option in TABLES"
-        :key="option.id"
-        type="button"
-        class="skins__option"
-        role="radio"
-        :aria-checked="option.id === table.id"
-        @click="emit('changeTable', option)"
+      <template v-if="tab === 'dice'">
+        <template
+          v-for="group in groups"
+          :key="group.finish"
+        >
+          <h2
+            :id="`skins-${group.finish}`"
+            class="skins__heading"
+          >
+            {{ $t(`finish.${group.finish}`) }}
+          </h2>
+          <div
+            class="skins__grid"
+            role="radiogroup"
+            :aria-labelledby="`skins-${group.finish}`"
+          >
+            <button
+              v-for="option in group.skins"
+              :key="option.id"
+              type="button"
+              class="skins__option"
+              role="radio"
+              :aria-checked="option.id === skin.id"
+              @click="emit('change', option)"
+            >
+              <img
+                v-if="icons[option.id]"
+                class="skins__die"
+                :src="icons[option.id]"
+                alt=""
+              >
+              <span
+                v-else
+                class="skins__die skins__swatch"
+                :style="{ background: option.body }"
+              />
+              <span class="skins__name">{{ $t(`skin.${option.id}`) }}</span>
+            </button>
+          </div>
+        </template>
+      </template>
+      <div
+        v-else
+        class="skins__grid"
+        role="radiogroup"
+        aria-labelledby="skins-tab-table"
       >
-        <span
-          class="skins__die skins__swatch skins__table"
-          :class="{ 'skins__table--grid': option.floor.pattern === 'grid' }"
-          :style="{ backgroundColor: option.floor.colour, borderColor: option.wall.colour }"
-        />
-        <span class="skins__name">{{ $t(`table.${option.id}`) }}</span>
-      </button>
+        <button
+          v-for="option in TABLES"
+          :key="option.id"
+          type="button"
+          class="skins__option"
+          role="radio"
+          :aria-checked="option.id === table.id"
+          @click="emit('changeTable', option)"
+        >
+          <span
+            class="skins__die skins__swatch skins__table"
+            :class="{ 'skins__table--grid': option.floor.pattern === 'grid' }"
+            :style="{ backgroundColor: option.floor.colour, borderColor: option.wall.colour }"
+          />
+          <span class="skins__name">{{ $t(`table.${option.id}`) }}</span>
+        </button>
+      </div>
     </div>
     <UButton
       class="min-h-11 self-end"
@@ -74,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { DIE_SKINS, type DieSkin } from '~/engine/render/skins'
+import { DIE_SKINS, FINISHES, type DieSkin } from '~/engine/render/skins'
 import { TABLES, type Table } from '~/engine/tables'
 
 defineProps<{
@@ -84,7 +113,35 @@ defineProps<{
 
 const emit = defineEmits<{ change: [skin: DieSkin], changeTable: [table: Table], close: [] }>()
 
+const TABS = [
+  { id: 'dice', label: 'skin.label' },
+  { id: 'table', label: 'table.label' },
+] as const
+
+/** Kept while the app is open, so the sheet opens where it was left; a new visit starts on the dice. */
+const tab = useState<typeof TABS[number]['id']>('skin-sheet-tab', () => 'dice')
+
+const groups = FINISHES
+  .map(finish => ({ finish, skins: DIE_SKINS.filter(skin => skin.finish === finish) }))
+  .filter(group => group.skins.length > 0)
+
 const icons = useSkinIcons()
+
+const panel = useTemplateRef('panel')
+
+/**
+ * Scrolls the panel just far enough that the chosen option shows. The panel
+ * scrolls itself rather than with scrollIntoView, which could also scroll
+ * the fixed page under it.
+ */
+function showChosen() {
+  const chosen = panel.value?.querySelector<HTMLElement>('[aria-checked="true"]')
+  if (!panel.value || !chosen) return
+  panel.value.scrollTop = Math.max(0, chosen.offsetTop + chosen.offsetHeight - panel.value.clientHeight)
+}
+
+onMounted(showChosen)
+watch(tab, showChosen, { flush: 'post' })
 </script>
 
 <style scoped>
@@ -92,6 +149,49 @@ const icons = useSkinIcons()
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  /* The cup shows above it, so a new style can be seen on the dice while
+     choosing. One height for both tabs, so the tabs stay under the thumb
+     when switching between them. */
+  height: 60vh;
+}
+
+.skins__tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: rgb(244 239 227 / 8%);
+}
+
+.skins__tab {
+  flex: 1;
+  min-height: 2.75rem;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.skins__tab[aria-selected="true"] {
+  background: rgb(244 239 227 / 18%);
+  font-weight: 600;
+}
+
+.skins__panel {
+  /* The parent for offsetTop in showChosen. */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  /* Takes the sheet's height, so Done stays at the foot with fewer options. */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* The body turns touch scrolling off everywhere else (main.css). */
+  touch-action: pan-y;
+  overscroll-behavior: contain;
 }
 
 .skins__grid {

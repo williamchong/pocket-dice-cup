@@ -156,5 +156,6 @@ export function createPolyhedronLook(shape: PolyhedronShape, skin: DieSkin): Die
   colour.colorSpace = SRGBColorSpace
   // A height map: white, dipping to black where the numbers are cut in, softened so they catch the light.
   const bump = paintAtlas(shape, layouts, columns, rows, '#fff', '#000', 1.5)
-  return { geometry: polyhedronGeometry(shape, layouts, columns, rows), materials: [dieMaterial(colour, bump, skin)] }
+  const inkMask = () => paintAtlas(shape, layouts, columns, rows, '#fff', '#000', 0)
+  return { geometry: polyhedronGeometry(shape, layouts, columns, rows), materials: [dieMaterial(colour, bump, skin, inkMask)] }
 }

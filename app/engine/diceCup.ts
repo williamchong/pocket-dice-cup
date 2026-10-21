@@ -40,6 +40,8 @@ export interface CupDebugInfo extends FeedbackStats {
   agitation: number
   /** What the simulation takes a frame, in ms, averaged over about the last 60 frames. */
   physicsMs: number
+  /** The time between frames drawn one after another, in ms, averaged likewise: 16.7 at 60 Hz, longer when drawing drops frames. */
+  frameMs: number
   sensorActive: boolean
   /** What reads the sensor; see MotionSource.name. */
   sensorName: string
@@ -55,8 +57,8 @@ export interface DiceCupOptions extends CupOptions {
 
 /** A frame longer than this is treated as a pause (a hidden tab), not as time to catch up on. */
 const MAX_FRAME_SECONDS = 0.1
-/** How much each frame moves the average of physicsMs. */
-const PHYSICS_MS_SMOOTHING = 1 / 60
+/** How much each frame moves the averages of physicsMs and frameMs. */
+const AVERAGE_SMOOTHING = 1 / 60
 /** How long the marks under dice that did not roll over take to fade in (ms), about the result card's own pop. */
 const MARK_FADE_MS = 300
 
@@ -72,6 +74,9 @@ export class DiceCup {
   /** Whether the last frame had dice in motion, or the view changed, so one more draw is owed. */
   private stale = true
   private physicsMs = 0
+  private frameMs = 0
+  /** When the dice were last drawn, for frameMs. A tick that goes dormant draws nothing, so the gap before waking never counts. */
+  private drawnAtMs = -Infinity
   /** Dormant: no frame is asked for until a reading disturbs the stillness. */
   private framesStopped = false
   /** Whether the sensor has sent a reading yet; see onReading. */
@@ -134,6 +139,7 @@ export class DiceCup {
       acceleration: this.source.acceleration,
       agitation: this.simulation.analyser.agitation,
       physicsMs: this.physicsMs,
+      frameMs: this.frameMs,
       sensorActive: this.source.active,
       sensorName: this.source.name,
       sound: this.feedback.soundState,
@@ -301,6 +307,10 @@ export class DiceCup {
   private readonly tick = (timeMs: number): void => {
     this.frame = requestAnimationFrame(this.tick)
     const dt = Math.min((timeMs - this.lastTimeMs) / 1000, MAX_FRAME_SECONDS)
+    // For frameMs, which counts only frames drawn one after another: a tick
+    // that draws marks drawnAtMs with its own time, so the last tick drew if
+    // the two still match.
+    const drewLastTick = this.drawnAtMs === this.lastTimeMs
     this.lastTimeMs = timeMs
 
     const { simulation, scene } = this
@@ -308,7 +318,7 @@ export class DiceCup {
     if (this.source.active) this.recorder?.push(this.source.acceleration, timeMs)
     const started = performance.now()
     const changed = simulation.tick(dt, this.source.acceleration, timeMs)
-    this.physicsMs += (performance.now() - started - this.physicsMs) * PHYSICS_MS_SMOOTHING
+    this.physicsMs += (performance.now() - started - this.physicsMs) * AVERAGE_SMOOTHING
     if (changed) {
       this.notifyChange()
       // The dice are often asleep by the time the result is read, and what
@@ -355,6 +365,8 @@ export class DiceCup {
       return { x, y, footprintRadius: simulation.physics.dieShape(index).footprintRadius }
     }), markShown)
     scene.render()
+    if (drewLastTick) this.frameMs += (timeMs - this.drawnAtMs - this.frameMs) * AVERAGE_SMOOTHING
+    this.drawnAtMs = timeMs
   }
 }
 

@@ -148,10 +148,12 @@ const commands = {
   async debug() {
     console.log(await debugText())
   },
-  /** click <name> - clicks the button or radio with that name: Done, History, Style, 2d6, More d8, Gold, Clear... */
+  /** click <name> - clicks the button, radio or tab with that name: Done, History, Style, Table, 2d6, More d8, Gold, Clear... */
   async click(text) {
-    // Skins are radios; everything else in the sheets is a button.
-    const named = exact => page.getByRole('button', { name: text, exact }).or(page.getByRole('radio', { name: text, exact }))
+    // Skins are radios and the Style sheet's Dice and Table are tabs; everything else in the sheets is a button.
+    const named = exact => page.getByRole('button', { name: text, exact })
+      .or(page.getByRole('radio', { name: text, exact }))
+      .or(page.getByRole('tab', { name: text, exact }))
     // An exact name first, so `d6` is not taken for `More d6`.
     const target = await named(true).count() ? named(true) : named(false)
     await target.first().click({ timeout: 5000 })

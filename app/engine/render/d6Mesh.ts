@@ -36,13 +36,18 @@ function faceTexture(
   return texture
 }
 
-function colourTexture(value: number, { body, ink }: DieSkin): CanvasTexture {
-  const texture = faceTexture(value, body, (context, x, y) => {
+/** `body` everywhere, with the pips in `ink`. */
+function inkTexture(value: number, body: string, ink: string): CanvasTexture {
+  return faceTexture(value, body, (context, x, y) => {
     context.fillStyle = ink
     context.beginPath()
     context.arc(x, y, PIP_RADIUS, 0, Math.PI * 2)
     context.fill()
   })
+}
+
+function colourTexture(value: number, { body, ink }: DieSkin): CanvasTexture {
+  const texture = inkTexture(value, body, ink)
   texture.colorSpace = SRGBColorSpace
   return texture
 }
@@ -63,6 +68,11 @@ function bumpTexture(value: number): CanvasTexture {
 export function createD6Look(skin: DieSkin): DieLook {
   const geometry = new RoundedBoxGeometry(D6_SIZE, D6_SIZE, D6_SIZE, 4, D6_EDGE_RADIUS)
   // D6_FACES is in BoxGeometry's group order, so face i gets material i.
-  const materials = D6_FACES.map(face => dieMaterial(colourTexture(face.value, skin), bumpTexture(face.value), skin))
+  const materials = D6_FACES.map(face => dieMaterial(
+    colourTexture(face.value, skin),
+    bumpTexture(face.value),
+    skin,
+    () => inkTexture(face.value, '#fff', '#000'),
+  ))
   return { geometry, materials }
 }

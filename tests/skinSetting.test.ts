@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { DEFAULT_SKIN_ID, DIE_SKINS, findSkin } from '../app/engine/render/skins'
+import { DEFAULT_SKIN_ID, DIE_SKINS, findSkin, type DieSkin } from '../app/engine/render/skins'
 import { loadSkin, parseSkinSetting, saveSkin } from '../app/utils/skinSetting'
 
 describe('skins', () => {
@@ -9,6 +9,15 @@ describe('skins', () => {
       expect(skin.body).toMatch(/^#[0-9a-f]{6}$/)
       expect(skin.ink).toMatch(/^#[0-9a-f]{6}$/)
       expect(findSkin(skin.id)).toBe(skin)
+    }
+  })
+
+  it('lets light through only the translucent skins, each with a tint', () => {
+    const skins: readonly DieSkin[] = DIE_SKINS
+    for (const skin of skins) {
+      const translucent = skin.finish === 'translucent'
+      expect(skin.transmission ?? 0, skin.id).toSatisfy((value: number) => translucent ? value > 0 && value <= 1 : value === 0)
+      if (translucent) expect(skin.tint, skin.id).toMatch(/^#[0-9a-f]{6}$/)
     }
   })
 })
