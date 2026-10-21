@@ -25,7 +25,7 @@ import type { DicePool } from '../core/pool'
 import { DIE_KINDS, POLYHEDRA, type DieKind } from '../dice/shapes'
 import type { Quat, Vec3 } from '../math'
 import { createD6Look } from './d6Mesh'
-import { createDiceMesh, disposeLook, type DieLook } from './dieLook'
+import { createDiceMesh, disposeLook, translucentShadow, type DieLook } from './dieLook'
 import { createPolyhedronLook } from './polyhedronMesh'
 import type { DieSkin } from './skins'
 import type { Table } from '../tables'
@@ -220,8 +220,12 @@ export function createDieLook(kind: DieKind, skin: DieSkin): DieLook {
   return kind === 'd6' ? createD6Look(skin) : createPolyhedronLook(POLYHEDRA[kind], skin)
 }
 
+/** Every kind's look, with a lighter shadow for a translucent skin; the icons cast no shadow, so only the cup's looks get one. */
 function createDieLooks(skin: DieSkin): Record<DieKind, DieLook> {
-  return Object.fromEntries(DIE_KINDS.map(kind => [kind, createDieLook(kind, skin)])) as Record<DieKind, DieLook>
+  return Object.fromEntries(DIE_KINDS.map((kind) => {
+    const look = createDieLook(kind, skin)
+    return [kind, skin.transmission ? { ...look, shadow: translucentShadow() } : look]
+  })) as Record<DieKind, DieLook>
 }
 
 /**
@@ -312,9 +316,10 @@ export class DiceScene {
     const old = this.looks
     this.looks = createDieLooks(skin)
     for (const kind of DIE_KINDS) {
-      const { geometry, materials } = this.looks[kind]
+      const { geometry, materials, shadow } = this.looks[kind]
       this.meshes[kind].geometry = geometry
       this.meshes[kind].material = materials
+      this.meshes[kind].customDepthMaterial = shadow
       disposeLook(old[kind])
     }
   }

@@ -288,11 +288,22 @@ Phases
    ink. The light through the body is filtered twice, by the body colour
    and by the tint, so both are lighter than the colour the die should
    look; the first tries, a dark tint over a mid red, came out nearly
-   opaque. Known limits: a translucent die does not show another
-   translucent die behind it, nor its own far side's pips, and its shadow
-   is as solid as an opaque die's. Over a plain floor the effect is
-   subtle: through ice the battle mat's grid shows plainly, while cherry
-   over the felt reads as deep red, as red plastic over green would. The
+   opaque. The shipped cherry, smoke and ice still read as solid on the
+   iPhone, for two reasons. The tint deepened over 1.5 cm on top of the
+   body colour's filter, which left too little light through, so it now
+   deepens over 6 cm. And the die's solid shadow lay under the whole die,
+   so what showed through was dark, even felt. A translucent die now casts
+   its shadow with a depth material that leaves out every other texel in
+   a 2×2 pattern, which the shadow's filtering blurs to half as dark, at
+   the cost of a slightly ragged shadow edge. Cherry also got a pinker
+   body (#f06070) and more transmission (0.85). Drawing both sides, so the
+   far faces show through, made the dice darker rather than clearer, as
+   the far face is the one lying in shadow on the floor, so the dice stay
+   single-sided. Known limits: a translucent die does not show another
+   translucent die behind it. Over a plain floor the effect is subtle:
+   through any of the three the battle mat's grid shows plainly, while
+   cherry over the felt reads as deep wine red, as red plastic over green
+   would. The
    extra pass runs only while a translucent skin is in use. Under
    Chromium's software renderer (the headless driver) a frame of 3d6 + d20
    + d8 took about 98 ms translucent against 59 ms in ivory, read from the
@@ -300,7 +311,8 @@ Phases
    one after another. That says little of a phone's GPU. Not yet checked:
    frame times on the iPhone and an older Android phone with a full cup,
    lowering `renderer.transmissionResolutionScale` if they drop frames,
-   and the tints, tuned in Chromium only, on the iPhone.
+   and the tints and the dithered shadow, tuned in Chromium only, on the
+   iPhone.
    With more skins the sheet outgrew the screen, so it now has Dice and
    Table tabs, the dice grouped under a heading per finish, at a fixed 60%
    of the screen's height for both tabs, so the tabs stay under the thumb,

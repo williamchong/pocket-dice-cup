@@ -46,7 +46,7 @@ export const DIE_SKINS = [
   // Oxblood with gold numbers, as fantasy role-players' dice often are; darker than casino red, so the two tell apart.
   { id: 'dragon', body: '#5e0f14', ink: '#e2b659', ...RESIN },
   // Clear red with white pips, as casinos' precision dice are.
-  { id: 'cherry', body: '#e8404c', ink: '#f6f1e6', tint: '#ff8088', ...TRANSLUCENT, transmission: 0.7 },
+  { id: 'cherry', body: '#f06070', ink: '#f6f1e6', tint: '#ff8088', ...TRANSLUCENT, transmission: 0.85 },
   { id: 'smoke', body: '#9a9aa4', ink: '#f6f1e6', tint: '#c0c0c8', ...TRANSLUCENT },
   { id: 'ice', body: '#e4f2ff', ink: '#16263c', tint: '#c8e4ff', ...TRANSLUCENT, transmission: 0.9 },
   { id: 'gold', body: '#d2a23b', ink: '#2b1d08', ...METAL },
