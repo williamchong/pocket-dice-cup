@@ -10,7 +10,7 @@ The app keeps a few things in the phone's or browser's own storage, so they
 are there next time:
 
 - the dice you picked, such as "3d6";
-- the finish of the dice, such as ivory;
+- the finish of the dice, such as ivory, and the table they land on;
 - the last 50 rolls, shown under History.
 
 None of it leaves the device. Clear, under History, removes the rolls;
