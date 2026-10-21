@@ -43,7 +43,8 @@ starts the dice on a grid out from the middle with the same face up every
 time, instead of at random places and faces. `?dice=` starts with other dice
 than the remembered ones, as a number of d6 (`?dice=3`) or in dice notation
 (`?dice=2d6+d20`), `?skin=` starts with another finish (`?skin=ebony`), and `?table=` on
-another table (`?table=battlemat`).
+another table (`?table=battlemat`). `?pro` unlocks Pro without buying it,
+only with `?debug`.
 "Copy trace" copies the last 30 seconds of readings as
 JSON, for replaying in tests. The Haptics and Sound buttons open sliders for
 tuning the feel and the clacks live; "Copy tuning" copies the values, to make
@@ -81,6 +82,8 @@ turned on instead:
 ```sh
 NUXT_PUBLIC_DEBUG=1 npm run ios
 ```
+
+`NUXT_PUBLIC_PRO=1` likewise unlocks Pro in the build without buying it.
 
 In Xcode, pick your Apple ID under Signing & Capabilities, plug the iPhone
 in and run. With a free Apple ID the app stops opening after 7 days, and

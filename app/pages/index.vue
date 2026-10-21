@@ -234,8 +234,17 @@ import { isRolling } from '~/engine/core/stateMachine'
 import type { SoundTuning, VoiceName } from '~/engine/feedback/clackSound'
 import { DEFAULT_HAPTIC_TUNING, type HapticTuning } from '~/engine/feedback/cupFeedback'
 import type { Surface } from '~/engine/physics/world'
-import { findSkin, type DieSkin } from '~/engine/render/skins'
-import { findTable, type Table } from '~/engine/tables'
+import { DEFAULT_SKIN_ID, findSkin, type DieSkin } from '~/engine/render/skins'
+import { DEFAULT_TABLE_ID, findTable, type Table } from '~/engine/tables'
+
+/** `next`, or the default skin if it is Pro and Pro is not owned. */
+function usableSkin(next: DieSkin, ownsPro: boolean): DieSkin {
+  return usableOr(next, ownsPro, findSkin(DEFAULT_SKIN_ID))
+}
+
+function usableTable(next: Table, ownsPro: boolean): Table {
+  return usableOr(next, ownsPro, findTable(DEFAULT_TABLE_ID))
+}
 
 // `?debug` shows what the sensor and the state machine are doing, for tuning
 // on a real phone where there is no console. It also starts the dice in the
@@ -245,10 +254,14 @@ const debug = 'debug' in route.query || Boolean(useRuntimeConfig().public.debug)
 // `?dice=N` starts with N d6, and `?dice=2d6+d20` with those dice, over the
 // dice saved from last time.
 const startPool = parsePoolSetting(route.query.dice) ?? loadPool() ?? undefined
-// `?skin=ebony` starts with that finish, over the one saved from last time.
-const skin = shallowRef(findSkin(parseSkinSetting(route.query.skin) ?? loadSkin()))
+// `?debug&pro`, or `NUXT_PUBLIC_PRO=1` in the native shells, unlocks Pro
+// without buying it, to try Pro skins before the store plugin exists.
+const { ownsPro } = useProUnlock((debug && 'pro' in route.query) || Boolean(useRuntimeConfig().public.pro))
+// `?skin=ebony` starts with that finish, over the one saved from last time,
+// and a Pro one only while Pro is owned.
+const skin = shallowRef(usableSkin(findSkin(parseSkinSetting(route.query.skin) ?? loadSkin()), ownsPro.value))
 // `?table=battlemat` starts on that table, over the one saved from last time.
-const table = shallowRef(findTable(parseTableSetting(route.query.table) ?? loadTable()))
+const table = shallowRef(usableTable(findTable(parseTableSetting(route.query.table) ?? loadTable()), ownsPro.value))
 
 const canvas = useTemplateRef('canvas')
 // Shaking tips the phone far enough for the browser to rotate the page; the
@@ -278,22 +291,40 @@ function changePool(next: DicePool) {
 
 function changeSkin(next: DieSkin) {
   if (next === skin.value) return
+  applySkin(next)
+  saveSkin(next.id)
+}
+
+function applySkin(next: DieSkin) {
   skin.value = next
   setSkin(next)
-  saveSkin(next.id)
   // The dice picker's pictures of the new skin, drawn now rather than as it opens.
   drawDieIcons(next)
 }
 
 function changeTable(next: Table) {
   if (next === table.value) return
-  table.value = next
-  setTable(next)
+  applyTable(next)
   saveTable(next.id)
-  tuneTo(next)
   // Inside the tap that chose it, so the sound can start: the new floor, heard and felt.
   void testHit('floor')
 }
+
+function applyTable(next: Table) {
+  table.value = next
+  setTable(next)
+  tuneTo(next)
+}
+
+// The store's answer comes after launch, and can take Pro away, as after a
+// refund. The saved choice is kept, so it comes back at the next launch
+// once Pro is owned again.
+watch(ownsPro, (owns) => {
+  const nextSkin = usableSkin(skin.value, owns)
+  if (nextSkin !== skin.value) applySkin(nextSkin)
+  const nextTable = usableTable(table.value, owns)
+  if (nextTable !== table.value) applyTable(nextTable)
+})
 
 // The result card goes down above the buttons when it would hide a die at
 // the top, as a die there can be cocked or read wrong and should be seen.

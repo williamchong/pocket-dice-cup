@@ -28,9 +28,11 @@ interface TableFields {
   sound: Readonly<SoundTuning>
   /** How crisp a hit on each surface feels, from 0 to 1; see HapticTuning.sharpness. */
   sharpness: Readonly<Record<Surface, number>>
+  /** Comes with Pro rather than free; see app/utils/proUnlock.ts. Only the picker reads it, never the cup. */
+  pro?: boolean
 }
 
-/** Every table, in the order the picker shows them. All of them come with the app. */
+/** Every table, in the order the picker shows them. All of them are free. */
 export const TABLES = [
   // The cup as it was before tables: green baize in a dark wooden rail, the
   // sound and feel as tuned on the iPhone (clackSound.ts, cupFeedback.ts).
@@ -55,7 +57,8 @@ export const TABLES = [
   },
 ] as const satisfies readonly TableFields[]
 
-export type Table = typeof TABLES[number]
+/** A table, with the fields only some tables set readable on every one. */
+export type Table = typeof TABLES[number] & TableFields
 export type TableId = Table['id']
 
 export const DEFAULT_TABLE_ID: TableId = 'felt'

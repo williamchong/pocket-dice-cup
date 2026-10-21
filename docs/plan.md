@@ -345,9 +345,44 @@ Phases
    it. A table now says whether its floor is light, and on a light one the
    buttons are a dark, smoked glass, the hints felt green, and the drawn
    phone beside the shake hint cream, so its dice still show; checked in
-   Chromium, with the felt unchanged. Not yet done: anything paid. If skins are ever sold, add a `locked`
-   flag to the data and an entitlement check in the sheet; the renderer
-   need not know.
+   Chromium, with the felt unchanged. Paid skins and tables will come as Pro: one non-consumable purchase,
+   bought in the App Store or Google Play, that unlocks every item marked
+   `pro`. Packs were weighed and left out as more to build and explain for
+   little gain. Everything above shipped free and stays free, as taking a
+   finish away from people who had it would be resented; Pro is only for
+   items added later. The web sells nothing: it has no store to restore a
+   purchase from, so selling there would need accounts, a payment service
+   and sales tax, against the little traffic a dice roller gets from
+   search. RevenueCat would cover web and both stores, but adds a third
+   party to an app whose privacy policy promises none, and with one
+   product and no accounts it does little that the stores' own APIs do
+   not; it can be taken up later behind the same interface if the web
+   ever sells Pro.
+   Status: the groundwork, with nothing marked `pro` yet, so nothing shows.
+   Skins and tables take an optional `pro` flag, which only the pickers
+   will read. `utils/proUnlock.ts` decides what can be used and keeps the
+   store's last answer in `localStorage`, so a Pro owner's dice do not
+   start in ivory for a moment at each launch. `engine/store/unlock.ts`
+   asks the store through an `UnlockBackend`, as haptics go through a
+   `HapticsBackend`: the web one owns nothing, and the native one calls a
+   `CupStore` plugin, counting a plugin not yet in the shell as owning
+   nothing but passing on any other failure, so that the composable keeps
+   the last answer rather than take an offline check for a refund. A buy
+   or restore that fails rejects, even with no plugin, so the sheet can
+   say it failed rather than show it as cancelled. Left for when Buy
+   exists: a launch check still waiting when a purchase completes could
+   answer after it and take Pro away until the next launch; only the
+   newest answer should count. A
+   saved or `?skin=` Pro choice that is not owned starts on the default,
+   and losing Pro after launch drops back to it without forgetting the
+   choice. `?debug&pro`, or `NUXT_PUBLIC_PRO=1` in the shells, unlocks Pro
+   without buying it. Checked in Chromium with copper marked `pro` for the
+   run: `?skin=copper` starts in ivory, and with `&pro` in copper. Not yet
+   done: the `CupStore` plugins (StoreKit 2 in Swift, Play Billing in Java,
+   which must acknowledge a purchase within 3 days or Google refunds it),
+   the sheet's lock badges, trying a Pro item on in the cup before buying,
+   Buy and Restore buttons, the store products, and the privacy policy's
+   line on purchases.
 6. **Desktop and fallbacks.** Click or drag to throw, spacebar, and tap-to-roll
    on mobile when motion permission is denied.
    Status: a click or tap tosses the dice, with or without a sensor, and

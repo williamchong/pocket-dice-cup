@@ -25,6 +25,8 @@ interface SkinFields {
   transmission?: number
   /** The colour light deepens to as it goes through the body, so a die is darker where it is thick. */
   tint?: string
+  /** Comes with Pro rather than free; see app/utils/proUnlock.ts. Only the pickers read it, never the looks. */
+  pro?: boolean
 }
 
 /** Glossy resin, as most game dice are cast in. */
@@ -34,7 +36,7 @@ const TRANSLUCENT = { roughness: 0.15, metalness: 0, clearcoat: 1, finish: 'tran
 /** Brushed metal: no lacquer, and a little rough so the room reflects as a sheen rather than a mirror. */
 const METAL = { roughness: 0.4, metalness: 0.9, clearcoat: 0, finish: 'metal' } as const
 
-/** Every skin, in the order the picker shows them. All of them come with the app. */
+/** Every skin, in the order the picker shows them. All of them are free. */
 export const DIE_SKINS = [
   // Ivory rather than pure white, which blows out under the lamp.
   { id: 'ivory', body: '#e9e2d0', ink: '#17171b', ...RESIN },
