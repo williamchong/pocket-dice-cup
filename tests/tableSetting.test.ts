@@ -8,8 +8,8 @@ describe('tables', () => {
   it('has a distinct id, CSS hex colours and audible voices per table', () => {
     expect(new Set(TABLES.map(table => table.id)).size).toBe(TABLES.length)
     for (const table of TABLES) {
-      const { light, panel }: Table = table
-      for (const colour of [table.floor.colour, table.wall.colour, table.mark, light?.colour ?? '#000000', panel ?? '#000000']) expect(colour).toMatch(/^#[0-9a-f]{6}$/)
+      const { light, panel, accent }: Table = table
+      for (const colour of [table.floor.colour, table.wall.colour, table.mark, light?.colour ?? '#000000', panel ?? '#000000', accent ?? '#000000']) expect(colour).toMatch(/^#[0-9a-f]{6}$/)
       for (const voice of [table.sound.floor, table.sound.side, table.sound.die]) {
         for (const value of Object.values(voice)) expect(value).toBeGreaterThan(0)
       }

@@ -403,7 +403,8 @@ Phases
    for the dice's shadows to show. The walls are gunmetal, and a table may
    now set its lamp's colour and the room's light, here a cool white with
    little room light, and the dark the sheets and result card are tinted
-   with, here navy. A slowly turning sky was planned and left out: the cup
+   with, here navy, and an accent the glass buttons are rimmed with and
+   the hints drawn in, here the neon dice's cyan. A slowly turning sky was planned and left out: the cup
    redraws only while the dice move, to save the battery while a result is
    on screen, and the sky would keep it drawing. Its voices, higher and more
    ringing for dice on glass and metal, and its crisper haptics are a first
@@ -412,7 +413,8 @@ Phases
    the about page shows only free finishes. Checked in Chromium with
    `?debug&pro`: neon on the felt, the battle mat and deep space, ivory in
    deep space, and without `&pro`, `?skin=neon&table=space` starts in ivory
-   on the felt. Not yet checked on the iPhone: the glow and the frame time,
+   on the felt; the cyan rims on the buttons, but not the cyan hints, which
+   the headless browser never shows. Not yet checked on the iPhone: the glow and the frame time,
    the starfield's sharpness, and the voices.
 6. **Desktop and fallbacks.** Click or drag to throw, spacebar, and tap-to-roll
    on mobile when motion permission is denied.

@@ -39,6 +39,8 @@ interface TableFields {
   light?: { colour: string, environment: number }
   /** The dark that the sheets and hints over the cup are tinted with, in place of the felt green. */
   panel?: string
+  /** A bright colour the glass buttons are rimmed with and the hints drawn in, as lit trim; none if left out. */
+  accent?: string
   /** Comes with Pro rather than free; see app/utils/proUnlock.ts. Only the picker reads it, never the cup. */
   pro?: boolean
 }
@@ -78,6 +80,8 @@ export const TABLES = [
     mark: '#5ff0ff',
     light: { colour: '#dfe8ff', environment: 0.15 },
     panel: '#0b1030',
+    // The neon dice's cyan, so the trim and the dice read as one set.
+    accent: '#5ff0ff',
     sound: {
       floor: { band: 1600, q: 3, knock: 320, decay: 0.03, gain: 0.45 },
       side: { band: 2400, q: 4, knock: 650, decay: 0.04, gain: 0.8 },

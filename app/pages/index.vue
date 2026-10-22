@@ -1,8 +1,8 @@
 <template>
   <main
     class="cup"
-    :class="{ 'cup--light-floor': table.floor.light }"
-    :style="[counterRotationStyle, table.panel && { '--color-felt': table.panel }]"
+    :class="{ 'cup--light-floor': table.floor.light, 'cup--accent': table.accent }"
+    :style="[counterRotationStyle, table.panel && { '--color-felt': table.panel }, table.accent && { '--cup-accent': table.accent }]"
     @click="start"
   >
     <!-- Tap to shake stays on with a working sensor too: desktop Chrome
@@ -687,6 +687,20 @@ if (debug) {
 .cup--light-floor :is(.cup__hint, .cup__message:not(.cup__message--panel)) {
   color: var(--color-felt);
   text-shadow: none;
+}
+
+/* A table's accent, as deep space's cyan, lights the glass buttons' rim
+   like trim on a console, in place of the white catch-light along their top
+   edge, and colours the hints drawn on the floor. */
+.cup--accent .cup__controls > * {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--cup-accent) 55%, transparent),
+    0 0 12px color-mix(in srgb, var(--cup-accent) 25%, transparent),
+    0 10px 15px -3px rgb(0 0 0 / 25%);
+}
+
+.cup--accent .cup__hint {
+  color: var(--cup-accent);
 }
 
 .cup__controls {
