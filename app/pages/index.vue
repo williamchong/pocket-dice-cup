@@ -2,7 +2,7 @@
   <main
     class="cup"
     :class="{ 'cup--light-floor': table.floor.light }"
-    :style="counterRotationStyle"
+    :style="[counterRotationStyle, table.panel && { '--color-felt': table.panel }]"
     @click="start"
   >
     <!-- Tap to shake stays on with a working sensor too: desktop Chrome
@@ -136,6 +136,7 @@
         class="cup__sheet"
         :skin="skin"
         :table="table"
+        :owns-pro="ownsPro"
         @change="changeSkin"
         @change-table="changeTable"
         @close="openSheet = null"

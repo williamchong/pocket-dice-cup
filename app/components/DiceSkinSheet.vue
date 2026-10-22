@@ -77,7 +77,7 @@
         aria-labelledby="skins-tab-table"
       >
         <button
-          v-for="option in TABLES"
+          v-for="option in tables"
           :key="option.id"
           type="button"
           class="skins__option"
@@ -87,7 +87,7 @@
         >
           <span
             class="skins__die skins__swatch skins__table"
-            :class="{ 'skins__table--grid': option.floor.pattern === 'grid' }"
+            :class="`skins__table--${option.floor.pattern}`"
             :style="{ backgroundColor: option.floor.colour, borderColor: option.wall.colour }"
           />
           <span class="skins__name">{{ $t(`table.${option.id}`) }}</span>
@@ -106,9 +106,10 @@
 import { DIE_SKINS, FINISHES, type DieSkin } from '~/engine/render/skins'
 import { TABLES, type Table } from '~/engine/tables'
 
-defineProps<{
+const props = defineProps<{
   skin: DieSkin
   table: Table
+  ownsPro: boolean
 }>()
 
 const emit = defineEmits<{ change: [skin: DieSkin], changeTable: [table: Table], close: [] }>()
@@ -121,9 +122,14 @@ const TABS = [
 /** Kept while the app is open, so the sheet opens where it was left; a new visit starts on the dice. */
 const tab = useState<typeof TABS[number]['id']>('skin-sheet-tab', () => 'dice')
 
-const groups = FINISHES
-  .map(finish => ({ finish, skins: DIE_SKINS.filter(skin => skin.finish === finish) }))
-  .filter(group => group.skins.length > 0)
+// Pro skins and tables are left out until Pro is owned, as there is no way
+// to buy it yet; once there is, they will show with a lock instead.
+const skins: readonly DieSkin[] = DIE_SKINS
+const groups = computed(() => FINISHES
+  .map(finish => ({ finish, skins: skins.filter(skin => skin.finish === finish && canUse(skin, props.ownsPro)) }))
+  .filter(group => group.skins.length > 0))
+const allTables: readonly Table[] = TABLES
+const tables = computed(() => allTables.filter(table => canUse(table, props.ownsPro)))
 
 const icons = useSkinIcons()
 
@@ -249,6 +255,17 @@ watch(tab, showChosen, { flush: 'post' })
     linear-gradient(rgb(0 0 0 / 30%) 1px, transparent 1px),
     linear-gradient(90deg, rgb(0 0 0 / 30%) 1px, transparent 1px);
   background-size: 33% 33%;
+}
+
+/* A few stars over a wisp of nebula. */
+.skins__table--starfield {
+  background-image:
+    radial-gradient(1px 1px at 25% 30%, #fff 100%, transparent),
+    radial-gradient(1px 1px at 70% 20%, #cfe0ff 100%, transparent),
+    radial-gradient(1.5px 1.5px at 55% 65%, #fff 100%, transparent),
+    radial-gradient(1px 1px at 20% 80%, #ffecd2 100%, transparent),
+    radial-gradient(circle at 70% 75%, rgb(163 48 122 / 55%), transparent 60%),
+    radial-gradient(circle at 30% 40%, rgb(31 111 139 / 55%), transparent 60%);
 }
 
 .skins__name {

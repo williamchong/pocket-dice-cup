@@ -31,7 +31,9 @@ drop as if the phone lay flat. A tap to roll again in the hand drops them the
 same way. History lists the last 50 rolls, also kept
 between visits. Style picks the finish of the dice, ivory by default, from
 thirteen that all come with the app, in glossy resin, translucent and metal,
-and the table they land on: green felt or a tabletop battle mat. Both are
+and the table they land on: green felt or a tabletop battle mat. Pro adds
+neon dice that glow cyan and a deep space table, shown only once Pro is
+owned (`?debug&pro&skin=neon&table=space` to see them). Both are
 remembered. The ? button beside it opens an about page, at `/about`, that
 says how each part works. Lying screen-down the dice still roll and are
 heard and felt but are not drawn; a tap shows them, for a screen watched

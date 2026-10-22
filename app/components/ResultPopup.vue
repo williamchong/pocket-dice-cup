@@ -35,7 +35,7 @@ defineProps<{
   gap: 0.25rem;
   padding: 0.75rem 1.5rem;
   border-radius: 1rem;
-  background: rgb(18 36 27 / 85%);
+  background: color-mix(in srgb, var(--color-felt) 85%, transparent);
   font-variant-numeric: tabular-nums;
   animation: result-in 0.2s ease-out;
 }

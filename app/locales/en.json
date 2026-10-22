@@ -44,17 +44,20 @@
     "ice": "Ice",
     "gold": "Gold",
     "silver": "Silver",
-    "copper": "Copper"
+    "copper": "Copper",
+    "neon": "Ion"
   },
   "finish": {
     "resin": "Resin",
     "translucent": "Translucent",
-    "metal": "Metal"
+    "metal": "Metal",
+    "neon": "Neon"
   },
   "table": {
     "label": "Table",
     "felt": "Felt",
-    "battlemat": "Battle mat"
+    "battlemat": "Battle mat",
+    "space": "Deep space"
   },
   "about": {
     "label": "About and help",

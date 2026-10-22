@@ -13,26 +13,37 @@ interface TableFields {
   /** Also its name's key in the translations (app/locales). */
   id: string
   floor: {
-    /** A CSS colour, which the pattern's light and dark shades multiply. */
+    /** A CSS colour, which the pattern's light and dark shades multiply; a starfield is painted on it instead. */
     colour: string
     /** 0 is a mirror finish, 1 is matt. */
     roughness: number
-    /** Cloth is a fine speckle; a grid is a battle mat's one-inch squares. */
-    pattern: 'cloth' | 'grid'
+    /**
+     * Cloth is a fine speckle; a grid is a battle mat's one-inch squares; a
+     * starfield is a sky of stars and nebula under the glass, lit from within.
+     */
+    pattern: 'cloth' | 'grid' | 'starfield'
     /** Light enough that cream text over it cannot be read, so the buttons and hints over it go dark. */
     light: boolean
   }
-  wall: { colour: string, roughness: number }
+  /** 0 is a painted or wooden rail, 1 is metal; 0 if left out. */
+  wall: { colour: string, roughness: number, metalness?: number }
   /** The ring under each die that did not roll over: light on a dark floor, dark on a light one. */
   mark: string
   sound: Readonly<SoundTuning>
   /** How crisp a hit on each surface feels, from 0 to 1; see HapticTuning.sharpness. */
   sharpness: Readonly<Record<Surface, number>>
+  /**
+   * The lamp's colour, and how much the room around the table lights it,
+   * from 0 to 1; a warm games-table lamp at 0.3 if left out.
+   */
+  light?: { colour: string, environment: number }
+  /** The dark that the sheets and hints over the cup are tinted with, in place of the felt green. */
+  panel?: string
   /** Comes with Pro rather than free; see app/utils/proUnlock.ts. Only the picker reads it, never the cup. */
   pro?: boolean
 }
 
-/** Every table, in the order the picker shows them. All of them are free. */
+/** Every table, in the order the picker shows them. Those before space are free, and stay so. */
 export const TABLES = [
   // The cup as it was before tables: green baize in a dark wooden rail, the
   // sound and feel as tuned on the iPhone (clackSound.ts, cupFeedback.ts).
@@ -54,6 +65,27 @@ export const TABLES = [
     mark: '#1f4fa8',
     sound: DEFAULT_SOUND_TUNING,
     sharpness: DEFAULT_HAPTIC_TUNING.sharpness,
+  },
+  // A glass floor in a starship's deck, with deep space under it, in a
+  // gunmetal hull, lit by a cool white lamp with little room light, so the
+  // cup is dark outside its pool and neon dice stand out. Dice on glass and
+  // metal ring higher and crisper than on cloth: the voices are a first
+  // guess, to be tuned by ear on the iPhone as the felt's were.
+  {
+    id: 'space',
+    floor: { colour: '#070a1c', roughness: 0.15, pattern: 'starfield', light: false },
+    wall: { colour: '#1c212c', roughness: 0.35, metalness: 0.8 },
+    mark: '#5ff0ff',
+    light: { colour: '#dfe8ff', environment: 0.15 },
+    panel: '#0b1030',
+    sound: {
+      floor: { band: 1600, q: 3, knock: 320, decay: 0.03, gain: 0.45 },
+      side: { band: 2400, q: 4, knock: 650, decay: 0.04, gain: 0.8 },
+      die: DEFAULT_SOUND_TUNING.die,
+      muffleHz: 1400,
+    },
+    sharpness: { floor: 0.7, wall: 0.9, glass: 0.9, die: 0.8 },
+    pro: true,
   },
 ] as const satisfies readonly TableFields[]
 

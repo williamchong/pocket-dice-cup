@@ -117,8 +117,8 @@ const SECTIONS = [
   { name: 'privacy', icon: 'i-lucide-shield-check' },
 ] as const
 
-/** The first skin of each finish, to show what Style offers. */
-const FINISH_SKINS = FINISHES.flatMap(finish => DIE_SKINS.find(skin => skin.finish === finish) ?? [])
+/** The first free skin of each finish, to show what Style offers to everyone. */
+const FINISH_SKINS = FINISHES.flatMap(finish => (DIE_SKINS as readonly DieSkin[]).find(skin => skin.finish === finish && canUse(skin, false)) ?? [])
 
 /** The limits the text quotes, from the code that sets them. */
 const COUNTS = { dice: MAX_DICE, history: MAX_HISTORY }

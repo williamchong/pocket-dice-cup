@@ -1,5 +1,5 @@
 /** What dice are cast in, in the order the picker groups them. */
-export const FINISHES = ['resin', 'translucent', 'metal'] as const
+export const FINISHES = ['resin', 'translucent', 'metal', 'neon'] as const
 
 /**
  * How a set of dice is finished: its colours and the material they are cast
@@ -25,6 +25,8 @@ interface SkinFields {
   transmission?: number
   /** The colour light deepens to as it goes through the body, so a die is darker where it is thick. */
   tint?: string
+  /** The colour the markings, and a flat die's edges, glow with, lit from within rather than by the lamp. Unlit if left out. */
+  glow?: string
   /** Comes with Pro rather than free; see app/utils/proUnlock.ts. Only the pickers read it, never the looks. */
   pro?: boolean
 }
@@ -35,8 +37,10 @@ const RESIN = { roughness: 0.25, metalness: 0, clearcoat: 1, finish: 'resin' } a
 const TRANSLUCENT = { roughness: 0.15, metalness: 0, clearcoat: 1, finish: 'translucent', transmission: 0.8 } as const
 /** Brushed metal: no lacquer, and a little rough so the room reflects as a sheen rather than a mirror. */
 const METAL = { roughness: 0.4, metalness: 0.9, clearcoat: 0, finish: 'metal' } as const
+/** Smoked glass with lit tubes set into it: a dark body, so the glow is what is seen. */
+const NEON = { roughness: 0.1, metalness: 0, clearcoat: 1, finish: 'neon' } as const
 
-/** Every skin, in the order the picker shows them. All of them are free. */
+/** Every skin, in the order the picker shows them. Those before neon are free, and stay so. */
 export const DIE_SKINS = [
   // Ivory rather than pure white, which blows out under the lamp.
   { id: 'ivory', body: '#e9e2d0', ink: '#17171b', ...RESIN },
@@ -54,6 +58,8 @@ export const DIE_SKINS = [
   { id: 'gold', body: '#d2a23b', ink: '#2b1d08', ...METAL },
   { id: 'silver', body: '#c4c8ce', ink: '#1c2026', ...METAL },
   { id: 'copper', body: '#b86a42', ink: '#2a140a', ...METAL },
+  // Near black rather than black, so the body still shows its shape against a dark table.
+  { id: 'neon', body: '#10131c', ink: '#7ff4ff', glow: '#19e6ff', ...NEON, pro: true },
 ] as const satisfies readonly SkinFields[]
 
 /** A skin, with the fields only some skins set readable on every one. */

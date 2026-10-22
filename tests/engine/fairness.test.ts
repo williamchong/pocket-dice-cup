@@ -6,7 +6,7 @@ import { COCKED_ALIGNMENT, readFace } from '../../app/engine/dice/faces'
 import { DIE_KINDS, DIE_SHAPES, type DieKind } from '../../app/engine/dice/shapes'
 import { REST_ACCELERATION } from '../../app/engine/input/motionSource'
 import { CupSimulation } from '../../app/engine/simulation'
-import { seededRandom } from './seededRandom'
+import { seededRandom } from '../../app/engine/math'
 import { shake } from './syntheticShake'
 
 beforeAll(() => RAPIER.init())

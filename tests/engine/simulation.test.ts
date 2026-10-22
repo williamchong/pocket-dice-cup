@@ -10,7 +10,7 @@ import { REST_ACCELERATION } from '../../app/engine/input/motionSource'
 import { distance, type Quat, type Vec3 } from '../../app/engine/math'
 import type { Impact } from '../../app/engine/physics/world'
 import { CupSimulation } from '../../app/engine/simulation'
-import { seededRandom } from './seededRandom'
+import { seededRandom } from '../../app/engine/math'
 import { shake } from './syntheticShake'
 
 beforeAll(() => RAPIER.init())

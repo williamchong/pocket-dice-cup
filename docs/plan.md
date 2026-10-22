@@ -383,6 +383,37 @@ Phases
    the sheet's lock badges, trying a Pro item on in the cup before buying,
    Buy and Restore buttons, the store products, and the privacy policy's
    line on purchases.
+   The first Pro items, made as a sci-fi pair: neon dice, `ion`, and a
+   deep space table, `space`. Each still looks right with the other's free
+   counterparts. Neon is a finish of its own: a near-black glossy body whose
+   pips, numbers and edges glow cyan through an emissive map, lit from
+   within rather than by the lamp. A flat die's edges are its face outlines
+   stroked in the atlas; a d6's are a border round each face, which the
+   rounded box stretches over the rounded edge. A real neon halo would need
+   a bloom pass, several full-screen passes at a pixel ratio of 2 on top of
+   the translucent dice's, and would change how every skin is tone-mapped;
+   instead each glowing die lights a soft pool on the floor under it, one
+   instanced plane like the marks, fading as the die rises off the floor.
+   On a light floor, the battle mat, the pool only washed it out to white,
+   so it is left off there. Point lights per die were left out as twelve
+   lights would cost far more per pixel. Deep space is a glass floor over a
+   starfield painted once from a fixed seed, so it is the same sky each
+   launch, stretched over the whole floor rather than tiled, as a tiled
+   nebula shows seams; it lights itself, and reflects enough of the lamp
+   for the dice's shadows to show. The walls are gunmetal, and a table may
+   now set its lamp's colour and the room's light, here a cool white with
+   little room light, and the dark the sheets and result card are tinted
+   with, here navy. A slowly turning sky was planned and left out: the cup
+   redraws only while the dice move, to save the battery while a result is
+   on screen, and the sky would keep it drawing. Its voices, higher and more
+   ringing for dice on glass and metal, and its crisper haptics are a first
+   guess, still to be tuned by ear on the iPhone. With nothing to buy Pro
+   with yet, the Style sheet leaves Pro items out until Pro is owned, and
+   the about page shows only free finishes. Checked in Chromium with
+   `?debug&pro`: neon on the felt, the battle mat and deep space, ivory in
+   deep space, and without `&pro`, `?skin=neon&table=space` starts in ivory
+   on the felt. Not yet checked on the iPhone: the glow and the frame time,
+   the starfield's sharpness, and the voices.
 6. **Desktop and fallbacks.** Click or drag to throw, spacebar, and tap-to-roll
    on mobile when motion permission is denied.
    Status: a click or tap tosses the dice, with or without a sensor, and

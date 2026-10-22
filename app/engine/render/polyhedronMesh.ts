@@ -13,6 +13,12 @@ const FONT_SCALE = 1.5
 /** A d4's corner numbers, smaller, and how far out towards their corner they sit. */
 const CORNER_FONT_SCALE = 1.25
 const CORNER_REACH = 0.5
+/**
+ * How wide, in atlas pixels, a neon die's edges glow. The line is drawn
+ * along the face's outline, so only its inner half lands on the face, and
+ * two faces meeting at an edge make one line of this width.
+ */
+const EDGE_LINE = 6
 
 /** Where a face sits in the atlas, in the face's plane: its middle, its axes, and its size. */
 interface FaceLayout {
@@ -86,8 +92,8 @@ function polyhedronGeometry(shape: PolyhedronShape, layouts: readonly FaceLayout
   return geometry
 }
 
-/** Each face's markings: its number in the middle, or for a d4 a number at each corner. */
-function paintAtlas(shape: PolyhedronShape, layouts: readonly FaceLayout[], columns: number, rows: number, background: string, ink: string, blur: number): CanvasTexture {
+/** Each face's markings: its number in the middle, or for a d4 a number at each corner, and its outline if `edges`. */
+function paintAtlas(shape: PolyhedronShape, layouts: readonly FaceLayout[], columns: number, rows: number, background: string, ink: string, blur: number, edges = false): CanvasTexture {
   const canvas = document.createElement('canvas')
   canvas.width = columns * CELL
   canvas.height = rows * CELL
@@ -130,6 +136,14 @@ function paintAtlas(shape: PolyhedronShape, layouts: readonly FaceLayout[], colu
       const b = corners[(i + 1) % corners.length]!
       return Math.abs((b.x - a.x) * (a.y - middle.y) - (a.x - middle.x) * (b.y - a.y)) / Math.hypot(b.x - a.x, b.y - a.y)
     }))
+    if (edges) {
+      context.lineWidth = EDGE_LINE
+      context.lineJoin = 'round'
+      context.beginPath()
+      for (const { x, y } of corners) context.lineTo(x, y)
+      context.closePath()
+      context.stroke()
+    }
     if (shape.reads === 'up') {
       write(faceLabel(shape.kind, face.value), middle, inner * FONT_SCALE)
       return
@@ -157,5 +171,6 @@ export function createPolyhedronLook(shape: PolyhedronShape, skin: DieSkin): Die
   // A height map: white, dipping to black where the numbers are cut in, softened so they catch the light.
   const bump = paintAtlas(shape, layouts, columns, rows, '#fff', '#000', 1.5)
   const inkMask = () => paintAtlas(shape, layouts, columns, rows, '#fff', '#000', 0)
-  return { geometry: polyhedronGeometry(shape, layouts, columns, rows), materials: [dieMaterial(colour, bump, skin, inkMask)] }
+  const glowMask = () => paintAtlas(shape, layouts, columns, rows, '#000', '#fff', 0, true)
+  return { geometry: polyhedronGeometry(shape, layouts, columns, rows), materials: [dieMaterial(colour, bump, skin, inkMask, glowMask)] }
 }

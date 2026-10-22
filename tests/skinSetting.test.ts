@@ -20,6 +20,14 @@ describe('skins', () => {
       if (translucent) expect(skin.tint, skin.id).toMatch(/^#[0-9a-f]{6}$/)
     }
   })
+
+  it('lights only the neon skins from within, each with a glow colour', () => {
+    const skins: readonly DieSkin[] = DIE_SKINS
+    for (const skin of skins) {
+      if (skin.finish === 'neon') expect(skin.glow, skin.id).toMatch(/^#[0-9a-f]{6}$/)
+      else expect(skin.glow, skin.id).toBeUndefined()
+    }
+  })
 })
 
 describe('parseSkinSetting', () => {

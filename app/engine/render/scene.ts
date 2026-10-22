@@ -1,10 +1,14 @@
 import {
+  AdditiveBlending,
   BufferGeometry,
   CanvasTexture,
+  Color,
   Float32BufferAttribute,
+  LinearFilter,
   InstancedMesh,
   Matrix4,
   Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
   NeutralToneMapping,
   PerspectiveCamera,
@@ -22,8 +26,8 @@ import {
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { CAMERA_DISTANCE, type BoxSize } from '../box'
 import type { DicePool } from '../core/pool'
-import { DIE_KINDS, POLYHEDRA, type DieKind } from '../dice/shapes'
-import type { Quat, Vec3 } from '../math'
+import { DIE_KINDS, DIE_SHAPES, POLYHEDRA, type DieKind } from '../dice/shapes'
+import { seededRandom, type Quat, type Vec3 } from '../math'
 import { createD6Look } from './d6Mesh'
 import { createDiceMesh, disposeLook, translucentShadow, type DieLook } from './dieLook'
 import { createPolyhedronLook } from './polyhedronMesh'
@@ -34,18 +38,43 @@ import type { Table } from '../tables'
 const MAX_PIXEL_RATIO = 2
 
 /** A warm lamp, as over a games table. */
-export const LAMP_COLOUR = 0xfff1dc
+export const LAMP_COLOUR = '#fff1dc'
+/**
+ * The light of a table that does not set its own: the warm lamp, with the
+ * room there for reflections and a little fill. The lamp does the lighting,
+ * so the table stays dark outside its pool.
+ */
+const DEFAULT_LIGHT: NonNullable<Table['light']> = { colour: LAMP_COLOUR, environment: 0.3 }
+/** The floor patterns tiled by the centimetre; a starfield is painted once over the whole floor. */
+type TiledPattern = Exclude<Table['floor']['pattern'], 'starfield'>
 /**
  * How each floor pattern is drawn: a tile of `size` pixels covering `tile`
  * cm, speckled with greys from `darkest` up by `spread`, so the floor reads
  * as cloth or vinyl rather than flat paint; a grid also has lines along the
  * tile's edges.
  */
-const FLOOR_PATTERNS: Record<Table['floor']['pattern'], { size: number, tile: number, darkest: number, spread: number, grid: boolean }> = {
+const FLOOR_PATTERNS: Record<TiledPattern, { size: number, tile: number, darkest: number, spread: number, grid: boolean }> = {
   cloth: { size: 128, tile: 1, darkest: 190, spread: 65, grid: false },
   // A battle mat's squares are an inch, the size its figures stand on, and the cup is drawn at true size.
   grid: { size: 256, tile: 2.54, darkest: 235, spread: 20, grid: true },
 }
+/**
+ * Pixels across the starfield, which covers the whole floor once rather than
+ * tiling, as a tiled nebula shows its seams. A phone's long side is about
+ * 1,860 px at the pixel ratio of 2 the cup is drawn at, so a star a pixel or
+ * two across stays sharp. The floor is seen face-on at about a texel a pixel,
+ * so it has no mipmaps, which would add a third to its 16 MB of GPU memory;
+ * it takes that only while the table is in use.
+ */
+const STARFIELD_SIZE = 2048
+/**
+ * How much of the lamp a starfield floor reflects, as a grey its colour is
+ * multiplied by. The stars light themselves, so a mid grey is enough for
+ * the dice's shadows to show on them, without the lamp's pool washing out the
+ * middle of the sky; at #2a2a2a the shadows could not be seen and the dice
+ * looked to float.
+ */
+const STARFIELD_REFLECTANCE = '#4a4a4a'
 /**
  * Height (cm) of the marks under dice that did not roll over: on the felt,
  * which is at 0, without fighting it for depth.
@@ -54,6 +83,23 @@ const MARK_HEIGHT = 0.01
 /** How strong a mark is once faded in, and how far out it reaches from a die's centre, in footprint radii. */
 const MARK_OPACITY = 0.35
 const MARK_REACH = 1.45
+/**
+ * A glowing die lights the floor under it: how far the light reaches, in
+ * footprint radii, how bright it is at its middle, and how high (cm) above
+ * the floor it is drawn, over the marks. At 0.02 cm the floor hid it in
+ * Chromium; at 0.1 it shows, and the die still hides its middle. At 0.45 it
+ * was barely seen on the starfield.
+ */
+const GLOW_REACH = 2.5
+const GLOW_OPACITY = 0.7
+const GLOW_HEIGHT = 0.1
+/**
+ * The light on the floor is full while a die's centre is lower than
+ * GLOW_FULL (cm), as every die is at rest, and fades out over the next
+ * GLOW_FADE, so a die tossed up off the floor lights it less.
+ */
+const GLOW_FULL = 1
+const GLOW_FADE = 3
 /**
  * Radius (cm) of the cove where the felt curves up into the walls, and of the
  * cup's corners seen from above. The colliders keep the corners square, so a
@@ -136,7 +182,7 @@ function trayGeometry({ width, height, depth }: BoxSize): BufferGeometry {
 }
 
 /** The floor's pattern, tiled across it, in shades of grey for the floor's colour to tint. */
-function floorTexture(pattern: Table['floor']['pattern']): CanvasTexture {
+function floorTexture(pattern: TiledPattern): CanvasTexture {
   const { size, tile, darkest, spread, grid } = FLOOR_PATTERNS[pattern]
   const canvas = document.createElement('canvas')
   canvas.width = canvas.height = size
@@ -168,27 +214,96 @@ function floorTexture(pattern: Table['floor']['pattern']): CanvasTexture {
 }
 
 /**
- * A soft ring, as if chalked on the cloth: clear in the middle, where the die
- * stands, palest across its band and fading to nothing at both edges. It fills
- * a square two units wide, the ring's outer edge at 1.
+ * Deep space seen through the floor: a band of nebula from corner to corner,
+ * as the Milky Way crosses the sky, in the floor's colour, with stars thicker
+ * along it and a few bright ones with a cross of glare. It is drawn from a
+ * fixed seed, so it is the same sky at every launch.
  */
-function markTexture(): CanvasTexture {
+function starfieldTexture(colour: string): CanvasTexture {
+  const size = STARFIELD_SIZE
+  const random = seededRandom(1977)
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = size
+  const context = canvas.getContext('2d')!
+  context.fillStyle = colour
+  context.fillRect(0, 0, size, size)
+  /** A point near the band, `spread` of the size off it at most. */
+  const nearBand = (spread: number) => {
+    const along = random()
+    const off = (random() - 0.5) * spread * size
+    return { x: along * size + off * 0.7, y: (1 - along) * size + off * 0.7 }
+  }
+  // The nebula: soft clouds that add up where they overlap, as glowing gas does.
+  context.globalCompositeOperation = 'lighter'
+  const clouds = ['#5b2a86', '#1f6f8b', '#a3307a', '#2a3fa0', '#14807a']
+  for (let i = 0; i < 28; i++) {
+    const { x, y } = nearBand(0.5)
+    const radius = size * (0.08 + random() * 0.18)
+    const cloud = context.createRadialGradient(x, y, 0, x, y, radius)
+    cloud.addColorStop(0, `${clouds[i % clouds.length]}50`)
+    cloud.addColorStop(1, `${clouds[i % clouds.length]}00`)
+    context.fillStyle = cloud
+    context.fillRect(x - radius, y - radius, radius * 2, radius * 2)
+  }
+  const tints = ['255 255 255', '200 220 255', '255 236 210', '180 240 255']
+  const star = (x: number, y: number, radius: number, alpha: number) => {
+    context.fillStyle = `rgb(${tints[Math.floor(random() * tints.length)]} / ${alpha})`
+    context.beginPath()
+    context.arc(x, y, radius, 0, Math.PI * 2)
+    context.fill()
+  }
+  for (let i = 0; i < 2600; i++) {
+    const { x, y } = i % 2 ? nearBand(0.35) : { x: random() * size, y: random() * size }
+    star(x, y, 0.6 + random() ** 3 * 1.6, 0.35 + random() * 0.65)
+  }
+  for (let i = 0; i < 24; i++) {
+    const x = random() * size
+    const y = random() * size
+    const reach = 10 + random() * 18
+    const halo = context.createRadialGradient(x, y, 0, x, y, reach)
+    halo.addColorStop(0, 'rgb(220 235 255 / 0.9)')
+    halo.addColorStop(0.15, 'rgb(170 210 255 / 0.25)')
+    halo.addColorStop(1, 'rgb(170 210 255 / 0)')
+    context.fillStyle = halo
+    context.fillRect(x - reach, y - reach, reach * 2, reach * 2)
+    context.fillRect(x - reach * 2, y - 0.75, reach * 4, 1.5)
+    context.fillRect(x - 0.75, y - reach * 2, 1.5, reach * 4)
+    star(x, y, 2, 1)
+  }
+  const texture = new CanvasTexture(canvas)
+  texture.colorSpace = SRGBColorSpace
+  texture.generateMipmaps = false
+  texture.minFilter = LinearFilter
+  // Centred in the cup; setBox scales it to cover the floor.
+  texture.offset.set(0.5, 0.5)
+  return texture
+}
+
+/** A square texture filled with a radial gradient from its middle to its edges, through `stops` of white at the given alphas. */
+function radialTexture(stops: readonly [offset: number, alpha: number][]): CanvasTexture {
   const size = 128
   const canvas = document.createElement('canvas')
   canvas.width = canvas.height = size
   const context = canvas.getContext('2d')!
   const centre = size / 2
   const gradient = context.createRadialGradient(centre, centre, 0, centre, centre, centre)
-  gradient.addColorStop(0, 'rgb(255 255 255 / 0)')
-  gradient.addColorStop(0.6, 'rgb(255 255 255 / 0)')
-  gradient.addColorStop(0.8, 'rgb(255 255 255 / 1)')
-  gradient.addColorStop(1, 'rgb(255 255 255 / 0)')
+  for (const [offset, alpha] of stops) gradient.addColorStop(offset, `rgb(255 255 255 / ${alpha})`)
   context.fillStyle = gradient
   context.fillRect(0, 0, size, size)
   const texture = new CanvasTexture(canvas)
   texture.colorSpace = SRGBColorSpace
   return texture
 }
+
+/** A round pool of light, brightest in the middle, for a glowing die to cast on the floor under it. */
+const glowTexture = () => radialTexture([[0, 1], [0.35, 0.45], [1, 0]])
+
+/**
+ * A soft ring, as if chalked on the cloth: clear in the middle, where the die
+ * stands, palest across its band and fading to nothing at both edges. It fills
+ * a square two units wide, the ring's outer edge at 1.
+ */
+const markTexture = () => radialTexture([[0, 0], [0.6, 0], [0.8, 1], [1, 0]])
 
 /**
  * Glossy surfaces need surroundings to reflect. This room is generated, so
@@ -240,18 +355,28 @@ export class DiceScene {
   /** The tray's two materials, given their looks by setTable. */
   private readonly wall = new MeshStandardMaterial()
   private readonly floor = new MeshStandardMaterial()
-  /** A warm lamp hung over the table: bright in the middle, falling off towards the rail. */
+  /** A lamp hung over the table, in the table's colour: bright in the middle, falling off towards the rail. */
   private readonly lamp = new SpotLight(LAMP_COLOUR, 5)
   private readonly environment: WebGLRenderTarget
   private looks: Record<DieKind, DieLook>
+  /** The floor's size, for a starfield, which is fitted to it rather than tiled. */
+  private box: BoxSize | null = null
+  private starfield = false
 
   /** One instanced mesh per kind of die. */
   private readonly meshes: Record<DieKind, InstancedMesh>
-  /** Each die's mesh, and its instance in that mesh. */
-  private slots: { mesh: InstancedMesh, instance: number }[] = []
+  /** Each die's mesh, its instance in that mesh, and the radius of its glow on the floor (cm). */
+  private slots: { mesh: InstancedMesh, instance: number, glowRadius: number }[] = []
   /** Rings on the felt under the dice that did not roll over; see setMarks. */
   private readonly marks: InstancedMesh
   private readonly markMaterial: MeshStandardMaterial
+  /** The light a glowing skin casts on the floor under each die, instance i under die i; hidden for other skins. */
+  private readonly glows: InstancedMesh
+  private readonly glowMaterial: MeshBasicMaterial
+  private readonly glowShade = new Color()
+  /** Whether the skin glows, and whether the floor is dark enough for its light to be seen on. */
+  private glowing = false
+  private darkFloor = true
   /** Reused for every die's transform, rather than made anew each frame. */
   private readonly matrix = new Matrix4()
   private readonly position = new Vector3()
@@ -267,10 +392,8 @@ export class DiceScene {
     // the hue of the felt the way the filmic curves do.
     this.renderer.toneMapping = NeutralToneMapping
 
+    // How much the room lights the table is the table's, set in setTable.
     this.environment = lightByRoom(this.renderer, this.scene)
-    // The room is there for reflections and a little fill. The lamp does the
-    // lighting, so the table stays dark outside its pool.
-    this.scene.environmentIntensity = 0.3
 
     // The geometry is built for each box size, in setBox, and the materials' looks in setTable.
     this.tray = new Mesh(new BufferGeometry(), [this.wall, this.floor])
@@ -285,7 +408,15 @@ export class DiceScene {
     this.marks.visible = false
     this.marks.receiveShadow = true
     this.marks.frustumCulled = false
-    this.scene.add(this.tray, ...Object.values(this.meshes), this.marks)
+    // Unlit and added on, as light is, and faded per die by its instance colour.
+    this.glowMaterial = new MeshBasicMaterial({ map: glowTexture(), transparent: true, opacity: GLOW_OPACITY, blending: AdditiveBlending, depthWrite: false })
+    this.glows = new InstancedMesh(new PlaneGeometry(2, 2), this.glowMaterial, capacity)
+    this.glows.count = 0
+    this.glows.frustumCulled = false
+    // Every instance has a colour from the start, so the shader is built with them once.
+    for (let index = 0; index < capacity; index++) this.glows.setColorAt(index, this.glowShade.setScalar(1))
+    this.setGlow(skin)
+    this.scene.add(this.tray, ...Object.values(this.meshes), this.marks, this.glows)
 
     // The pool of light comes from the soft edge of the cone, not from
     // distance, so the brightness does not change with the size of the table.
@@ -303,8 +434,9 @@ export class DiceScene {
     for (const mesh of Object.values(this.meshes)) mesh.count = 0
     this.slots = pool.map((kind) => {
       const mesh = this.meshes[kind]
-      return { mesh, instance: mesh.count++ }
+      return { mesh, instance: mesh.count++, glowRadius: DIE_SHAPES[kind].footprintRadius * GLOW_REACH }
     })
+    this.glows.count = pool.length
     // An empty instanced mesh still sets up its shader and textures every
     // frame, in both passes; a hidden one is skipped, and uploads its
     // textures the first time it is shown.
@@ -322,17 +454,48 @@ export class DiceScene {
       this.meshes[kind].customDepthMaterial = shadow
       disposeLook(old[kind])
     }
+    this.setGlow(skin)
   }
 
-  /** Lines the cup as `table`, where the dice lie; the old floor pattern is freed. */
-  setTable({ floor, wall, mark }: Table): void {
+  private setGlow({ glow }: DieSkin): void {
+    this.glowing = Boolean(glow)
+    if (glow) this.glowMaterial.color.set(glow)
+    this.showGlows()
+  }
+
+  /** Added to a light floor, as the battle mat's, the glow only washed it out to white, as a real one would not show there. */
+  private showGlows(): void {
+    this.glows.visible = this.glowing && this.darkFloor
+  }
+
+  /** Lines and lights the cup as `table`, where the dice lie; the old floor pattern is freed. */
+  setTable({ floor, wall, mark, light = DEFAULT_LIGHT }: Table): void {
     this.wall.color.set(wall.colour)
     this.wall.roughness = wall.roughness
+    this.wall.metalness = wall.metalness ?? 0
     this.floor.map?.dispose()
-    this.floor.map = floorTexture(floor.pattern)
-    this.floor.color.set(floor.colour)
+    // A starfield lights itself, so it is also the floor's emissive map.
+    this.starfield = floor.pattern === 'starfield'
+    this.floor.map = floor.pattern === 'starfield' ? starfieldTexture(floor.colour) : floorTexture(floor.pattern)
+    this.floor.emissiveMap = this.starfield ? this.floor.map : null
+    this.floor.emissive.set(this.starfield ? 0xffffff : 0x000000)
+    this.floor.color.set(this.starfield ? STARFIELD_REFLECTANCE : floor.colour)
     this.floor.roughness = floor.roughness
+    // An emissive map in or out changes the shader.
+    this.floor.needsUpdate = true
+    this.fitFloor()
     this.markMaterial.color.set(mark)
+    this.lamp.color.set(light.colour)
+    this.scene.environmentIntensity = light.environment
+    this.darkFloor = !floor.light
+    this.showGlows()
+  }
+
+  /** Stretches a starfield over the whole floor, keeping its stars round; a pattern tiled by the centimetre is left as it is. */
+  private fitFloor(): void {
+    if (!this.starfield || !this.box) return
+    const side = Math.max(this.box.width, this.box.height)
+    this.floor.map!.repeat.set(1 / side, 1 / side)
   }
 
   /** Fits the cup's opening to a viewport of the given size in CSS pixels. */
@@ -341,6 +504,8 @@ export class DiceScene {
 
     this.tray.geometry.dispose()
     this.tray.geometry = trayGeometry(box)
+    this.box = box
+    this.fitFloor()
 
     const distance = box.height * CAMERA_DISTANCE
     this.camera.fov = 2 * Math.atan(box.height / 2 / distance) * 180 / Math.PI
@@ -371,9 +536,17 @@ export class DiceScene {
   setDieTransform(index: number, position: Vec3, rotation: Quat): void {
     this.position.set(position.x, position.y, position.z)
     this.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w)
-    const { mesh, instance } = this.slots[index]!
+    const { mesh, instance, glowRadius } = this.slots[index]!
     mesh.setMatrixAt(instance, this.matrix.compose(this.position, this.quaternion, UNIT_SCALE))
     mesh.instanceMatrix.needsUpdate = true
+    // Kept up while hidden too, so a glowing skin chosen with the dice at rest lights the floor where they lie.
+    this.position.z = GLOW_HEIGHT
+    this.scale.set(glowRadius, glowRadius, 1)
+    this.glows.setMatrixAt(index, this.matrix.compose(this.position, this.quaternion.identity(), this.scale))
+    this.glows.instanceMatrix.needsUpdate = true
+    const fade = Math.min(1, Math.max(0, 1 - (position.z - GLOW_FULL) / GLOW_FADE))
+    this.glows.setColorAt(index, this.glowShade.setScalar(fade))
+    this.glows.instanceColor!.needsUpdate = true
   }
 
   /**
@@ -406,6 +579,9 @@ export class DiceScene {
     for (const mesh of Object.values(this.meshes)) mesh.dispose()
     disposeLook({ geometry: this.marks.geometry, materials: [this.markMaterial] })
     this.marks.dispose()
+    this.glowMaterial.map?.dispose()
+    disposeLook({ geometry: this.glows.geometry, materials: [this.glowMaterial] })
+    this.glows.dispose()
     this.lamp.dispose()
     this.environment.dispose()
     this.renderer.dispose()

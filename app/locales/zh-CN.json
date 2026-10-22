@@ -44,17 +44,20 @@
     "ice": "冰蓝",
     "gold": "金色",
     "silver": "银色",
-    "copper": "铜色"
+    "copper": "铜色",
+    "neon": "离子"
   },
   "finish": {
     "resin": "树脂",
     "translucent": "透明",
-    "metal": "金属"
+    "metal": "金属",
+    "neon": "霓虹"
   },
   "table": {
     "label": "桌面",
     "felt": "绒布",
-    "battlemat": "战棋地图"
+    "battlemat": "战棋地图",
+    "space": "深空"
   },
   "about": {
     "label": "关于与帮助",

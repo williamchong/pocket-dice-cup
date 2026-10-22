@@ -81,3 +81,13 @@ export function rotationBetween(from: Vec3, to: Vec3): Quat {
   const norm = Math.hypot(x, y, z, w)
   return { x: x / norm, y: y / norm, z: z / norm, w: w / norm }
 }
+
+/** A repeatable stand-in for Math.random (mulberry32). */
+export function seededRandom(seed: number): () => number {
+  return () => {
+    seed = (seed + 0x6D2B79F5) | 0
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}

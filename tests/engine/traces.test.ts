@@ -9,7 +9,7 @@ import type { MotionTrace } from '../../app/engine/input/motionTrace'
 import type { CupState } from '../../app/engine/core/stateMachine'
 import { CupSimulation } from '../../app/engine/simulation'
 import { REST_ACCELERATION } from '../../app/engine/input/motionSource'
-import { seededRandom } from './seededRandom'
+import { seededRandom } from '../../app/engine/math'
 
 // Sensor readings recorded on an iPhone with ?debug and "Copy trace". Each one
 // read through the WebView starts with the phone lying screen-up on a table;

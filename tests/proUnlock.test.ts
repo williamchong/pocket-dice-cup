@@ -7,9 +7,10 @@ const free = { id: 'free' }
 const pro = { id: 'pro', pro: true }
 
 describe('Pro', () => {
-  it('leaves every skin and table that shipped before it free', () => {
+  it('leaves every skin and table that shipped before it free, and comes with every one added since', () => {
+    const shippedFree = ['ivory', 'ebony', 'casino', 'sapphire', 'emerald', 'amethyst', 'dragon', 'cherry', 'smoke', 'ice', 'gold', 'silver', 'copper', 'felt', 'battlemat']
     const items: readonly (DieSkin | Table)[] = [...DIE_SKINS, ...TABLES]
-    for (const item of items) expect(item.pro, item.id).toBeFalsy()
+    for (const item of items) expect(Boolean(item.pro), item.id).toBe(!shippedFree.includes(item.id))
   })
 
   it('lets a free item be used always and a Pro one only while Pro is owned', () => {

@@ -24,13 +24,20 @@ const THICKNESS = 1.2
  * lines show through.
  */
 const TINT_DISTANCE = 6
+/**
+ * How bright a neon die's markings glow, as a multiple of its glow colour.
+ * Over 1, so the tone mapping rolls the glow towards white at its brightest,
+ * as a lit tube looks.
+ */
+const GLOW_INTENSITY = 2.5
 
 /**
  * The skin's finish, with `bumpMap` dark where the markings are cut in. A
  * translucent skin also paints `inkMask`, white on the body and black on the
- * markings, so the light passes through the plastic but not the ink.
+ * markings, so the light passes through the plastic but not the ink. A
+ * glowing skin paints `glowMask`, black on the body and white where it glows.
  */
-export function dieMaterial(map: Texture, bumpMap: Texture, { roughness, metalness, clearcoat, transmission, tint }: DieSkin, inkMask: () => Texture): MeshPhysicalMaterial {
+export function dieMaterial(map: Texture, bumpMap: Texture, { roughness, metalness, clearcoat, transmission, tint, glow }: DieSkin, inkMask: () => Texture, glowMask: () => Texture): MeshPhysicalMaterial {
   return new MeshPhysicalMaterial({
     map,
     bumpMap,
@@ -45,6 +52,11 @@ export function dieMaterial(map: Texture, bumpMap: Texture, { roughness, metalne
       thickness: THICKNESS,
       attenuationColor: new Color(tint),
       attenuationDistance: TINT_DISTANCE,
+    },
+    ...glow && {
+      emissive: new Color(glow),
+      emissiveMap: glowMask(),
+      emissiveIntensity: GLOW_INTENSITY,
     },
   })
 }
@@ -87,6 +99,7 @@ export function disposeLook({ geometry, materials, shadow }: { geometry: BufferG
     if (material instanceof MeshStandardMaterial) {
       material.map?.dispose()
       material.bumpMap?.dispose()
+      material.emissiveMap?.dispose()
       if (material instanceof MeshPhysicalMaterial) material.transmissionMap?.dispose()
     }
     material.dispose()

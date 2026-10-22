@@ -1,14 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_SOUND_TUNING } from '../app/engine/feedback/clackSound'
 import { DEFAULT_HAPTIC_TUNING } from '../app/engine/feedback/cupFeedback'
-import { DEFAULT_TABLE_ID, TABLES, findTable } from '../app/engine/tables'
+import { DEFAULT_TABLE_ID, TABLES, findTable, type Table } from '../app/engine/tables'
 import { loadTable, parseTableSetting, saveTable } from '../app/utils/tableSetting'
 
 describe('tables', () => {
   it('has a distinct id, CSS hex colours and audible voices per table', () => {
     expect(new Set(TABLES.map(table => table.id)).size).toBe(TABLES.length)
     for (const table of TABLES) {
-      for (const colour of [table.floor.colour, table.wall.colour, table.mark]) expect(colour).toMatch(/^#[0-9a-f]{6}$/)
+      const { light, panel }: Table = table
+      for (const colour of [table.floor.colour, table.wall.colour, table.mark, light?.colour ?? '#000000', panel ?? '#000000']) expect(colour).toMatch(/^#[0-9a-f]{6}$/)
       for (const voice of [table.sound.floor, table.sound.side, table.sound.die]) {
         for (const value of Object.values(voice)) expect(value).toBeGreaterThan(0)
       }

@@ -44,17 +44,20 @@
     "ice": "冰藍",
     "gold": "金色",
     "silver": "銀色",
-    "copper": "銅色"
+    "copper": "銅色",
+    "neon": "離子"
   },
   "finish": {
     "resin": "樹脂",
     "translucent": "透明",
-    "metal": "金屬"
+    "metal": "金屬",
+    "neon": "霓虹"
   },
   "table": {
     "label": "枱面",
     "felt": "絨布",
-    "battlemat": "戰棋地圖"
+    "battlemat": "戰棋地圖",
+    "space": "深空"
   },
   "about": {
     "label": "關於與說明",
