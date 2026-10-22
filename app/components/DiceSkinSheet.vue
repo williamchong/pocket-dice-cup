@@ -66,6 +66,13 @@
                 :style="{ background: option.body }"
               />
               <span class="skins__name">{{ $t(`skin.${option.id}`) }}</span>
+              <template v-if="!canUse(option, ownsPro)">
+                <UIcon
+                  name="i-lucide-lock-keyhole"
+                  class="skins__lock"
+                />
+                <span class="sr-only">{{ $t('pro.locked') }}</span>
+              </template>
             </button>
           </div>
         </template>
@@ -91,14 +98,45 @@
             :style="{ backgroundColor: option.floor.colour, borderColor: option.wall.colour }"
           />
           <span class="skins__name">{{ $t(`table.${option.id}`) }}</span>
+          <template v-if="!canUse(option, ownsPro)">
+            <UIcon
+              name="i-lucide-lock-keyhole"
+              class="skins__lock"
+            />
+            <span class="sr-only">{{ $t('pro.locked') }}</span>
+          </template>
         </button>
       </div>
     </div>
-    <UButton
-      class="min-h-11 self-end"
-      :label="$t('sheet.done')"
-      @click="emit('close')"
-    />
+    <!-- Shown while a Pro item is tried on: Apple asks for Restore beside Buy. -->
+    <p
+      v-if="tryingOn"
+      class="skins__pro"
+    >
+      {{ $t(STATUS_TEXT[status]) }}
+    </p>
+    <div class="skins__actions">
+      <template v-if="tryingOn">
+        <UButton
+          class="min-h-11"
+          :label="$t('pro.restore')"
+          :disabled="busy"
+          @click="run(restore, 'notFound')"
+        />
+        <UButton
+          class="min-h-11"
+          variant="solid"
+          :label="$t('pro.buy')"
+          :loading="busy"
+          @click="run(buy, 'offer')"
+        />
+      </template>
+      <UButton
+        class="min-h-11"
+        :label="$t('sheet.done')"
+        @click="emit('close')"
+      />
+    </div>
   </section>
 </template>
 
@@ -110,6 +148,11 @@ const props = defineProps<{
   skin: DieSkin
   table: Table
   ownsPro: boolean
+  /** Whether Pro can be bought here, so Pro items are offered with a lock rather than left out. */
+  sellsPro: boolean
+  /** Each resolves to whether Pro is owned afterwards. */
+  buy: () => Promise<boolean>
+  restore: () => Promise<boolean>
 }>()
 
 const emit = defineEmits<{ change: [skin: DieSkin], changeTable: [table: Table], close: [] }>()
@@ -122,14 +165,37 @@ const TABS = [
 /** Kept while the app is open, so the sheet opens where it was left; a new visit starts on the dice. */
 const tab = useState<typeof TABS[number]['id']>('skin-sheet-tab', () => 'dice')
 
-// Pro skins and tables are left out until Pro is owned, as there is no way
-// to buy it yet; once there is, they will show with a lock instead.
+// Where Pro can be bought, Pro skins and tables show with a lock, to try on
+// in the cup; elsewhere, as on the web, they are left out until Pro is owned.
+const offered = (item: { pro?: boolean }) => canUse(item, props.ownsPro) || props.sellsPro
 const skins: readonly DieSkin[] = DIE_SKINS
 const groups = computed(() => FINISHES
-  .map(finish => ({ finish, skins: skins.filter(skin => skin.finish === finish && canUse(skin, props.ownsPro)) }))
+  .map(finish => ({ finish, skins: skins.filter(skin => skin.finish === finish && offered(skin)) }))
   .filter(group => group.skins.length > 0))
 const allTables: readonly Table[] = TABLES
-const tables = computed(() => allTables.filter(table => canUse(table, props.ownsPro)))
+const tables = computed(() => allTables.filter(offered))
+
+const tryingOn = computed(() => !canUse(props.skin, props.ownsPro) || !canUse(props.table, props.ownsPro))
+const busy = ref(false)
+/** What the last buy or restore came to, if it needs saying, in place of the offer. */
+const STATUS_TEXT = { offer: 'pro.tryOn', notFound: 'pro.notFound', failed: 'pro.failed' } as const
+const status = ref<keyof typeof STATUS_TEXT>('offer')
+
+/** Runs a buy or restore, saying `notOwned` if it ends without Pro and that it failed if the store could not be reached. */
+async function run(action: () => Promise<boolean>, notOwned: keyof typeof STATUS_TEXT) {
+  busy.value = true
+  status.value = 'offer'
+  try {
+    if (!await action()) status.value = notOwned
+  }
+  catch (error) {
+    console.warn('The store could not complete the purchase', error)
+    status.value = 'failed'
+  }
+  finally {
+    busy.value = false
+  }
+}
 
 const icons = useSkinIcons()
 
@@ -207,6 +273,8 @@ watch(tab, showChosen, { flush: 'post' })
 }
 
 .skins__option {
+  /* The parent the lock badge sits in the corner of. */
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -266,6 +334,27 @@ watch(tab, showChosen, { flush: 'post' })
     radial-gradient(1px 1px at 20% 80%, #ffecd2 100%, transparent),
     radial-gradient(circle at 70% 75%, rgb(163 48 122 / 55%), transparent 60%),
     radial-gradient(circle at 30% 40%, rgb(31 111 139 / 55%), transparent 60%);
+}
+
+.skins__lock {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.6rem;
+  width: 1rem;
+  height: 1rem;
+  opacity: 0.8;
+}
+
+.skins__pro {
+  margin: 0;
+  font-size: 0.9rem;
+  text-wrap: pretty;
+}
+
+.skins__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 .skins__name {

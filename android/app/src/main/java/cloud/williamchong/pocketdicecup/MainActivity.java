@@ -12,9 +12,10 @@ public class MainActivity extends BridgeActivity {
         // The die on the felt (styles.xml), on every Android version, until
         // the web view's first frame shows the page's own loading screen.
         SplashScreen.installSplashScreen(this);
-        // The plugin lives in the app rather than in a package, so Capacitor
-        // does not find it on its own.
+        // The plugins live in the app rather than in a package, so Capacitor
+        // does not find them on their own.
         registerPlugin(CupHapticsPlugin.class);
+        registerPlugin(CupStorePlugin.class);
         super.onCreate(savedInstanceState);
         // The phone lies on the table showing a result. The web Wake Lock is
         // not reliable in a WebView, so keep the screen on natively.

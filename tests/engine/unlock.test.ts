@@ -29,6 +29,7 @@ describe('WebUnlockBackend', () => {
   it('never owns Pro, nor can buy or restore it', async () => {
     const web = new WebUnlockBackend()
     expect(await web.ownsPro()).toBe(false)
+    expect(web.sells).toBe(false)
     expect(await web.buyPro()).toBe(false)
     expect(await web.restorePro()).toBe(false)
   })

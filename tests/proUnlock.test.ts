@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DIE_SKINS, type DieSkin } from '../app/engine/render/skins'
 import { TABLES, type Table } from '../app/engine/tables'
-import { canUse, loadOwnsPro, saveOwnsPro, usableOr } from '../app/utils/proUnlock'
+import { canUse, loadOwnsPro, newestAnswer, saveOwnsPro, usableOr } from '../app/utils/proUnlock'
 
 const free = { id: 'free' }
 const pro = { id: 'pro', pro: true }
@@ -18,6 +18,18 @@ describe('Pro', () => {
     expect(canUse(free, true)).toBe(true)
     expect(canUse(pro, false)).toBe(false)
     expect(canUse(pro, true)).toBe(true)
+  })
+
+  it('keeps only the newest answer when an older question answers last', async () => {
+    const kept: boolean[] = []
+    const ask = newestAnswer((owned: boolean) => kept.push(owned))
+    let answerLaunch!: (owned: boolean) => void
+    const launch = ask(() => new Promise(resolve => answerLaunch = resolve))
+    // A purchase completes while the launch check is still waiting.
+    expect(await ask(async () => true)).toBe(true)
+    answerLaunch(false)
+    expect(await launch).toBe(false)
+    expect(kept).toEqual([true])
   })
 
   it('falls back from a Pro item that cannot be used', () => {

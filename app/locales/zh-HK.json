@@ -17,6 +17,14 @@
   "sheet": {
     "done": "完成"
   },
+  "pro": {
+    "locked": "Pro",
+    "tryOn": "正在試用 Pro。一次購買即可永久解鎖霓虹骰子和深空桌面。",
+    "buy": "解鎖 Pro",
+    "restore": "恢復購買",
+    "notFound": "此帳戶找不到 Pro 購買記錄。",
+    "failed": "無法連接商店，請再試一次。"
+  },
   "pool": {
     "label": "骰子",
     "fewer": "減少 {kind}",

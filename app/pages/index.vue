@@ -137,6 +137,9 @@
         :skin="skin"
         :table="table"
         :owns-pro="ownsPro"
+        :sells-pro="sellsPro"
+        :buy="buyAndKeep"
+        :restore="restoreAndKeep"
         @change="changeSkin"
         @change-table="changeTable"
         @close="openSheet = null"
@@ -257,7 +260,7 @@ const debug = 'debug' in route.query || Boolean(useRuntimeConfig().public.debug)
 const startPool = parsePoolSetting(route.query.dice) ?? loadPool() ?? undefined
 // `?debug&pro`, or `NUXT_PUBLIC_PRO=1` in the native shells, unlocks Pro
 // without buying it, to try Pro skins before the store plugin exists.
-const { ownsPro } = useProUnlock((debug && 'pro' in route.query) || Boolean(useRuntimeConfig().public.pro))
+const { ownsPro, sellsPro, buyPro, restorePro } = useProUnlock((debug && 'pro' in route.query) || Boolean(useRuntimeConfig().public.pro))
 // `?skin=ebony` starts with that finish, over the one saved from last time,
 // and a Pro one only while Pro is owned.
 const skin = shallowRef(usableSkin(findSkin(parseSkinSetting(route.query.skin) ?? loadSkin()), ownsPro.value))
@@ -290,10 +293,12 @@ function changePool(next: DicePool) {
   if (setPool(next)) savePool(pool.value)
 }
 
+// A Pro skin or table chosen without Pro is tried on: shown in the cup while
+// the sheet is open, but not saved, and put back when it closes.
 function changeSkin(next: DieSkin) {
   if (next === skin.value) return
   applySkin(next)
-  saveSkin(next.id)
+  if (canUse(next, ownsPro.value)) saveSkin(next.id)
 }
 
 function applySkin(next: DieSkin) {
@@ -306,7 +311,7 @@ function applySkin(next: DieSkin) {
 function changeTable(next: Table) {
   if (next === table.value) return
   applyTable(next)
-  saveTable(next.id)
+  if (canUse(next, ownsPro.value)) saveTable(next.id)
   // Inside the tap that chose it, so the sound can start: the new floor, heard and felt.
   void testHit('floor')
 }
@@ -326,6 +331,26 @@ watch(ownsPro, (owns) => {
   const nextTable = usableTable(table.value, owns)
   if (nextTable !== table.value) applyTable(nextTable)
 })
+
+/**
+ * Buys or restores Pro through `action`, and once it is owned keeps what was
+ * being tried on as it began, even if a shake closed the sheet and put the
+ * saved choice back while the store's sheet was up.
+ */
+async function unlock(action: () => Promise<boolean>): Promise<boolean> {
+  const triedSkin = skin.value
+  const triedTable = table.value
+  const owned = await action()
+  if (owned) {
+    applySkin(triedSkin)
+    saveSkin(triedSkin.id)
+    if (triedTable !== table.value) applyTable(triedTable)
+    saveTable(triedTable.id)
+  }
+  return owned
+}
+const buyAndKeep = () => unlock(buyPro)
+const restoreAndKeep = () => unlock(restorePro)
 
 // The result card goes down above the buttons when it would hide a die at
 // the top, as a die there can be cocked or read wrong and should be seen.
@@ -388,6 +413,12 @@ watch(ready, (now) => {
 // the dice are ready, or once they never will be.
 watch(() => ready.value || failed.value, (done) => {
   if (done) hideSplash()
+})
+// Closing the style sheet ends a try-on: the saved skin and table come back.
+watch(openSheet, (now, before) => {
+  if (before !== 'skin' || now === 'skin') return
+  if (!canUse(skin.value, ownsPro.value)) applySkin(usableSkin(findSkin(loadSkin()), ownsPro.value))
+  if (!canUse(table.value, ownsPro.value)) applyTable(usableTable(findTable(loadTable()), ownsPro.value))
 })
 // Shaking with a sheet open would hide the roll behind it.
 watch(rolling, (now) => {

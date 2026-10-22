@@ -17,6 +17,14 @@
   "sheet": {
     "done": "Done"
   },
+  "pro": {
+    "locked": "Pro",
+    "tryOn": "Trying on Pro. One purchase unlocks the neon dice and the deep space table for good.",
+    "buy": "Unlock Pro",
+    "restore": "Restore",
+    "notFound": "No Pro purchase was found for this account.",
+    "failed": "The store could not be reached. Try again."
+  },
   "pool": {
     "label": "Dice",
     "fewer": "Fewer {kind}",

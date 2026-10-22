@@ -8,23 +8,27 @@ import { deviceUnlock } from '~/engine/store/unlock'
 export function useProUnlock(granted: boolean) {
   const ownsPro = ref(granted || loadOwnsPro())
   const backend = granted ? null : deviceUnlock()
-
-  function settle(owned: boolean): boolean {
+  // A launch check still waiting when a purchase completes would otherwise
+  // answer after it and take Pro away until the next launch.
+  const ask = newestAnswer((owned: boolean) => {
     ownsPro.value = owned
     saveOwnsPro(owned)
-    return owned
-  }
+  })
 
   // A store that cannot be reached at launch, as offline, is not a refund,
   // so the last answer stands. A buy or restore that fails rejects instead,
   // for the sheet to say so.
-  void backend?.ownsPro().then(settle, (error: unknown) => {
-    console.warn('The store could not say whether Pro is owned', error)
-  })
+  if (backend) {
+    ask(() => backend.ownsPro()).catch((error: unknown) => {
+      console.warn('The store could not say whether Pro is owned', error)
+    })
+  }
 
   return {
     ownsPro: readonly(ownsPro),
-    buyPro: async () => backend ? settle(await backend.buyPro()) : true,
-    restorePro: async () => backend ? settle(await backend.restorePro()) : true,
+    /** Whether Pro can be bought here: in the store apps, not on the web, nor when granted for debugging. */
+    sellsPro: backend?.sells ?? false,
+    buyPro: () => backend ? ask(() => backend.buyPro()) : Promise.resolve(true),
+    restorePro: () => backend ? ask(() => backend.restorePro()) : Promise.resolve(true),
   }
 }

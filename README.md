@@ -32,8 +32,9 @@ same way. History lists the last 50 rolls, also kept
 between visits. Style picks the finish of the dice, ivory by default, from
 thirteen that all come with the app, in glossy resin, translucent and metal,
 and the table they land on: green felt or a tabletop battle mat. Pro adds
-neon dice that glow cyan and a deep space table, shown only once Pro is
-owned (`?debug&pro&skin=neon&table=space` to see them). Both are
+neon dice that glow cyan and a deep space table. In the phone apps they
+show with a lock, to try on in the cup before buying; the web sells nothing
+and leaves them out (`?debug&pro&skin=neon&table=space` to see them). Both are
 remembered. The ? button beside it opens an about page, at `/about`, that
 says how each part works. Lying screen-down the dice still roll and are
 heard and felt but are not drawn; a tap shows them, for a screen watched
@@ -86,6 +87,14 @@ NUXT_PUBLIC_DEBUG=1 npm run ios
 ```
 
 `NUXT_PUBLIC_PRO=1` likewise unlocks Pro in the build without buying it.
+
+Pro is sold as one non-consumable in-app purchase with the product id `pro`,
+the same in App Store Connect and the Play Console, through
+`CupStorePlugin.swift` (StoreKit 2) and `CupStorePlugin.java` (Play Billing
+8). Without the product set up in the store, Unlock Pro says the store
+could not be reached. Purchases are tried with a sandbox Apple ID on the
+iPhone, and on Android with a licence tester account on a build installed
+from a Play testing track.
 
 In Xcode, pick your Apple ID under Signing & Capabilities, plug the iPhone
 in and run. With a free Apple ID the app stops opening after 7 days, and

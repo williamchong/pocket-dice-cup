@@ -377,12 +377,7 @@ Phases
    and losing Pro after launch drops back to it without forgetting the
    choice. `?debug&pro`, or `NUXT_PUBLIC_PRO=1` in the shells, unlocks Pro
    without buying it. Checked in Chromium with copper marked `pro` for the
-   run: `?skin=copper` starts in ivory, and with `&pro` in copper. Not yet
-   done: the `CupStore` plugins (StoreKit 2 in Swift, Play Billing in Java,
-   which must acknowledge a purchase within 3 days or Google refunds it),
-   the sheet's lock badges, trying a Pro item on in the cup before buying,
-   Buy and Restore buttons, the store products, and the privacy policy's
-   line on purchases.
+   run: `?skin=copper` starts in ivory, and with `&pro` in copper. The store's side follows the first Pro items below.
    The first Pro items, made as a sci-fi pair: neon dice, `ion`, and a
    deep space table, `space`. Each still looks right with the other's free
    counterparts. Neon is a finish of its own: a near-black glossy body whose
@@ -408,14 +403,33 @@ Phases
    redraws only while the dice move, to save the battery while a result is
    on screen, and the sky would keep it drawing. Its voices, higher and more
    ringing for dice on glass and metal, and its crisper haptics are a first
-   guess, still to be tuned by ear on the iPhone. With nothing to buy Pro
-   with yet, the Style sheet leaves Pro items out until Pro is owned, and
-   the about page shows only free finishes. Checked in Chromium with
+   guess, still to be tuned by ear on the iPhone. The about page shows only
+   free finishes, as it is also the web's, which sells nothing. Checked in Chromium with
    `?debug&pro`: neon on the felt, the battle mat and deep space, ivory in
    deep space, and without `&pro`, `?skin=neon&table=space` starts in ivory
    on the felt; the cyan rims on the buttons, but not the cyan hints, which
    the headless browser never shows. Not yet checked on the iPhone: the glow and the frame time,
    the starfield's sharpness, and the voices.
+   Then the store: the `CupStore` plugins are written, StoreKit 2 in Swift
+   and Play Billing 8 in Java, both selling one product, `pro`. The Swift
+   one finishes the transactions StoreKit hands over outside a buy, as an
+   Ask to Buy approved later; the Java one acknowledges each completed
+   purchase at every check, as Google refunds one not acknowledged within
+   3 days. A cancelled buy, or one waiting on a parent or a cash payment,
+   resolves as not owned, and the later purchase is seen at the next
+   launch's check. Only the newest answer from the store counts
+   (`newestAnswer`), so a launch check that answers after a purchase cannot
+   take Pro away. In the phone apps the Style sheet shows Pro items with a
+   lock; choosing one tries it on in the cup without saving it, with
+   Restore and Unlock Pro beside Done, and closing the sheet puts the saved
+   choice back, while a purchase keeps what was tried on. The web, which
+   sells nothing, still leaves them out. The privacy policy says what the
+   stores see. Checked: the iOS app builds for the simulator and the
+   Android app compiles; the try-on, Done putting ivory back with nothing
+   saved, Restore finding nothing, and the lock badges, in Chromium with
+   the web backend made to sell for the run. Not yet done: the `pro`
+   product in App Store Connect and the Play Console, and a sandbox
+   purchase, restore and refund on each phone.
 6. **Desktop and fallbacks.** Click or drag to throw, spacebar, and tap-to-roll
    on mobile when motion permission is denied.
    Status: a click or tap tosses the dice, with or without a sensor, and
