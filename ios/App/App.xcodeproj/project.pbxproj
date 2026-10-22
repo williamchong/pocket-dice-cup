@@ -12,6 +12,8 @@
 		39368C6261AB5AB630F5B383 /* CupHapticsPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2298AE3604A098B3F0723320 /* CupHapticsPlugin.swift */; };
 		A1C0DE0000000000000000B1 /* CupMotionPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000F1 /* CupMotionPlugin.swift */; };
 		A1C0DE0000000000000000B2 /* CupStorePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000F2 /* CupStorePlugin.swift */; };
+		A1C0DE0000000000000000B3 /* CupStorePluginTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000F3 /* CupStorePluginTests.swift */; };
+		A1C0DE0000000000000000B5 /* Products.storekit in Resources */ = {isa = PBXBuildFile; fileRef = A1C0DE0000000000000000F5 /* Products.storekit */; };
 		4D22ABE92AF431CB00220026 /* CapApp-SPM in Frameworks */ = {isa = PBXBuildFile; productRef = 4D22ABE82AF431CB00220026 /* CapApp-SPM */; };
 		50379B232058CBB4000EE86E /* capacitor.config.json in Resources */ = {isa = PBXBuildFile; fileRef = 50379B222058CBB4000EE86E /* capacitor.config.json */; };
 		504EC3081FED79650016851F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504EC3071FED79650016851F /* AppDelegate.swift */; };
@@ -23,10 +25,23 @@
 		1C18A0000000000000000008 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 1C18A0000000000000000007 /* InfoPlist.strings */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		A1C0DE0000000000000000A1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 504EC2FC1FED79650016851F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 504EC3031FED79650016851F;
+			remoteInfo = App;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		2298AE3604A098B3F0723320 /* CupHapticsPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CupHapticsPlugin.swift; sourceTree = "<group>"; };
 		A1C0DE0000000000000000F1 /* CupMotionPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CupMotionPlugin.swift; sourceTree = "<group>"; };
 		A1C0DE0000000000000000F2 /* CupStorePlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CupStorePlugin.swift; sourceTree = "<group>"; };
+		A1C0DE0000000000000000F3 /* CupStorePluginTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CupStorePluginTests.swift; sourceTree = "<group>"; };
+		A1C0DE0000000000000000F4 /* AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1C0DE0000000000000000F5 /* Products.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Products.storekit; sourceTree = "<group>"; };
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
 		50379B222058CBB4000EE86E /* capacitor.config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = capacitor.config.json; sourceTree = "<group>"; };
 		504EC3041FED79650016851F /* App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -56,6 +71,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A1C0DE0000000000000000E2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -65,6 +87,7 @@
 				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
 				504EC3061FED79650016851F /* App */,
 				504EC3051FED79650016851F /* Products */,
+				A1C0DE0000000000000000D1 /* AppTests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -72,6 +95,7 @@
 			isa = PBXGroup;
 			children = (
 				504EC3041FED79650016851F /* App.app */,
+				A1C0DE0000000000000000F4 /* AppTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -93,8 +117,17 @@
 				2298AE3604A098B3F0723320 /* CupHapticsPlugin.swift */,
 				A1C0DE0000000000000000F1 /* CupMotionPlugin.swift */,
 				A1C0DE0000000000000000F2 /* CupStorePlugin.swift */,
+				A1C0DE0000000000000000F5 /* Products.storekit */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		A1C0DE0000000000000000D1 /* AppTests */ = {
+			isa = PBXGroup;
+			children = (
+				A1C0DE0000000000000000F3 /* CupStorePluginTests.swift */,
+			);
+			path = AppTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -120,6 +153,24 @@
 			productReference = 504EC3041FED79650016851F /* App.app */;
 			productType = "com.apple.product-type.application";
 		};
+		A1C0DE0000000000000000C1 /* AppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1C0DE0000000000000000C2 /* Build configuration list for PBXNativeTarget "AppTests" */;
+			buildPhases = (
+				A1C0DE0000000000000000E1 /* Sources */,
+				A1C0DE0000000000000000E2 /* Frameworks */,
+				A1C0DE0000000000000000E3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A1C0DE0000000000000000A2 /* PBXTargetDependency */,
+			);
+			name = AppTests;
+			productName = AppTests;
+			productReference = A1C0DE0000000000000000F4 /* AppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -133,6 +184,10 @@
 						CreatedOnToolsVersion = 9.2;
 						LastSwiftMigration = 1100;
 						ProvisioningStyle = Automatic;
+					};
+					A1C0DE0000000000000000C1 = {
+						ProvisioningStyle = Automatic;
+						TestTargetID = 504EC3031FED79650016851F;
 					};
 				};
 			};
@@ -156,6 +211,7 @@
 			projectRoot = "";
 			targets = (
 				504EC3031FED79650016851F /* App */,
+				A1C0DE0000000000000000C1 /* AppTests */,
 			);
 		};
 /* End PBXProject section */
@@ -175,6 +231,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A1C0DE0000000000000000E3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1C0DE0000000000000000B5 /* Products.storekit in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -191,7 +255,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A1C0DE0000000000000000E1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1C0DE0000000000000000B3 /* CupStorePluginTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A1C0DE0000000000000000A2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 504EC3031FED79650016851F /* App */;
+			targetProxy = A1C0DE0000000000000000A1 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		504EC30B1FED79650016851F /* Main.storyboard */ = {
@@ -381,6 +461,38 @@
 			};
 			name = Release;
 		};
+		A1C0DE0000000000000000C3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = Q5YJ6GX784;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.williamchong.pocketdicecup.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/App.app/App";
+			};
+			name = Debug;
+		};
+		A1C0DE0000000000000000C4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = Q5YJ6GX784;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.williamchong.pocketdicecup.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/App.app/App";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -398,6 +510,15 @@
 			buildConfigurations = (
 				504EC3171FED79650016851F /* Debug */,
 				504EC3181FED79650016851F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1C0DE0000000000000000C2 /* Build configuration list for PBXNativeTarget "AppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1C0DE0000000000000000C3 /* Debug */,
+				A1C0DE0000000000000000C4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

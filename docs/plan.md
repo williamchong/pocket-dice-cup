@@ -430,7 +430,18 @@ Phases
    the web backend made to sell for the run. The shared App scheme points
    Xcode at a local StoreKit configuration with a `pro` product, so the
    iOS buy, restore and refund can be tried before App Store Connect has
-   the product; the scheme parses, but the file has not yet been run. Not
+   the product. The App scheme's tests (`ios/App/AppTests`, an XCTest
+   that drives the Swift plugin through the same file with
+   `SKTestSession`) pass in the iPhone 17 simulator: the file serves
+   `pro` at $0.99; a buy owns Pro and a fresh plugin, as at the next
+   launch, still finds it; a refund or a
+   deleted transaction takes it away; Ask to Buy resolves as not owned
+   until a parent approves, and stays locked when they decline; a failed
+   transaction rejects; and Restore finds nothing before the buy and Pro
+   after it. Not yet checked: the same through the page, launched from
+   Xcode's Run with the scheme, as the test called the plugin directly and
+   no sheet, try-on or lock was seen, and a buy cancelled on the sheet,
+   which the test, with StoreKit's dialogs off, cannot make. Not
    yet done: the `pro` product in App Store Connect and the Play Console, a
    purchase, restore and refund on each phone, and the iPhone checks of the
    glow, the frame time, the stars and the deep space voices above.

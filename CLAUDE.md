@@ -12,6 +12,7 @@ npx vitest run tests/engine/pool.test.ts -t "<name>"   # one file / one test
 npm run test:fairness                  # slow χ² rolls of every die kind (FAIRNESS=1)
 npm run lint
 npm run typecheck
+cd ios/App && xcodebuild test -project App.xcodeproj -scheme App -destination 'platform=iOS Simulator,name=iPhone 17'   # Swift store plugin vs Products.storekit
 ```
 
 `npm test` starts vitest in **watch mode** and never exits; use `npx vitest run` from an agent. CI runs lint, typecheck and tests, then `npm run generate` for GitHub Pages and a debug APK build of the Android shell.
