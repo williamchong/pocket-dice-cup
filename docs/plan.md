@@ -427,9 +427,13 @@ Phases
    stores see. Checked: the iOS app builds for the simulator and the
    Android app compiles; the try-on, Done putting ivory back with nothing
    saved, Restore finding nothing, and the lock badges, in Chromium with
-   the web backend made to sell for the run. Not yet done: the `pro`
-   product in App Store Connect and the Play Console, and a sandbox
-   purchase, restore and refund on each phone.
+   the web backend made to sell for the run. The shared App scheme points
+   Xcode at a local StoreKit configuration with a `pro` product, so the
+   iOS buy, restore and refund can be tried before App Store Connect has
+   the product; the scheme parses, but the file has not yet been run. Not
+   yet done: the `pro` product in App Store Connect and the Play Console, a
+   purchase, restore and refund on each phone, and the iPhone checks of the
+   glow, the frame time, the stars and the deep space voices above.
 6. **Desktop and fallbacks.** Click or drag to throw, spacebar, and tap-to-roll
    on mobile when motion permission is denied.
    Status: a click or tap tosses the dice, with or without a sensor, and

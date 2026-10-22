@@ -92,9 +92,13 @@ Pro is sold as one non-consumable in-app purchase with the product id `pro`,
 the same in App Store Connect and the Play Console, through
 `CupStorePlugin.swift` (StoreKit 2) and `CupStorePlugin.java` (Play Billing
 8). Without the product set up in the store, Unlock Pro says the store
-could not be reached. Purchases are tried with a sandbox Apple ID on the
-iPhone, and on Android with a licence tester account on a build installed
-from a Play testing track.
+could not be reached. Run from Xcode, the shared App scheme sells a local
+`pro` from `ios/App/App/Products.storekit` instead, so a buy, a restore and
+a refund (Debug → StoreKit → Manage Transactions) can be tried in the
+simulator or on the iPhone without App Store Connect or a sandbox account;
+its price is a placeholder. Beyond that, purchases are tried with a sandbox
+Apple ID on the iPhone, and on Android with a licence tester account on a
+build installed from a Play testing track.
 
 In Xcode, pick your Apple ID under Signing & Capabilities, plug the iPhone
 in and run. With a free Apple ID the app stops opening after 7 days, and
