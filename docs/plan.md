@@ -97,8 +97,11 @@ is longer than the 0.3 s that counts as put down, and with the analyser
 calling the phone shaken for up to a second after a shake, a pause of 1.2 s
 between shakes does not end the roll. It left the dice as fair: 100 cups of
 12 held upright that way gave χ² 2.5 of 20.7 on the d6 and 18.2 of 43.9 on
-the d20. Not yet checked on the iPhone: how long people pause mid-shake, to
-tune the second against, and how it feels in the hand.
+the d20. Checked in Chromium with faked readings: after a shake, readings
+held upright as in that trace, with no tap and never screen-up, end in a
+result with the dice laid flat along the low edge. Not yet checked on the
+iPhone: how long people pause mid-shake, to tune the second against, and how
+it feels in the hand.
 
 Stack
 -----
