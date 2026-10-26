@@ -1,8 +1,6 @@
 import {
-  AdditiveBlending,
   BufferGeometry,
   CanvasTexture,
-  Color,
   Float32BufferAttribute,
   LinearFilter,
   InstancedMesh,
@@ -19,6 +17,7 @@ import {
   Scene,
   SpotLight,
   SRGBColorSpace,
+  Vector2,
   Vector3,
   WebGLRenderer,
   type WebGLRenderTarget,
@@ -26,9 +25,10 @@ import {
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { CAMERA_DISTANCE, type BoxSize } from '../box'
 import type { DicePool } from '../core/pool'
-import { DIE_KINDS, DIE_SHAPES, POLYHEDRA, type DieKind } from '../dice/shapes'
+import { DIE_KINDS, POLYHEDRA, type DieKind } from '../dice/shapes'
 import { seededRandom, type Quat, type Vec3 } from '../math'
 import { createD6Look } from './d6Mesh'
+import { NeonHalo } from './halo'
 import { createDiceMesh, disposeLook, translucentShadow, type DieLook } from './dieLook'
 import { createPolyhedronLook } from './polyhedronMesh'
 import type { DieSkin } from './skins'
@@ -83,23 +83,6 @@ const MARK_HEIGHT = 0.01
 /** How strong a mark is once faded in, and how far out it reaches from a die's centre, in footprint radii. */
 const MARK_OPACITY = 0.35
 const MARK_REACH = 1.45
-/**
- * A glowing die lights the floor under it: how far the light reaches, in
- * footprint radii, how bright it is at its middle, and how high (cm) above
- * the floor it is drawn, over the marks. At 0.02 cm the floor hid it in
- * Chromium; at 0.1 it shows, and the die still hides its middle. At 0.45 it
- * was barely seen on the starfield.
- */
-const GLOW_REACH = 2.5
-const GLOW_OPACITY = 0.7
-const GLOW_HEIGHT = 0.1
-/**
- * The light on the floor is full while a die's centre is lower than
- * GLOW_FULL (cm), as every die is at rest, and fades out over the next
- * GLOW_FADE, so a die tossed up off the floor lights it less.
- */
-const GLOW_FULL = 1
-const GLOW_FADE = 3
 /**
  * Radius (cm) of the cove where the felt curves up into the walls, and of the
  * cup's corners seen from above. The colliders keep the corners square, so a
@@ -295,9 +278,6 @@ function radialTexture(stops: readonly [offset: number, alpha: number][]): Canva
   return texture
 }
 
-/** A round pool of light, brightest in the middle, for a glowing die to cast on the floor under it. */
-const glowTexture = () => radialTexture([[0, 1], [0.35, 0.45], [1, 0]])
-
 /**
  * A soft ring, as if chalked on the cloth: clear in the middle, where the die
  * stands, palest across its band and fading to nothing at both edges. It fills
@@ -365,18 +345,15 @@ export class DiceScene {
 
   /** One instanced mesh per kind of die. */
   private readonly meshes: Record<DieKind, InstancedMesh>
-  /** Each die's mesh, its instance in that mesh, and the radius of its glow on the floor (cm). */
-  private slots: { mesh: InstancedMesh, instance: number, glowRadius: number }[] = []
+  /** Each die's mesh and its instance in that mesh. */
+  private slots: { mesh: InstancedMesh, instance: number }[] = []
   /** Rings on the felt under the dice that did not roll over; see setMarks. */
   private readonly marks: InstancedMesh
   private readonly markMaterial: MeshStandardMaterial
-  /** The light a glowing skin casts on the floor under each die, instance i under die i; hidden for other skins. */
-  private readonly glows: InstancedMesh
-  private readonly glowMaterial: MeshBasicMaterial
-  private readonly glowShade = new Color()
-  /** Whether the skin glows, and whether the floor is dark enough for its light to be seen on. */
-  private glowing = false
-  private darkFloor = true
+  /** The light a glowing skin spills round its lit parts. */
+  private readonly halo = new NeonHalo()
+  /** Per kind, what draws only a glowing skin's lit parts, for the halo; null for a skin that does not glow. */
+  private haloLooks: Record<DieKind, MeshBasicMaterial[]> | null = null
   /** Reused for every die's transform, rather than made anew each frame. */
   private readonly matrix = new Matrix4()
   private readonly position = new Vector3()
@@ -408,15 +385,8 @@ export class DiceScene {
     this.marks.visible = false
     this.marks.receiveShadow = true
     this.marks.frustumCulled = false
-    // Unlit and added on, as light is, and faded per die by its instance colour.
-    this.glowMaterial = new MeshBasicMaterial({ map: glowTexture(), transparent: true, opacity: GLOW_OPACITY, blending: AdditiveBlending, depthWrite: false })
-    this.glows = new InstancedMesh(new PlaneGeometry(2, 2), this.glowMaterial, capacity)
-    this.glows.count = 0
-    this.glows.frustumCulled = false
-    // Every instance has a colour from the start, so the shader is built with them once.
-    for (let index = 0; index < capacity; index++) this.glows.setColorAt(index, this.glowShade.setScalar(1))
-    this.setGlow(skin)
-    this.scene.add(this.tray, ...Object.values(this.meshes), this.marks, this.glows)
+    this.setHaloLooks(skin)
+    this.scene.add(this.tray, ...Object.values(this.meshes), this.marks)
 
     // The pool of light comes from the soft edge of the cone, not from
     // distance, so the brightness does not change with the size of the table.
@@ -434,9 +404,8 @@ export class DiceScene {
     for (const mesh of Object.values(this.meshes)) mesh.count = 0
     this.slots = pool.map((kind) => {
       const mesh = this.meshes[kind]
-      return { mesh, instance: mesh.count++, glowRadius: DIE_SHAPES[kind].footprintRadius * GLOW_REACH }
+      return { mesh, instance: mesh.count++ }
     })
-    this.glows.count = pool.length
     // An empty instanced mesh still sets up its shader and textures every
     // frame, in both passes; a hidden one is skipped, and uploads its
     // textures the first time it is shown.
@@ -454,18 +423,20 @@ export class DiceScene {
       this.meshes[kind].customDepthMaterial = shadow
       disposeLook(old[kind])
     }
-    this.setGlow(skin)
+    this.setHaloLooks(skin)
   }
 
-  private setGlow({ glow }: DieSkin): void {
-    this.glowing = Boolean(glow)
-    if (glow) this.glowMaterial.color.set(glow)
-    this.showGlows()
-  }
-
-  /** Added to a light floor, as the battle mat's, the glow only washed it out to white, as a real one would not show there. */
-  private showGlows(): void {
-    this.glows.visible = this.glowing && this.darkFloor
+  /**
+   * Unlit, the glow mask in the glow colour and black elsewhere, so the
+   * body of a die hides the lit parts of one behind it. The masks are the
+   * looks' own, so only the materials are freed here.
+   */
+  private setHaloLooks({ glow }: DieSkin): void {
+    this.disposeHaloLooks()
+    this.haloLooks = glow
+      ? Object.fromEntries(DIE_KINDS.map(kind => [kind, this.looks[kind].materials.map(material =>
+          new MeshBasicMaterial({ map: material.emissiveMap, color: material.emissive }))])) as Record<DieKind, MeshBasicMaterial[]>
+      : null
   }
 
   /** Lines and lights the cup as `table`, where the dice lie; the old floor pattern is freed. */
@@ -487,8 +458,8 @@ export class DiceScene {
     this.markMaterial.color.set(mark)
     this.lamp.color.set(light.colour)
     this.scene.environmentIntensity = light.environment
-    this.darkFloor = !floor.light
-    this.showGlows()
+    // On a light floor, the battle mat, the light thrown on it only washed it out to white.
+    this.halo.floorGlow = !floor.light
   }
 
   /** Stretches a starfield over the whole floor, keeping its stars round; a pattern tiled by the centimetre is left as it is. */
@@ -501,6 +472,8 @@ export class DiceScene {
   /** Fits the cup's opening to a viewport of the given size in CSS pixels. */
   setBox(box: BoxSize, widthPx: number, heightPx: number): void {
     this.renderer.setSize(widthPx, heightPx, false)
+    const buffer = this.renderer.getDrawingBufferSize(new Vector2())
+    this.halo.setSize(buffer.x, buffer.y)
 
     this.tray.geometry.dispose()
     this.tray.geometry = trayGeometry(box)
@@ -536,17 +509,9 @@ export class DiceScene {
   setDieTransform(index: number, position: Vec3, rotation: Quat): void {
     this.position.set(position.x, position.y, position.z)
     this.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w)
-    const { mesh, instance, glowRadius } = this.slots[index]!
+    const { mesh, instance } = this.slots[index]!
     mesh.setMatrixAt(instance, this.matrix.compose(this.position, this.quaternion, UNIT_SCALE))
     mesh.instanceMatrix.needsUpdate = true
-    // Kept up while hidden too, so a glowing skin chosen with the dice at rest lights the floor where they lie.
-    this.position.z = GLOW_HEIGHT
-    this.scale.set(glowRadius, glowRadius, 1)
-    this.glows.setMatrixAt(index, this.matrix.compose(this.position, this.quaternion.identity(), this.scale))
-    this.glows.instanceMatrix.needsUpdate = true
-    const fade = Math.min(1, Math.max(0, 1 - (position.z - GLOW_FULL) / GLOW_FADE))
-    this.glows.setColorAt(index, this.glowShade.setScalar(fade))
-    this.glows.instanceColor!.needsUpdate = true
   }
 
   /**
@@ -572,6 +537,29 @@ export class DiceScene {
 
   render(): void {
     this.renderer.render(this.scene, this.camera)
+    if (this.haloLooks) this.renderHalo(this.haloLooks)
+  }
+
+  /** Draws the dice again in their halo looks alone, for the halo's mask. */
+  private renderHalo(haloLooks: Record<DieKind, MeshBasicMaterial[]>): void {
+    this.halo.render(this.renderer, () => {
+      this.tray.visible = false
+      const marksShown = this.marks.visible
+      this.marks.visible = false
+      for (const kind of DIE_KINDS) this.meshes[kind].material = haloLooks[kind]
+      // The dice have not moved since the shadows were drawn for the screen.
+      const shadows = this.renderer.shadowMap.autoUpdate
+      this.renderer.shadowMap.autoUpdate = false
+      this.renderer.render(this.scene, this.camera)
+      this.renderer.shadowMap.autoUpdate = shadows
+      for (const kind of DIE_KINDS) this.meshes[kind].material = this.looks[kind].materials
+      this.tray.visible = true
+      this.marks.visible = marksShown
+    })
+  }
+
+  private disposeHaloLooks(): void {
+    for (const materials of Object.values(this.haloLooks ?? {})) for (const material of materials) material.dispose()
   }
 
   dispose(): void {
@@ -579,9 +567,8 @@ export class DiceScene {
     for (const mesh of Object.values(this.meshes)) mesh.dispose()
     disposeLook({ geometry: this.marks.geometry, materials: [this.markMaterial] })
     this.marks.dispose()
-    this.glowMaterial.map?.dispose()
-    disposeLook({ geometry: this.glows.geometry, materials: [this.glowMaterial] })
-    this.glows.dispose()
+    this.disposeHaloLooks()
+    this.halo.dispose()
     this.lamp.dispose()
     this.environment.dispose()
     this.renderer.dispose()

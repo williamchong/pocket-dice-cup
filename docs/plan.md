@@ -384,14 +384,19 @@ Phases
    pips, numbers and edges glow cyan through an emissive map, lit from
    within rather than by the lamp. A flat die's edges are its face outlines
    stroked in the atlas; a d6's are a border round each face, which the
-   rounded box stretches over the rounded edge. A real neon halo would need
-   a bloom pass, several full-screen passes at a pixel ratio of 2 on top of
-   the translucent dice's, and would change how every skin is tone-mapped;
-   instead each glowing die lights a soft pool on the floor under it, one
-   instanced plane like the marks, fading as the die rises off the floor.
-   On a light floor, the battle mat, the pool only washed it out to white,
-   so it is left off there. Point lights per die were left out as twelve
-   lights would cost far more per pixel. Deep space is a glass floor over a
+   rounded box stretches over the rounded edge. A full bloom pass would
+   blur every bright pixel at a pixel ratio of 2 and change how every skin
+   is tone-mapped, and a round pool of light on the floor under each die,
+   tried first, lay round a d6 as a disc rather than following its shape.
+   So only for a glowing skin, the dice are drawn a second time, their lit
+   parts alone, at a quarter of the width, then blurred there into a near
+   halo, which makes the pips, numbers and edges bloom onto the dark body,
+   and at a sixteenth into a far one, the light the tubes throw on the
+   floor, which the dice's bodies hide; both are added on top of the
+   screen (`render/halo.ts`). On a light floor, the battle mat, the far
+   halo only washed it out to white, so only the near one shows there.
+   Point lights per die were left out as twelve lights would cost far more
+   per pixel. Deep space is a glass floor over a
    starfield painted once from a fixed seed, so it is the same sky each
    launch, stretched over the whole floor rather than tiled, as a tiled
    nebula shows seams; it lights itself, and reflects enough of the lamp
@@ -408,7 +413,7 @@ Phases
    `?debug&pro`: neon on the felt, the battle mat and deep space, ivory in
    deep space, and without `&pro`, `?skin=neon&table=space` starts in ivory
    on the felt; the cyan rims on the buttons, but not the cyan hints, which
-   the headless browser never shows. Not yet checked on the iPhone: the glow and the frame time,
+   the headless browser never shows. The halo checked in Chromium on all three tables. Not yet checked on the iPhone: the glow and its halo, and the frame time,
    the starfield's sharpness, and the voices.
    Then the store: the `CupStore` plugins are written, StoreKit 2 in Swift
    and Play Billing 8 in Java, both selling one product, `pro`. The Swift
