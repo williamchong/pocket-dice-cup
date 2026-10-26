@@ -183,9 +183,14 @@ describe('CupSimulation', () => {
       y: 0.2 * Math.sin(2 * Math.PI * 11 * t),
       z: REST_ACCELERATION.z * Math.cos(Math.PI / 3),
     })
+    /**
+     * Held the same way while walking, swaying 3 m/s² at a stride's 2 Hz:
+     * never still, and too gentle to count as a swing of a shake.
+     */
+    const walking = (t: number): Vec3 => ({ ...inHand(t), y: 3 * Math.sin(2 * Math.PI * 2 * t) })
 
-    /** Shakes three dice, then holds the phone in the hand, settling after `settleAfter` s if given. */
-    function holdAfterShake(seconds: number, settleAfter?: number, seed = 7) {
+    /** Shakes three dice, then holds the phone as `hand` reads, settling after `settleAfter` s if given. */
+    function holdAfterShake(seconds: number, settleAfter?: number, { seed = 7, hand = inHand } = {}) {
       const simulation = fixedCup(box, 3)
       let time = 0
       const run = (frames: number, sample: (t: number) => Vec3) => {
@@ -196,16 +201,55 @@ describe('CupSimulation', () => {
       }
       run(30, () => REST_ACCELERATION)
       run(2 * 60, t => shake(t, seed))
-      run(Math.round((settleAfter ?? seconds) * 60), inHand)
+      run(Math.round((settleAfter ?? seconds) * 60), hand)
       if (settleAfter !== undefined) {
         expect(simulation.settle()).toBe(true)
-        run(Math.round((seconds - settleAfter) * 60), inHand)
+        run(Math.round((seconds - settleAfter) * 60), hand)
       }
       return simulation
     }
 
-    it('never reads the dice of a phone held tilted in the hand', () => {
+    it('lays the dice flat by itself once the phone is held still in the hand after a shake', () => {
       const simulation = holdAfterShake(6)
+      expect(simulation.state).toBe('result')
+      for (let index = 0; index < 3; index++) {
+        const { alignment } = readFace(simulation.physics.dieShape(index), simulation.physics.dieRotation(index))
+        expect(alignment).toBeGreaterThanOrEqual(COCKED_ALIGNMENT)
+        expect(simulation.physics.diePosition(index).z).toBeCloseTo(D6_SIZE / 2, 1)
+      }
+      simulation.dispose()
+    })
+
+    it('never reads the dice of a phone moving in the hand', () => {
+      const simulation = holdAfterShake(6, undefined, { hand: walking })
+      expect(simulation.state).toBe('shaking')
+      expect(simulation.layingFlat).toBe(false)
+      simulation.dispose()
+    })
+
+    it('keeps a pause between shakes from ending the roll', () => {
+      const simulation = fixedCup(box, 3)
+      let time = 0
+      const run = (frames: number, sample: (t: number) => Vec3) => {
+        for (let i = 0; i < frames; i++) {
+          time += FRAME
+          simulation.tick(FRAME, sample(time), time * 1000)
+          expect(simulation.layingFlat).toBe(false)
+        }
+      }
+      run(30, () => REST_ACCELERATION)
+      run(2 * 60, t => shake(t, 7))
+      // Held still for longer than the second it takes, counted from the
+      // last swing, but not from when the analyser stops calling it a shake.
+      run(Math.round(1.2 * 60), inHand)
+      run(2 * 60, t => shake(t, 8))
+      expect(simulation.state).toBe('shaking')
+      simulation.dispose()
+    })
+
+    it('leaves the dice of a phone held still screen-down to be looked at', () => {
+      const screenDown = (t: number): Vec3 => ({ x: 0.2 * Math.sin(2 * Math.PI * 8 * t), y: 0, z: -REST_ACCELERATION.z })
+      const simulation = holdAfterShake(6, undefined, { hand: screenDown })
       expect(simulation.state).toBe('shaking')
       simulation.dispose()
     })
@@ -233,7 +277,7 @@ describe('CupSimulation', () => {
       // low bounce while laying flat, none did.
       let highest = 0
       for (let seed = 1; seed <= 20; seed++) {
-        const simulation = holdAfterShake(1.5, undefined, seed)
+        const simulation = holdAfterShake(1.5, undefined, { seed })
         simulation.settle()
         const landed = [false, false, false]
         let time = 100
@@ -277,10 +321,10 @@ describe('CupSimulation', () => {
         simulation.tick(FRAME, shake(i * FRAME, 9), time * 1000)
       }
       expect(simulation.state).toBe('shaking')
-      // The dice follow the phone again: held in the hand, there is no result.
+      // The dice follow the phone again: moving in the hand, there is no result.
       for (let i = 0; i < 5 * 60; i++) {
         time += FRAME
-        simulation.tick(FRAME, inHand(i * FRAME), time * 1000)
+        simulation.tick(FRAME, walking(i * FRAME), time * 1000)
       }
       expect(simulation.state).toBe('shaking')
       simulation.dispose()
@@ -316,7 +360,7 @@ describe('CupSimulation', () => {
       expect(simulation.layingFlat).toBe(false)
       for (let i = 0; i < 5 * 60; i++) {
         time += FRAME
-        simulation.tick(FRAME, inHand(i * FRAME), time * 1000)
+        simulation.tick(FRAME, walking(i * FRAME), time * 1000)
       }
       expect(simulation.state).toBe('shaking')
       simulation.dispose()
@@ -333,7 +377,7 @@ describe('CupSimulation', () => {
       expect(simulation.layingFlat).toBe(false)
       for (let i = 0; i < 5 * 60; i++) {
         time += FRAME
-        simulation.tick(FRAME, inHand(i * FRAME), time * 1000)
+        simulation.tick(FRAME, walking(i * FRAME), time * 1000)
       }
       expect(simulation.state).toBe('shaking')
       simulation.dispose()

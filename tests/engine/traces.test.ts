@@ -111,7 +111,9 @@ describe('recorded iPhone traces', () => {
     const trace = load('shake-core-motion')
     const [, x, y, z] = trace.samples[0]!
     expect(Math.hypot(x, y, z)).toBeCloseTo(REST_ACCELERATION.z, 0)
-    expect(statesThrough(trace)).toEqual(['idle', 'shaking', 'settling', 'result'])
+    // Held upright and still for over 3 s between two shakes, at 0.3 m/s²,
+    // the dice are laid flat and read there, and the second shake rolls again.
+    expect(statesThrough(trace)).toEqual(['idle', 'shaking', 'settling', 'result', 'shaking', 'settling', 'result'])
   })
 
   it('rattle the die against the cup through a real shake, and fall quiet once it is read', () => {

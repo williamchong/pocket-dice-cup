@@ -79,11 +79,11 @@
     },
     "shake": {
       "title": "Shake to roll",
-      "body": "Shake the phone like a cup: a hard shake rolls the dice hard, a gentle one barely turns them. Lay it flat, screen up, to read the total."
+      "body": "Shake the phone like a cup: a hard shake rolls the dice hard, a gentle one barely turns them. Lay it flat, screen up, or hold it still, to read the total."
     },
     "settle": {
       "title": "Settle",
-      "body": "In the hand, the dice slide to the phone’s low edge. Settle drops them as if it lay flat, and spins until the roll ends."
+      "body": "In the hand, the dice slide to the phone’s low edge. Hold the phone still for a second and they drop as if it lay flat; Settle drops them at once, and spins until the roll ends."
     },
     "tap": {
       "title": "Tap, click or press space",

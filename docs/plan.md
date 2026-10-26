@@ -84,6 +84,22 @@ laid flat mid-shake gave χ² 9.4 of 20.5 on the d6 and 7.6 of 43.8 on the
 d20. Checked by hand on the iPhone: held upright, the dice stay down on the
 screen after 開盅.
 
+Most rolls in the hand still needed that tap, so now holding the phone still
+after a shake does it: once the shake is over, the phone neither screen-up
+nor screen-down has been still for a second, and the dice have come to rest
+against the low wall, the cup lays them flat as 開盅 does. The dice are not
+read where they lie against the wall, as only a d6 shows a face squarely to
+the screen there. Screen-down is left out, so a cup turned over on the table
+still waits to be lifted. The recorded Core Motion shake has the phone held
+upright between two shakes for over 3 s at 0.3-0.4 m/s² of agitation, under
+the 1 m/s² that counts as still, and its first roll now ends there. A second
+is longer than the 0.3 s that counts as put down, and with the analyser
+calling the phone shaken for up to a second after a shake, a pause of 1.2 s
+between shakes does not end the roll. It left the dice as fair: 100 cups of
+12 held upright that way gave χ² 2.5 of 20.7 on the d6 and 18.2 of 43.9 on
+the d20. Not yet checked on the iPhone: how long people pause mid-shake, to
+tune the second against, and how it feels in the hand.
+
 Stack
 -----
 

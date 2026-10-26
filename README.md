@@ -26,7 +26,8 @@ the cup starts with; the dice are chosen between rolls and remembered for
 next time. When the dice
 settle, the total shows at the top, and they stay where they landed while the
 phone is picked up and passed round, until the next shake or tap. To roll in
-the hand without putting the phone down, tap Settle after the shake: the dice
+the hand without putting the phone down, hold it still for a second after
+the shake, or tap Settle at once: the dice
 drop as if the phone lay flat. A tap to roll again in the hand drops them the
 same way. History lists the last 50 rolls, also kept
 between visits. Style picks the finish of the dice, ivory by default, from

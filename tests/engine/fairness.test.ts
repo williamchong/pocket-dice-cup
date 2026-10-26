@@ -6,7 +6,7 @@ import { COCKED_ALIGNMENT, readFace } from '../../app/engine/dice/faces'
 import { DIE_KINDS, DIE_SHAPES, type DieKind } from '../../app/engine/dice/shapes'
 import { REST_ACCELERATION } from '../../app/engine/input/motionSource'
 import { CupSimulation } from '../../app/engine/simulation'
-import { seededRandom } from '../../app/engine/math'
+import { seededRandom, type Vec3 } from '../../app/engine/math'
 import { shake } from './syntheticShake'
 
 beforeAll(() => RAPIER.init())
@@ -39,11 +39,18 @@ function stepper(simulation: CupSimulation) {
 }
 
 /**
- * Shakes a cup of `pool` for 1 to 2 seconds and puts it down, waiting up to
- * `settleSeconds` for a result. The dice start at random places and faces
- * from `seed`, and the shake's phases and length vary with it.
+ * Held upright in the hand and still, a little past vertical, as in the
+ * recorded Core Motion shake, trembling 0.2 m/s².
  */
-function roll(pool: DicePool, seed: number, settleSeconds = 10): Roll {
+const heldUpright = (t: number): Vec3 => ({ x: -1.2 + 0.2 * Math.sin(2 * Math.PI * 8 * t), y: 9.6, z: -0.8 })
+
+/**
+ * Shakes a cup of `pool` for 1 to 2 seconds and puts it down, or holds it as
+ * `after` reads, waiting up to `settleSeconds` for a result. The dice start
+ * at random places and faces from `seed`, and the shake's phases and length
+ * vary with it.
+ */
+function roll(pool: DicePool, seed: number, settleSeconds = 10, after: (t: number) => Vec3 = () => REST_ACCELERATION): Roll {
   vi.spyOn(Math, 'random').mockImplementation(seededRandom(seed))
   const simulation = new CupSimulation(RAPIER, box, { pool })
   vi.restoreAllMocks()
@@ -54,7 +61,7 @@ function roll(pool: DicePool, seed: number, settleSeconds = 10): Roll {
   const started = performance.now()
   run(0.5, () => REST_ACCELERATION)
   run(shakeSeconds, t => shake(t, phase))
-  run(settleSeconds, () => REST_ACCELERATION, () => simulation.state === 'result')
+  run(settleSeconds, after, () => simulation.state === 'result')
   const frameMs = (performance.now() - started) / steps.frames
   let cocked = 0
   for (let index = 0; index < simulation.physics.dieCount; index++) {
@@ -97,16 +104,17 @@ describe('every kind of die', () => {
 describe.runIf(process.env.FAIRNESS)('the distribution of each kind of die', () => {
   const ROLLS = 100
 
-  // A full cup of one kind, the dice knocking each other about as they would.
-  // One in a hundred cups of twelve d12 took 10.6 s to settle, a die perched
-  // on the others creeping off them, so they get 20.
-  it.each(DIE_KINDS)('comes out fair on a %s', (kind: DieKind) => {
+  /**
+   * Rolls a full cup of one kind ROLLS times, putting it down or holding it
+   * as `after` reads, and checks the faces come out fair.
+   */
+  function expectFair(kind: DieKind, label: string, after?: (t: number) => Vec3): void {
     const sides = DIE_SHAPES[kind].faces.length
     const counts = Array.from({ length: sides }, () => 0)
     let unsettled = 0
     let frameMs = 0
     for (let seed = 1; seed <= ROLLS; seed++) {
-      const result = roll(Array.from({ length: MAX_DICE }, () => kind), seed, 20)
+      const result = roll(Array.from({ length: MAX_DICE }, () => kind), seed, 20, after)
       frameMs += result.frameMs / ROLLS
       if (!result.values) unsettled++
       for (const value of result.values ?? []) counts[value - 1]!++
@@ -114,10 +122,22 @@ describe.runIf(process.env.FAIRNESS)('the distribution of each kind of die', () 
     const total = counts.reduce((sum, count) => sum + count, 0)
     const expected = total / sides
     const chiSquared = counts.reduce((sum, count) => sum + (count - expected) ** 2 / expected, 0)
-    console.log(`${kind}: ${counts.join(' ')}; χ² ${chiSquared.toFixed(1)} of ${chiSquaredLimit(sides - 1).toFixed(1)}; ${frameMs.toFixed(2)} ms a frame`)
+    console.log(`${label}: ${counts.join(' ')}; χ² ${chiSquared.toFixed(1)} of ${chiSquaredLimit(sides - 1).toFixed(1)}; ${frameMs.toFixed(2)} ms a frame`)
     expect(unsettled).toBe(0)
     expect(counts.every(count => count > 0)).toBe(true)
     expect(chiSquared).toBeLessThan(chiSquaredLimit(sides - 1))
+  }
+
+  // A full cup of one kind, the dice knocking each other about as they would.
+  // One in a hundred cups of twelve d12 took 10.6 s to settle, a die perched
+  // on the others creeping off them, so they get 20.
+  it.each(DIE_KINDS)('comes out fair on a %s', (kind: DieKind) => expectFair(kind, kind))
+
+  // Held upright and still after the shake, the dice rest against the low
+  // wall until the cup lays them flat by itself, so they fall from there
+  // rather than from wherever the shake left them.
+  it.each(['d6', 'd20'] as const)('comes out fair laid flat by itself in the hand on a %s', (kind: DieKind) => {
+    expectFair(kind, `${kind} held`, heldUpright)
   })
 
   // Alone, so only the cup can hold a die tilted: the bevels where the walls

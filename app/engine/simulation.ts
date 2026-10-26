@@ -24,6 +24,16 @@ const TOSS = { lift: 150, push: 80, spin: 80 }
 const MIN_TOSS_GRAVITY = 1
 /** How long the phone lies still screen-down, its dice asleep, before the cup goes dormant. */
 const DORMANT_AFTER_MS = 2000
+/**
+ * How long a phone held in the hand stays still after a shake, its dice at
+ * rest against the low wall, before they are laid flat as Settle does. The
+ * recorded Core Motion shake holds the iPhone upright for over 3 s between
+ * two shakes, at 0.3-0.4 m/s² against the 1 m/s² that counts as still, and
+ * ends its first roll there. Longer than the 0.3 s that counts as put down
+ * screen-up, so a short pause between shakes goes on rolling; no such pause
+ * has been recorded on a phone yet to tune it against.
+ */
+const HELD_STILL_SETTLE_MS = 1000
 
 export interface CupOptions {
   /**
@@ -63,8 +73,9 @@ export class CupSimulation {
    * The pull the dice feel in place of the sensor's, or null to follow it.
    * A result keeps the pull the dice came to rest under, so they stay put
    * while the phone is picked up and passed around, until the next roll.
-   * During a roll it is only set by settle() or a tap in the hand, so it
-   * also stands for the phone lying flat.
+   * During a roll it is only set by settle(), asked for or by a phone held
+   * still after a shake, or by a tap in the hand, so it also stands for the
+   * phone lying flat.
    */
   private pinned: Vec3 | null = null
   /**
@@ -110,6 +121,7 @@ export class CupSimulation {
     if (!isRolling(this.state) && (this.analyser.shaking || this.tossed)) {
       this.rollStart = this.readFaces().map(face => ({ face, lowest: 1 }))
     }
+    if (this.heldStillAfterShake) this.settle()
     this.physics.setAcceleration(this.pinned ?? acceleration)
     this.physics.setLayingFlat(this.layingFlat)
     this.physics.step(dtSeconds)
@@ -193,6 +205,24 @@ export class CupSimulation {
    */
   get dormant(): boolean {
     return this.analyser.faceDown && this.analyser.stillMs >= DORMANT_AFTER_MS && this.physics.asleep
+  }
+
+  /**
+   * A shake has ended with the phone in the hand, neither screen-up nor
+   * screen-down, held still with its dice at rest against the low wall. Held,
+   * the phone never reads as resting screen-up, so the roll would wait there
+   * for Settle; staying still this long is taken as the shake being over.
+   * Screen-down is left out, as a cup turned over on the table waits to be
+   * lifted.
+   */
+  private get heldStillAfterShake(): boolean {
+    const { analyser } = this
+    return this.state === 'shaking'
+      && !analyser.shaking
+      && !analyser.restingFaceUp
+      && !analyser.faceDown
+      && analyser.stillMs >= HELD_STILL_SETTLE_MS
+      && this.physics.diceAtRest
   }
 
   dispose(): void {
