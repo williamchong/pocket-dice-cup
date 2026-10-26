@@ -108,7 +108,10 @@ of frames and never came to rest. Cocked dice now slip only while gravity
 pulls within 45° of the floor; replaying that trace (`held-upright`), every
 cup from one d6 to twelve d20 over eight starts is laid flat 1-1.3 s after the
 hand goes still, where most had stayed rolling, and the fairness rolls still
-pass. Not yet checked on the iPhone: how long people pause mid-shake, to tune
+pass. Checked on the iPhone with the fix: shaken and then held still upright,
+the cup shows the result with no tap, about 2 s after the shaking stops (0.8 s
+for the hand to count as still, then the second). Not yet checked on the
+iPhone: how long people pause mid-shake, to tune
 the second against, and how it feels in the hand.
 
 Stack
