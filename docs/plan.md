@@ -99,9 +99,17 @@ between shakes does not end the roll. It left the dice as fair: 100 cups of
 12 held upright that way gave χ² 2.5 of 20.7 on the d6 and 18.2 of 43.9 on
 the d20. Checked in Chromium with faked readings: after a shake, readings
 held upright as in that trace, with no tap and never screen-up, end in a
-result with the dice laid flat along the low edge. Not yet checked on the
-iPhone: how long people pause mid-shake, to tune the second against, and how
-it feels in the hand.
+result with the dice laid flat along the low edge. On the iPhone, held
+upright for 4 s after a shake, it never ended: the hand's slow tilt moves the
+reading past the dice's wake threshold every second or so while still counting
+as still, and each wake started the cocked dice's slip over. Against the wall
+almost no die lies on a face towards the floor, so they slipped in over 90%
+of frames and never came to rest. Cocked dice now slip only while gravity
+pulls within 45° of the floor; replaying that trace (`held-upright`), every
+cup from one d6 to twelve d20 over eight starts is laid flat 1-1.3 s after the
+hand goes still, where most had stayed rolling, and the fairness rolls still
+pass. Not yet checked on the iPhone: how long people pause mid-shake, to tune
+the second against, and how it feels in the hand.
 
 Stack
 -----

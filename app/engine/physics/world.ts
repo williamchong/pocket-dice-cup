@@ -110,6 +110,17 @@ const REST_DURATION_S = 0.25
  */
 const SLIP_LIMIT_S = 1
 /**
+ * Cocked dice only slip while gravity pulls within 45° of the floor (as the
+ * cosine of its angle from straight down, like IMPACT_FLOOR_MIN_Z). A die is
+ * cocked by how far it is off a face towards the floor, so with the phone held
+ * upright almost every die resting against the low wall reads as cocked, and
+ * the hand's slow tilt wakes the dice past WAKE_ACCELERATION_DELTA about once
+ * a second, which would start the slip over each time. Held upright for 4 s
+ * after a shake (the held-upright trace), the dice slipped in over 90% of
+ * frames without this, so they never came to rest to be laid flat.
+ */
+const SLIP_MIN_FLOOR_PULL = Math.SQRT1_2
+/**
  * Drag on the dice while they slip, so that one sliding off a pile sinks off
  * it and stops rather than skating on across the floor with no grip. Over 60
  * full cups of each kind, a slipping die moved at most 2.4 cm at 20 (about two
@@ -387,9 +398,12 @@ export class PhysicsWorld {
    * lying flat on a level floor has nothing to slide it, so it looks like an
    * ordinary settle. Their grip comes back once none is cocked or they have
    * slipped for SLIP_LIMIT_S, and at once when the dice are shaken or tossed.
+   * They only slip with gravity towards the floor (SLIP_MIN_FLOOR_PULL).
    */
   private settleCocked(dtSeconds: number): void {
+    const gravity = this.world.gravity
     const slipping = this.slipTime < SLIP_LIMIT_S
+      && -gravity.z > SLIP_MIN_FLOOR_PULL * length(gravity)
       && (this.slipping || this.dice.every(die => isSlow(die.body)))
       && this.dice.some(die => faceTowards(die.shape.faces, die.body.rotation(), TOWARDS_FLOOR).alignment < COCKED_ALIGNMENT)
     if (slipping) {

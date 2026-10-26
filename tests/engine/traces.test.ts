@@ -116,6 +116,17 @@ describe('recorded iPhone traces', () => {
     expect(statesThrough(trace)).toEqual(['idle', 'shaking', 'settling', 'result', 'shaking', 'settling', 'result'])
   })
 
+  it('lay flat and read a mixed cup held still upright after a shake, through the hand\'s slow tilt', () => {
+    // The hand's slow tilt wakes the dice about once a second; see SLIP_MIN_FLOOR_PULL.
+    const simulation = new CupSimulation(RAPIER, boxForViewport(390, 844), {
+      randomStart: false,
+      pool: ['d4', 'd6', 'd8', 'd10', 'd12', 'd20'],
+    })
+    replay(simulation, load('held-upright'))
+    expect(simulation.state).toBe('result')
+    simulation.dispose()
+  })
+
   it('rattle the die against the cup through a real shake, and fall quiet once it is read', () => {
     /** Impacts per state and surface, such as "shaking glass". */
     const count = (name: string) => {
