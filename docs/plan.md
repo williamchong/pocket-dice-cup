@@ -581,6 +581,36 @@ Phases
    on a mid-range phone, and whether other apps' music carries on under
    the clacks. Android has no mute switch; the clacks follow the media
    volume. CI builds the debug APK on every push.
+9. **Usage statistics.** One GA4 property across the web and both phone
+   apps, to see how the app is used. This reverses the reasoning under Pro
+   above, of an app whose privacy policy promises no third party, as
+   without it there is no way to tell which dice and tables are used; the
+   privacy policy now says what goes to Google. Collection is on by default,
+   with a switch on the about page and no consent prompt. That was a choice
+   that accepts some legal risk for visitors in the EU and UK, kept smaller
+   by using no ad features or advertising IDs and sending only the events
+   listed in `utils/analytics.ts`, which never include the numbers rolled.
+   The web uses Nuxt Scripts, in a chunk of its own (11 KB gzipped) rather
+   than the first download. The phone apps use Firebase's SDK, as cookies are
+   reported to be unreliable in Capacitor's web views, which would count each
+   event as a new user. They start with collection off until the page passes
+   on the switch, so that an opted-out launch reports nothing.
+   Status: the code is written. Checked in Chromium on the generated build,
+   with hits to Google recorded and aborted: a roll sends `roll_completed`
+   with the dice, skin and table and no numbers; after a reload with the
+   switch off, or with `?debug`, nothing is fetched from Google; and rolls
+   still finish with Google blocked. One known limit: switching off within
+   seconds of opening a page still lets that page's queued `page_view` out,
+   about 4 s later, reproduced 3 times of 3, though no later hit follows;
+   the privacy policy says so. The Android debug APK builds, with no ad
+   permissions in its merged manifest; the iOS Release build for the
+   simulator builds, linking neither AdSupport nor AppTrackingTransparency,
+   and its 8 store tests pass. Not yet checked: anything on the phone apps
+   actually reaching GA, as `GoogleService-Info.plist` and
+   `google-services.json` do not exist yet and every call does nothing
+   without them, or in debug builds; the iPhone's frame time as `gtag.js`
+   loads on the web, which may overlap the engine's start; and whether
+   Xcode needs anything more for the iOS privacy manifest at submission.
 
 Languages
 ---------

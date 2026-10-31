@@ -33,6 +33,8 @@ jobs:
       - run: npm run generate
         env:
           NUXT_APP_BASE_URL: ${{ steps.pages.outputs.base_path }}/
+          # Not a secret: every visitor's browser is sent it.
+          NUXT_PUBLIC_GA_ID: G-22Y73BGYNJ
       - if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v5
         with:

@@ -113,7 +113,8 @@
     },
     "privacy": {
       "title": "Privacy",
-      "body": "Everything stays on your device: no accounts, ads or tracking."
+      "body": "Your rolls stay on your device, and there are no accounts or ads. Usage statistics, such as which dice are rolled but never the numbers, go to Google Analytics.",
+      "analytics": "Share usage statistics"
     }
   }
 }

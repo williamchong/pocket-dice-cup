@@ -254,7 +254,8 @@ function usableTable(next: Table, ownsPro: boolean): Table {
 // on a real phone where there is no console. It also starts the dice in the
 // same place every time, so runs can be compared.
 const route = useRoute()
-const debug = 'debug' in route.query || Boolean(useRuntimeConfig().public.debug)
+const { $analytics: analytics } = useNuxtApp()
+const debug = isDebugRun()
 // `?dice=N` starts with N d6, and `?dice=2d6+d20` with those dice, over the
 // dice saved from last time.
 const startPool = parsePoolSetting(route.query.dice) ?? loadPool() ?? undefined
@@ -349,7 +350,17 @@ async function unlock(action: () => Promise<boolean>): Promise<boolean> {
   }
   return owned
 }
-const buyAndKeep = () => unlock(buyPro)
+async function buyAndKeep(): Promise<boolean> {
+  try {
+    const owned = await unlock(buyPro)
+    analytics.track('pro_purchase', { outcome: owned ? 'bought' : 'cancelled' })
+    return owned
+  }
+  catch (error) {
+    analytics.track('pro_purchase', { outcome: 'failed' })
+    throw error
+  }
+}
 const restoreAndKeep = () => unlock(restorePro)
 
 // The result card goes down above the buttons when it would hide a die at
@@ -402,6 +413,8 @@ watch(result, (values) => {
   if (!values) return
   history.value = addRoll(history.value, values, pool.value, Date.now())
   saveHistory(history.value)
+  // Which dice, on what: never the numbers they came up with.
+  analytics.track('roll_completed', { dice: formatPool(pool.value), skin: skin.value.id, table: table.value.id })
 })
 // The pickers' pictures hold the page for a moment as they are drawn,
 // unnoticed as the splash fades out.

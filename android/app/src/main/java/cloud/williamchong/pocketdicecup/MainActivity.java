@@ -16,6 +16,7 @@ public class MainActivity extends BridgeActivity {
         // does not find them on their own.
         registerPlugin(CupHapticsPlugin.class);
         registerPlugin(CupStorePlugin.class);
+        registerPlugin(CupAnalyticsPlugin.class);
         super.onCreate(savedInstanceState);
         // The phone lies on the table showing a result. The web Wake Lock is
         // not reliable in a WebView, so keep the screen on natively.

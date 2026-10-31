@@ -67,6 +67,12 @@
           >
             {{ $t(`about.${section.name}.note`) }}
           </p>
+          <USwitch
+            v-if="section.name === 'privacy' && $analytics.available"
+            v-model="analyticsOn"
+            class="about__switch"
+            :label="$t('about.privacy.analytics')"
+          />
           <!-- The real dice, as rendered for the pickers, rather than a list of their names. -->
           <div
             v-if="'row' in section"
@@ -100,6 +106,10 @@ import { DIE_KINDS } from '~/engine/dice/shapes'
 import { DIE_SKINS, FINISHES, type DieSkin } from '~/engine/render/skins'
 
 const props = defineProps<{ skin: DieSkin }>()
+
+const { $analytics } = useNuxtApp()
+const analyticsOn = ref($analytics.enabled)
+watch(analyticsOn, on => $analytics.setEnabled(on))
 
 /**
  * The sections after Shake to roll, in reading order, each a title, a
@@ -256,6 +266,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   margin-top: -0.5rem;
   font-size: 0.875rem;
   opacity: 0.7;
+}
+
+.about__switch {
+  margin-top: 0.75rem;
 }
 
 .about__dice {

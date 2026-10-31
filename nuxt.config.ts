@@ -7,7 +7,7 @@ const baseURL = process.env.NUXT_APP_BASE_URL ?? '/'
 const DESCRIPTION = 'A dice cup in your phone: shake it, hear the dice rattle, lay it down and read the roll.'
 
 export default defineNuxtConfig({
-  modules: ['@nuxt/eslint', '@nuxt/ui'],
+  modules: ['@nuxt/eslint', '@nuxt/scripts', '@nuxt/ui'],
 
   // Everything here needs a canvas, WASM and device sensors, so there is
   // nothing to render on a server. The static output is also what the
@@ -62,6 +62,9 @@ export default defineNuxtConfig({
       // Pro unlocked without buying it, for trying Pro skins in the native
       // shells before the store plugin exists: `NUXT_PUBLIC_PRO=1 npm run ios`.
       pro: false,
+      // The GA4 measurement ID, set only for the GitHub Pages build (deploy.yml),
+      // so that local runs and the phone apps' bundles load no Google script.
+      gaId: '',
     },
   },
 
