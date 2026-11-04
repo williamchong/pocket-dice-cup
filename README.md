@@ -137,3 +137,27 @@ npm run lint
 npm run typecheck
 npm test
 ```
+
+## Licence
+
+The code is free software under the [GNU General Public License, version 3
+or later](LICENSE): it can be studied, changed and shared, and a changed
+version that is passed on has to come with its source under the same
+licence.
+
+The documentation, the app icon and splash, and the looks of every skin and
+table that comes free are under [Creative Commons Attribution-ShareAlike
+4.0](https://creativecommons.org/licenses/by-sa/4.0/), which can be combined
+with the GPL code.
+
+The looks of skins and tables that come with Pro, kept apart in
+[app/engine/pro](app/engine/pro/LICENSE.md), are under [Creative Commons
+Attribution-NonCommercial-ShareAlike
+4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/): they can be shared
+and changed, with credit and under the same licence, but not sold or used
+in anything sold. Pro is how the app pays for itself, so a fork that is sold
+has to leave them out.
+
+Every contribution is taken in under the same terms, and the author keeps
+the right to also release the app under other terms, as the App Store's own
+terms of use don't sit with the GPL.

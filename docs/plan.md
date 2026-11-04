@@ -445,6 +445,9 @@ Phases
    on the felt; the cyan rims on the buttons, but not the cyan hints, which
    the headless browser never shows. The halo checked in Chromium on all three tables. Not yet checked on the iPhone: the glow and its halo, and the frame time,
    the starfield's sharpness, and the voices.
+   The Pro items' looks are kept apart in `app/engine/pro`, under CC
+   BY-NC-SA 4.0 rather than the GPL that covers the code, so a fork that is
+   sold can ship the free skins and tables but not Pro's (README → Licence).
    Then the store: the `CupStore` plugins are written, StoreKit 2 in Swift
    and Play Billing 8 in Java, both selling one product, `pro`. The Swift
    one finishes the transactions StoreKit hands over outside a buy, as an

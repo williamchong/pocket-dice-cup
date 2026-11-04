@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DIE_SKINS, type DieSkin } from '../app/engine/render/skins'
 import { TABLES, type Table } from '../app/engine/tables'
+import { PRO_SKINS } from '../app/engine/pro/skins'
+import { PRO_TABLES } from '../app/engine/pro/tables'
 import { canUse, loadOwnsPro, newestAnswer, saveOwnsPro, usableOr } from '../app/utils/proUnlock'
 
 const free = { id: 'free' }
@@ -11,6 +13,12 @@ describe('Pro', () => {
     const shippedFree = ['ivory', 'ebony', 'casino', 'sapphire', 'emerald', 'amethyst', 'dragon', 'cherry', 'smoke', 'ice', 'gold', 'silver', 'copper', 'felt', 'battlemat']
     const items: readonly (DieSkin | Table)[] = [...DIE_SKINS, ...TABLES]
     for (const item of items) expect(Boolean(item.pro), item.id).toBe(!shippedFree.includes(item.id))
+  })
+
+  it('keeps every Pro look in app/engine/pro, the only folder under the Pro licence rather than the GPL', () => {
+    const items: readonly (DieSkin | Table)[] = [...DIE_SKINS, ...TABLES]
+    const proIds = items.filter(item => item.pro).map(item => item.id)
+    expect(proIds).toEqual([...PRO_SKINS, ...PRO_TABLES].map(item => item.id))
   })
 
   it('lets a free item be used always and a Pro one only while Pro is owned', () => {
