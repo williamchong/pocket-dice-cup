@@ -1,6 +1,7 @@
 {
   "name": "pocket-dice-cup",
   "private": true,
+  "license": "GPL-3.0-or-later",
   "engines": {
     "node": ">=24.0.0"
   },

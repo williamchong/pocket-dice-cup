@@ -1,3 +1,5 @@
+import { PRO_SKINS } from '../pro/skins'
+
 /** What dice are cast in, in the order the picker groups them. */
 export const FINISHES = ['resin', 'translucent', 'metal', 'neon'] as const
 
@@ -6,7 +8,7 @@ export const FINISHES = ['resin', 'translucent', 'metal', 'neon'] as const
  * in. A skin is plain data, so the settings and the tests can read it without
  * three.js; the looks turn it into textures and materials.
  */
-interface SkinFields {
+export interface SkinFields {
   /** Also its name's key in the translations (app/locales). */
   id: string
   /** The body, as a CSS colour. */
@@ -37,10 +39,7 @@ const RESIN = { roughness: 0.25, metalness: 0, clearcoat: 1, finish: 'resin' } a
 const TRANSLUCENT = { roughness: 0.15, metalness: 0, clearcoat: 1, finish: 'translucent', transmission: 0.8 } as const
 /** Brushed metal: no lacquer, and a little rough so the room reflects as a sheen rather than a mirror. */
 const METAL = { roughness: 0.4, metalness: 0.9, clearcoat: 0, finish: 'metal' } as const
-/** Smoked glass with lit tubes set into it: a dark body, so the glow is what is seen. */
-const NEON = { roughness: 0.1, metalness: 0, clearcoat: 1, finish: 'neon' } as const
-
-/** Every skin, in the order the picker shows them. Those before neon are free, and stay so. */
+/** Every skin, in the order the picker shows them. The free ones come first, and stay free; Pro's follow, from app/engine/pro. */
 export const DIE_SKINS = [
   // Ivory rather than pure white, which blows out under the lamp.
   { id: 'ivory', body: '#e9e2d0', ink: '#17171b', ...RESIN },
@@ -58,8 +57,7 @@ export const DIE_SKINS = [
   { id: 'gold', body: '#d2a23b', ink: '#2b1d08', ...METAL },
   { id: 'silver', body: '#c4c8ce', ink: '#1c2026', ...METAL },
   { id: 'copper', body: '#b86a42', ink: '#2a140a', ...METAL },
-  // Near black rather than black, so the body still shows its shape against a dark table.
-  { id: 'neon', body: '#10131c', ink: '#7ff4ff', glow: '#19e6ff', ...NEON, pro: true },
+  ...PRO_SKINS,
 ] as const satisfies readonly SkinFields[]
 
 /** A skin, with the fields only some skins set readable on every one. */
