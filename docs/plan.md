@@ -798,7 +798,10 @@ Phases
     with `simctl io … screenConfig` crash-loops SpringBoard. Android
     foldables get the same code through the WebView's resize, since
     `configChanges` keeps the activity alive across the change.
-    Status: built, checked in Chromium at the Duo's two sizes. Not yet
+    Status: built, checked in Chromium at the Duo's two sizes. In the
+    iPhone Duo simulator (iOS 27.2) the built app runs on the outer screen,
+    where the debug overlay's `sizes` row reads 466×678, the size the
+    Chromium checks used. Not yet
     checked on a real Duo: which side the hinge is on, how the screens line
     up top to bottom, whether iOS letterboxes a portrait-only app on the
     inner screen or fills it, and in how many steps the WebView is resized
