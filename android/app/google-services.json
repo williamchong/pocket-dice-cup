@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "548963789605",
+    "project_id": "pocket-dice-cup",
+    "storage_bucket": "pocket-dice-cup.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:548963789605:android:14bed1520a8a0c877488cc",
+        "android_client_info": {
+          "package_name": "cloud.williamchong.pocketdicecup"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1ok_HRf4D4WHgG--wBNeqBb3hRgGltHM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
