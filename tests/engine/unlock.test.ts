@@ -60,8 +60,14 @@ describe('NativeUnlockBackend', () => {
 
 describe('deviceUnlock', () => {
   it('uses the plugin in the native shells and the web backend in a browser', () => {
-    expect(deviceUnlock()).toBeInstanceOf(WebUnlockBackend)
+    expect(deviceUnlock(true)).toBeInstanceOf(WebUnlockBackend)
     native.isNative = true
-    expect(deviceUnlock()).toBeInstanceOf(NativeUnlockBackend)
+    expect(deviceUnlock(true)).toBeInstanceOf(NativeUnlockBackend)
+  })
+
+  it('sells nothing in the native shells until they sell Pro', () => {
+    native.isNative = true
+    expect(deviceUnlock(false)).toBeInstanceOf(WebUnlockBackend)
+    expect(deviceUnlock(false).sells).toBe(false)
   })
 })

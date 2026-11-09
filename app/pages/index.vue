@@ -260,8 +260,13 @@ const debug = isDebugRun()
 // dice saved from last time.
 const startPool = parsePoolSetting(route.query.dice) ?? loadPool() ?? undefined
 // `?debug&pro`, or `NUXT_PUBLIC_PRO=1` in the native shells, unlocks Pro
-// without buying it, to try Pro skins before the store plugin exists.
-const { ownsPro, sellsPro, buyPro, restorePro } = useProUnlock((debug && 'pro' in route.query) || Boolean(useRuntimeConfig().public.pro))
+// without buying it, to try Pro skins before the store plugin exists, and
+// `NUXT_PUBLIC_SELL_PRO=1` lets the native shells sell it.
+const { public: { pro, sellPro } } = useRuntimeConfig()
+const { ownsPro, sellsPro, buyPro, restorePro } = useProUnlock({
+  granted: (debug && 'pro' in route.query) || Boolean(pro),
+  sellPro: Boolean(sellPro),
+})
 // `?skin=ebony` starts with that finish, over the one saved from last time,
 // and a Pro one only while Pro is owned.
 const skin = shallowRef(usableSkin(findSkin(parseSkinSetting(route.query.skin) ?? loadSkin()), ownsPro.value))

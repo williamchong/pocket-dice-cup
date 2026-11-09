@@ -88,6 +88,9 @@ NUXT_PUBLIC_DEBUG=1 npm run ios
 ```
 
 `NUXT_PUBLIC_PRO=1` likewise unlocks Pro in the build without buying it.
+The phone apps sell Pro only when built with `NUXT_PUBLIC_SELL_PRO=1`;
+without it they leave Pro items out, as the web does, so a release can ship
+before the `pro` product is live in the stores.
 
 Pro is sold as one non-consumable in-app purchase with the product id `pro`,
 the same in App Store Connect and the Play Console, through

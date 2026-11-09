@@ -62,6 +62,11 @@ export default defineNuxtConfig({
       // Pro unlocked without buying it, for trying Pro skins in the native
       // shells before the store plugin exists: `NUXT_PUBLIC_PRO=1 npm run ios`.
       pro: false,
+      // Whether the native shells sell Pro, off until the `pro` product is
+      // live in App Store Connect and the Play Console, so a release built
+      // before then leaves Pro items out as the web does instead of showing
+      // locks the store cannot open: `NUXT_PUBLIC_SELL_PRO=1 npm run ios`.
+      sellPro: false,
       // The GA4 measurement ID, set only for the GitHub Pages build (deploy.yml),
       // so that local runs and the phone apps' bundles load no Google script.
       gaId: '',

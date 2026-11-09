@@ -483,6 +483,10 @@ Phases
    yet done: the `pro` product in App Store Connect and the Play Console, a
    purchase, restore and refund on each phone, and the iPhone checks of the
    glow, the frame time, the stars and the deep space voices above.
+   The phone apps sell Pro only when built with `NUXT_PUBLIC_SELL_PRO=1`,
+   so the first App Store release can ship before the product is set up:
+   without it they leave Pro items out as the web does, where a build that
+   sold with no product behind it would show locks that cannot be opened.
 6. **Desktop and fallbacks.** Click or drag to throw, spacebar, and tap-to-roll
    on mobile when motion permission is denied.
    Status: a click or tap tosses the dice, with or without a sensor, and

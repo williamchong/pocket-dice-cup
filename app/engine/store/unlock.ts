@@ -69,6 +69,12 @@ export class NativeUnlockBackend implements UnlockBackend {
   }
 }
 
-export function deviceUnlock(): UnlockBackend {
-  return Capacitor.isNativePlatform() ? new NativeUnlockBackend() : new WebUnlockBackend()
+/**
+ * The store plugin in the native shells when they `sellPro`, and otherwise the
+ * web's backend, which sells nothing. A phone app built before the `pro`
+ * product exists in App Store Connect and the Play Console then leaves Pro
+ * items out as the web does, rather than show locks that cannot be opened.
+ */
+export function deviceUnlock(sellPro: boolean): UnlockBackend {
+  return Capacitor.isNativePlatform() && sellPro ? new NativeUnlockBackend() : new WebUnlockBackend()
 }

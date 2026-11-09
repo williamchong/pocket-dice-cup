@@ -3,11 +3,12 @@ import { deviceUnlock } from '~/engine/store/unlock'
 /**
  * Whether Pro is owned, starting from the store's last answer and updated
  * once it answers again. `granted` stands in for a purchase, for trying Pro
- * skins in a debug build before the store plugin exists.
+ * skins in a debug build before the store plugin exists. `sellPro` says
+ * whether the phone apps sell Pro yet; see `deviceUnlock`.
  */
-export function useProUnlock(granted: boolean) {
+export function useProUnlock({ granted, sellPro }: { granted: boolean, sellPro: boolean }) {
   const ownsPro = ref(granted || loadOwnsPro())
-  const backend = granted ? null : deviceUnlock()
+  const backend = granted ? null : deviceUnlock(sellPro)
   // A launch check still waiting when a purchase completes would otherwise
   // answer after it and take Pro away until the next launch.
   const ask = newestAnswer((owned: boolean) => {
@@ -26,7 +27,7 @@ export function useProUnlock(granted: boolean) {
 
   return {
     ownsPro: readonly(ownsPro),
-    /** Whether Pro can be bought here: in the store apps, not on the web, nor when granted for debugging. */
+    /** Whether Pro can be bought here: in the store apps once they sell it, not on the web, nor when granted for debugging. */
     sellsPro: backend?.sells ?? false,
     buyPro: () => backend ? ask(() => backend.buyPro()) : Promise.resolve(true),
     restorePro: () => backend ? ask(() => backend.restorePro()) : Promise.resolve(true),
