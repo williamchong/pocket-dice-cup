@@ -23,11 +23,6 @@ struct CupActivityAttributes: ActivityAttributes {
         /** When the roll was made, or the pool changed. */
         var time: Date
 
-        /** The faces, or a dash when the pool changed since the last roll. */
-        var faces: String {
-            values.map { DiceRow.faces(kinds: kinds, values: $0) } ?? "–"
-        }
-
         var totalText: String {
             values.map { String(DiceRow.total($0)) } ?? "–"
         }
@@ -68,21 +63,13 @@ enum DiceRow {
     }
 
     /**
-     * Each die's value: as die faces, "⚄ ⚂ ⚅", for a pool of only d6, the
-     * only dice Unicode has faces for; otherwise as numbers grouped by kind,
-     * largest first, as "17 · 4 2". A d10's 10 reads 10, as in the app's
-     * History, so the values add up to the total beside them.
+     * Each die with its value, largest kind first and in the cup's order
+     * within a kind, as the island lays them out. A d10's 10 stays 10, as in
+     * the app's History, so the values add up to the total beside them.
      */
-    static func faces(kinds: [String], values: [Int]) -> String {
-        guard kinds.count == values.count else { return "" }
-        if kinds.allSatisfy({ $0 == "d6" }) {
-            return values.map { value in
-                (1...6).contains(value) ? String(UnicodeScalar(0x2680 + value - 1)!) : String(value)
-            }.joined(separator: " ")
-        }
-        return groups(kinds)
-            .map { group in group.indices.map { String(values[$0]) }.joined(separator: " ") }
-            .joined(separator: " · ")
+    static func dice(kinds: [String], values: [Int]) -> [(kind: String, value: Int)] {
+        guard kinds.count == values.count else { return [] }
+        return groups(kinds).flatMap { group in group.indices.map { (kind: group.kind, value: values[$0]) } }
     }
 
     static func total(_ values: [Int]) -> Int {

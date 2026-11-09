@@ -10,6 +10,12 @@ struct CupActivityBundle: WidgetBundle {
     }
 }
 
+/** The felt of the cup, behind the Lock Screen banner: --color-felt in main.css. */
+private let felt = Color(red: 0x12 / 255, green: 0x24 / 255, blue: 0x1b / 255)
+/** The dice's sizes in the expanded island and on the Lock Screen, largest first. */
+private let largeDice: [CGFloat] = [34, 28, 22]
+private let largeTotal = Font.system(size: 40, weight: .bold, design: .rounded)
+
 /**
  * The last roll in the Dynamic Island and on the Lock Screen. A tap anywhere
  * opens the app, which is what a Live Activity does with no URL of its own;
@@ -18,77 +24,151 @@ struct CupActivityBundle: WidgetBundle {
 struct CupActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: CupActivityAttributes.self) { context in
-            RollRow(state: context.state, large: true)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+            LockScreenRoll(state: context.state)
+                .padding(16)
                 .opacity(context.isStale ? 0.6 : 1)
-                .activityBackgroundTint(Color(red: 0.11, green: 0.24, blue: 0.17))
+                .activityBackgroundTint(felt)
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
             DynamicIsland {
-                // One row under the camera, which leaves the regions beside it empty.
-                DynamicIslandExpandedRegion(.bottom) {
-                    RollRow(state: context.state, large: false)
+                // The dice and the total go in the band beside the camera, as one
+                // row under it left the expanded island looking empty.
+                DynamicIslandExpandedRegion(.leading) {
+                    DiceChips(state: context.state, sizes: largeDice)
+                        .padding(.leading, 6)
+                        .frame(maxHeight: .infinity)
                         .opacity(context.isStale ? 0.6 : 1)
                 }
+                DynamicIslandExpandedRegion(.trailing) {
+                    TotalText(state: context.state)
+                        .font(largeTotal)
+                        .padding(.trailing, 6)
+                        .frame(maxHeight: .infinity)
+                        .opacity(context.isStale ? 0.6 : 1)
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    PoolAndReroll(state: context.state)
+                        .padding(.horizontal, 6)
+                }
             } compactLeading: {
-                FacesIfTheyFit(state: context.state)
+                DiceChips(state: context.state, sizes: [18, 14])
             } compactTrailing: {
-                TotalText(state: context.state)
+                TotalText(state: context.state).font(.body.bold())
             } minimal: {
-                TotalText(state: context.state)
+                TotalText(state: context.state).font(.body.bold())
             }
+            .keylineTint(.white)
         }
     }
 }
 
-/** The pool, the faces, the total and the ↻ button, on one line. */
-struct RollRow: View {
+/** The Lock Screen's banner: the dice and the total, with the pool and ↻ under them. */
+struct LockScreenRoll: View {
     let state: CupActivityAttributes.ContentState
-    let large: Bool
 
     var body: some View {
-        HStack(spacing: 12) {
-            Text(DiceRow.poolLabel(state.kinds))
-                .font(large ? .subheadline : .caption)
-                .foregroundStyle(.secondary)
-                .fixedSize()
-            FacesIfTheyFit(state: state)
-            Spacer(minLength: 0)
-            HStack(alignment: .firstTextBaseline, spacing: 3) {
-                TotalText(state: state)
-                    .font(large ? .title.bold() : .title2.bold())
-                if state.quick {
-                    // A quick roll, not settled dice, until the next roll from the cup.
-                    Image(systemName: "arrow.clockwise")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .accessibilityLabel("Quick roll result")
-                }
+        VStack(spacing: 10) {
+            HStack {
+                DiceChips(state: state, sizes: largeDice)
+                Spacer(minLength: 8)
+                TotalText(state: state).font(largeTotal)
             }
-            Button(intent: QuickRollIntent()) {
-                Image(systemName: "arrow.clockwise.circle.fill")
-                    .font(.title2)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Quick roll")
+            PoolAndReroll(state: state)
         }
         .foregroundStyle(.white)
     }
 }
 
-/** The faces, dropped first when there is no room, leaving the pool and the total. */
-struct FacesIfTheyFit: View {
+/**
+ * Each die as a small die: the SF Symbol of its face for a d6, and a tile
+ * with its number for any other kind, at the first size in `sizes` that fits,
+ * the smaller ones taking over as the pool grows.
+ */
+struct DiceChips: View {
+    let state: CupActivityAttributes.ContentState
+    let sizes: [CGFloat]
+
+    var body: some View {
+        let dice = Array(DiceRow.dice(kinds: state.kinds, values: state.values ?? []).enumerated())
+        if !dice.isEmpty {
+            ViewThatFits(in: .horizontal) {
+                ForEach(sizes, id: \.self) { size in
+                    HStack(spacing: size * 0.2) {
+                        ForEach(dice, id: \.offset) { _, die in
+                            DieChip(kind: die.kind, value: die.value, size: size)
+                                // A new value in a slot is a new chip, so every kind of die
+                                // turns over the same way, rather than a symbol swap for a d6
+                                // and rolling digits for the others; a die that came up the
+                                // same stays still.
+                                .id(die.value)
+                                .transition(.scale.combined(with: .opacity))
+                        }
+                    }
+                }
+                // Too many even at the smallest size: the count, as "×12".
+                Text("×\(dice.count)").font(.system(size: sizes[sizes.count - 1], weight: .semibold, design: .rounded))
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(dice.map { String($0.element.value) }.joined(separator: ", "))
+        } else {
+            // The pool changed since the last roll.
+            Image(systemName: "dice")
+                .font(.system(size: sizes[0]))
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("Not rolled yet")
+        }
+    }
+}
+
+struct DieChip: View {
+    let kind: String
+    let value: Int
+    let size: CGFloat
+
+    var body: some View {
+        // A d6 outside 1...6 would name a symbol that does not exist.
+        if kind == "d6", (1...6).contains(value) {
+            Image(systemName: "die.face.\(value).fill")
+                .font(.system(size: size))
+        } else {
+            Text(String(value))
+                .font(.system(size: size * 0.5, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .minimumScaleFactor(0.6)
+                .foregroundStyle(.black)
+                .frame(width: size, height: size)
+                .background(RoundedRectangle(cornerRadius: size * 0.22).fill(.white))
+        }
+    }
+}
+
+/**
+ * The pool and when it was rolled, then the ↻ button. A quick roll is
+ * said in words here rather than with a second ↻, which read as another button.
+ */
+struct PoolAndReroll: View {
     let state: CupActivityAttributes.ContentState
 
     var body: some View {
-        ViewThatFits {
-            Text(state.faces).lineLimit(1)
-            EmptyView()
+        HStack {
+            // One Text, so VoiceOver reads a line rather than each dot. The
+            // clock time rather than a relative one, whose ticking seconds distract.
+            Text("\(Text(DiceRow.poolLabel(state.kinds)).bold())\(state.quick ? " · Quick roll" : "") · \(state.time, style: .time)")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            Spacer(minLength: 8)
+            Button(intent: QuickRollIntent()) {
+                Image(systemName: "arrow.clockwise")
+                    .font(.body.bold())
+                    .padding(.horizontal, 18)
+                    .frame(minHeight: 44)
+                    .background(Capsule().fill(.white.opacity(0.18)))
+                    .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Quick roll")
         }
-        .contentTransition(.numericText())
     }
 }
 

@@ -9,13 +9,11 @@ final class CupActivityTests: XCTestCase {
         XCTAssertEqual(DiceRow.poolLabel(["d4", "d10", "d12"]), "d12+d10+d4")
     }
 
-    func testFacesAreDieFacesForOnlyD6() {
-        XCTAssertEqual(DiceRow.faces(kinds: ["d6", "d6", "d6"], values: [5, 3, 6]), "⚄ ⚂ ⚅")
-    }
-
-    func testFacesAreNumbersByKindForAnyOtherDie() {
-        XCTAssertEqual(DiceRow.faces(kinds: ["d6", "d6", "d20"], values: [4, 2, 17]), "17 · 4 2")
-        XCTAssertEqual(DiceRow.faces(kinds: ["d10"], values: [10]), "10")
+    func testDiceAreLaidOutLargestKindFirstInTheCupsOrder() {
+        let dice = DiceRow.dice(kinds: ["d6", "d6", "d20"], values: [4, 2, 17])
+        XCTAssertEqual(dice.map(\.kind), ["d20", "d6", "d6"])
+        XCTAssertEqual(dice.map(\.value), [17, 4, 2])
+        XCTAssertEqual(DiceRow.dice(kinds: ["d10"], values: [10]).map(\.value), [10])
         XCTAssertEqual(DiceRow.total([4, 2, 17]), 23)
     }
 

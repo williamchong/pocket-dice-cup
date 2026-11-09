@@ -627,28 +627,36 @@ Phases
     result, and its ↻ button is a quick roll, drawn from
     `SystemRandomNumberGenerator`, uniform over each die's faces. That is
     the one place a number does not come from settled dice, so it is marked
-    as such: a ↻ badge beside its total in the island and in History, until
-    the next roll from the cup.
+    as such: "Quick roll" in words under it in the island, until the next
+    roll from the cup, and ↻ beside it in History. On the iPhone a second ↻
+    beside the island's total read as another button, so the island keeps
+    ↻ for the button alone.
     Layout. A plain tap anywhere opens the app (no `widgetURL` is needed for
-    that, so no URL scheme), and a long press expands the island to one row:
+    that, so no URL scheme), and a long press expands the island:
 
-        3d6   ⚄ ⚂ ⚅    15              ↻
-        d20+2d6   17 · 4 2    23       ↻
+        [17] ⚃ ⚁                         23
+        d20+2d6 · Quick roll · 8:14 PM   ( ↻ )
 
-    The pool in notation, largest kind first; the faces, as ⚀–⚅ for a pool
-    of only d6 and as values grouped by kind otherwise (a d10's 10 reads 10,
-    as in History, so the values add up to the total beside them); the
-    total; and ↻, with a 44 pt target, after which the digits roll over
-    (`contentTransition(.numericText())`). It does not spin while the roll
-    is drawn, as the island only redraws from the data the app sends. Where the row does not fit,
-    `ViewThatFits` drops the faces first, leaving `5d6  23  ↻`. The compact
-    island shows the faces and total, and the minimal one the total; neither
-    may hold a button. The Lock Screen banner is the same row, larger.
+    The band beside the camera holds the dice and the total, as one row of
+    small pool and faces under it left the island looking empty on the
+    iPhone. Each die is the SF Symbol of its face for a d6 and a white tile
+    with its value for any other kind (a d10's 10 reads 10, as in History,
+    so the values add up to the total), largest kind first, at the largest
+    of three sizes that fits, and as a count ("×12") past that. On a new
+    roll each die is replaced by a scale and fade, the same for every kind,
+    and the total's digits roll over. Under them, the pool in notation,
+    "Quick roll" for one, and the clock time of the roll rather than a
+    relative one, whose ticking seconds distracted; then ↻ as a capsule with
+    a 44 pt target. Nothing spins while the roll is drawn, as the island
+    only redraws from the data the app sends. The compact island shows the
+    dice small and the total, and the minimal one the total; neither may
+    hold a button. The Lock Screen banner is the expanded island, larger,
+    on the felt's green.
     Pieces:
     - `CupActivityAttributes.swift`, compiled into both the app and the new
       widget extension: the content state is the kinds, the values, the
-      time and whether it was a quick roll. The pool label and the faces are
-      derived from the kinds in Swift, so the island and the app cannot
+      time and whether it was a quick roll. The pool label and the order of
+      the dice are derived from the kinds in Swift, so the island and the app cannot
       disagree on which dice they show.
     - A widget extension target, `CupActivity`, with the island and Lock
       Screen views, needing iOS 17 for the button. The app stays on iOS 15
@@ -696,11 +704,11 @@ Phases
     the iPhone 17 simulator (iOS 27) the app builds with the extension
     embedded, and an activity started from a hosted test, then quick-rolled
     through `QuickRollIntent`, shows `12 · 3 2` and `17` in the compact
-    island over Settings. Not yet checked, as this Xcode has no Simulator
-    window to tap in: a roll from the cup starting it through the page, the
-    expanded island and the Lock Screen, a tap opening the app, ↻ from the
-    island itself, and the quick rolls reaching History; none of it on the
-    iPhone yet.
+    island over Settings. On the iPhone (iPhone Air): a roll from the cup
+    starts it, and ↻ in the expanded island rolls again without opening the
+    app, which is where the layout above came from. Not yet checked on the
+    iPhone: the Lock Screen banner, a tap opening the app, the quick rolls
+    reaching History, a change of pool, and a mixed pool's tiles.
 
 Languages
 ---------
