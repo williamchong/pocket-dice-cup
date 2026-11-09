@@ -162,7 +162,7 @@ const commands = {
   async wait(ms) {
     await page.waitForTimeout(num(ms, 1000))
   },
-  /** resize <width> <height> - changes the viewport (CSS px), as a phone folded or unfolded does, e.g. the iPhone Duo's 466 678 and 669 951. */
+  /** resize <width> <height> - changes the viewport (CSS px), as a phone folded or unfolded does, e.g. the iPhone Duo's 466 678, and 951 669 held open. */
   async resize(args) {
     const [width, height] = args.split(/\s+/)
     viewport.width = num(width)

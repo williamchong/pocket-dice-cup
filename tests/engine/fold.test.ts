@@ -12,9 +12,12 @@ import { CupSimulation } from '../../app/engine/simulation'
 beforeAll(() => RAPIER.init())
 
 const FRAME = 1 / 60
-// The iPhone Duo's two screens in the simulator, at 3 pixels to the CSS pixel.
+// The iPhone Duo's two screens, in CSS px. The outer one is as its
+// simulator reports it. The inner one is held open wider than tall, two
+// outer screens side by side over the hinge; its panel is 669 × 951 in
+// the simulator, turned.
 const OUTER = { width: 466, height: 678 }
-const INNER = { width: 669, height: 951 }
+const INNER = { width: 951, height: 669 }
 const outerBox = boxForViewport(OUTER.width, OUTER.height)
 const innerBox = boxForViewport(INNER.width, INNER.height)
 

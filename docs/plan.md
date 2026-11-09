@@ -741,9 +741,12 @@ Phases
     The right wall stays put. The dice are moved across by half the change
     in width, `(newWidth − oldWidth) / 2`, which keeps each die's distance
     from the right wall. Each die keeps its rotation and its speed. The
-    Duo's two screens are not the same height (678 and 951 CSS px in the
-    simulator), and how they line up is not known, so the box stays centred
-    top to bottom until it can be measured on a phone.
+    Duo is held open wider than tall: its inner panel, 669 × 951 CSS px in
+    the simulator, turned, is 951 wide by 669 high, two outer screens of
+    466 × 678 side by side over the hinge, and about as high as one. So the
+    box stays centred top to bottom, which moves the dice by at most 5 px.
+    Apple's photos of the closed phone show the hinge on its left-hand edge,
+    as this assumes.
     Growing and shrinking. Unfolded or folded, the walls and the tray drawn
     round them move together, frame by frame, over 350 ms with an ease-out:
     the right-hand wall stays still and the others move from the old size
@@ -784,7 +787,7 @@ Phases
     Checks: vitest for `fold.ts` (the Duo's change of screen is a fold
     either way, while a toolbar, a step of a dragged window and the first
     layout are not; the right-hand wall stays still through the fold), and
-    against the real Rapier: four d6 unfolded from 466×678 to 669×951 keep
+    against the real Rapier: four d6 unfolded from 466×678 to 951×669 keep
     their distance from the right wall and their faces, and three d6 slid
     against the left wall of the open phone are carried inside the folded
     cup with their faces unchanged. The `run-pocket-dice-cup` driver has a
@@ -798,14 +801,24 @@ Phases
     with `simctl io … screenConfig` crash-loops SpringBoard. Android
     foldables get the same code through the WebView's resize, since
     `configChanges` keeps the activity alive across the change.
-    Status: built, checked in Chromium at the Duo's two sizes. In the
-    iPhone Duo simulator (iOS 27.2) the built app runs on the outer screen,
-    where the debug overlay's `sizes` row reads 466×678, the size the
-    Chromium checks used. Not yet
-    checked on a real Duo: which side the hinge is on, how the screens line
-    up top to bottom, whether iOS letterboxes a portrait-only app on the
-    inner screen or fills it, and in how many steps the WebView is resized
-    during an unfold. Not yet checked on an Android foldable.
+    What Apple says (developer.apple.com/iphone-duo/prepare): "your app's
+    size changes whenever the device folds or unfolds", "in the middle of
+    a session", so the WebView is resized in place, which is what the
+    ResizeObserver here sees. An app built with the iOS 26 SDK sits "in the
+    center of the display, with empty space surrounding the window"; with
+    the iOS 27.1 SDK or later "apps will extend to use the full display".
+    The app is built with the iOS 27.2 SDK, so it fills the inner screen.
+    The status bar is on the right-hand edge, as Apple's photos show on the
+    outer screen too, and only `--safe-inset`, the largest of the four
+    insets, keeps the buttons clear of it; the felt is drawn under it, as
+    under the status bar of any iPhone.
+    Status: built, checked in Chromium at the Duo's sizes, unfolding from
+    466×678 to both 951×669, as held open, and 669×951. In the iPhone Duo
+    simulator (iOS 27.2) the built app runs on the outer screen, where the
+    debug overlay's `sizes` row reads 466×678. Not yet checked on a real
+    Duo: in how many steps the WebView is resized during an unfold, and the
+    inner screen's real size, which the `sizes` row will show. Not yet
+    checked on an Android foldable.
 
 Languages
 ---------
