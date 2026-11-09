@@ -296,7 +296,11 @@ watch(shaken, (now) => {
 })
 
 function changePool(next: DicePool) {
-  if (setPool(next)) savePool(pool.value)
+  if (!setPool(next)) return
+  savePool(pool.value)
+  // Not a watch on the pool, which is set once at launch too, and would blank
+  // a roll still showing in the island from before the app was closed.
+  lastRoll?.show(pool.value, null, Date.now())
 }
 
 // A Pro skin or table chosen without Pro is tried on: shown in the cup while
@@ -392,6 +396,8 @@ watch(result, () => {
 }, { flush: 'post' })
 
 const history = shallowRef(loadHistory())
+// The roll stays in the Dynamic Island after leaving the iPhone app; null elsewhere.
+const lastRoll = deviceLastRoll()
 /** The sheet open above the controls, if any. */
 type Sheet = 'history' | 'pool' | 'skin'
 const openSheet = ref<Sheet | null>(null)
@@ -416,8 +422,10 @@ useBackButton(() => {
 // The cup hands over a new array each time the dice settle, and null in between.
 watch(result, (values) => {
   if (!values) return
-  history.value = addRoll(history.value, values, pool.value, Date.now())
+  const time = Date.now()
+  history.value = addRoll(history.value, values, pool.value, time)
   saveHistory(history.value)
+  lastRoll?.show(pool.value, values, time)
   // Which dice, on what: never the numbers they came up with.
   analytics.track('roll_completed', { dice: formatPool(pool.value), skin: skin.value.id, table: table.value.id })
 })
@@ -453,6 +461,20 @@ function onKeydown(event: KeyboardEvent) {
 }
 onMounted(() => window.addEventListener('keydown', onKeydown))
 onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+
+// The island's quick rolls join History when the app is back in front.
+async function takeQuickRolls() {
+  if (!lastRoll || document.visibilityState !== 'visible') return
+  const next = addQuickRolls(history.value, await lastRoll.takeQuickRolls())
+  if (next === history.value) return
+  history.value = next
+  saveHistory(next)
+}
+onMounted(() => {
+  document.addEventListener('visibilitychange', takeQuickRolls)
+  void takeQuickRolls()
+})
+onBeforeUnmount(() => document.removeEventListener('visibilitychange', takeQuickRolls))
 
 function clearHistory() {
   history.value = []

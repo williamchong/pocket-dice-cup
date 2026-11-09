@@ -618,6 +618,89 @@ Phases
    without them, or in debug builds; the iPhone's frame time as `gtag.js`
    loads on the web, which may overlap the engine's start; and whether
    Xcode needs anything more for the iOS privacy manifest at submission.
+10. **Last roll in the Dynamic Island.** After a roll the iPhone app starts
+    a Live Activity, so the roll is still there after leaving the app for a
+    score sheet or the rules: in the Dynamic Island, and as a banner on the
+    Lock Screen. The island cannot run the physics, as it only draws SwiftUI
+    from data the app sends, at most about once a second, and the WebView
+    with Rapier is suspended in the background; so it shows the cup's
+    result, and its ↻ button is a quick roll, drawn from
+    `SystemRandomNumberGenerator`, uniform over each die's faces. That is
+    the one place a number does not come from settled dice, so it is marked
+    as such: a ↻ badge beside its total in the island and in History, until
+    the next roll from the cup.
+    Layout. A plain tap anywhere opens the app (no `widgetURL` is needed for
+    that, so no URL scheme), and a long press expands the island to one row:
+
+        3d6   ⚄ ⚂ ⚅    15              ↻
+        d20+2d6   17 · 4 2    23       ↻
+
+    The pool in notation, largest kind first; the faces, as ⚀–⚅ for a pool
+    of only d6 and as values grouped by kind otherwise (a d10's 10 reads 10,
+    as in History, so the values add up to the total beside them); the
+    total; and ↻, with a 44 pt target, after which the digits roll over
+    (`contentTransition(.numericText())`). It does not spin while the roll
+    is drawn, as the island only redraws from the data the app sends. Where the row does not fit,
+    `ViewThatFits` drops the faces first, leaving `5d6  23  ↻`. The compact
+    island shows the faces and total, and the minimal one the total; neither
+    may hold a button. The Lock Screen banner is the same row, larger.
+    Pieces:
+    - `CupActivityAttributes.swift`, compiled into both the app and the new
+      widget extension: the content state is the kinds, the values, the
+      time and whether it was a quick roll. The pool label and the faces are
+      derived from the kinds in Swift, so the island and the app cannot
+      disagree on which dice they show.
+    - A widget extension target, `CupActivity`, with the island and Lock
+      Screen views, needing iOS 17 for the button. The app stays on iOS 15
+      and the plugin does nothing below 17. `NSSupportsLiveActivities` in
+      the app's `Info.plist`.
+    - `QuickRollIntent`, a `LiveActivityIntent`, so it runs in the app's
+      process without opening it: it draws the values, updates the
+      activity, and appends the roll to a list in the app's own
+      `UserDefaults`. That keeps it out of an App Group, which a free Apple
+      ID may not provision.
+    - `CupActivityPlugin.swift`, registered beside the others in
+      `DiceCupViewController`: `show({ kinds, values, time })`, starting
+      the activity or updating it; `end()`; and `takeQuickRolls()`, which
+      returns and clears the quick rolls kept since it was last asked.
+    - On the web side, a backend like `HapticsBackend` that does nothing on
+      the web and in the Android app, called from the `watch(result)` in
+      `pages/index.vue` beside `addRoll`. A change of pool updates the
+      activity with the new pool and no values, as the last roll's would
+      not match what ↻ rolls. On returning to the foreground the page asks
+      for the quick rolls and adds them to History, with `quick: true` on
+      `Roll`, which `isRoll` accepts and `RollHistory.vue` shows as ↻.
+    - The activity is marked stale an hour after the last roll, and drawn
+      dimmer; it is ended when the app next comes to the front four hours
+      or more after the last roll, and otherwise by iOS after 8 hours, as
+      nothing can end it on a timer while the app is not running.
+    Out of scope for the prototype: a setting to turn it off, and whether it
+    is part of Pro; translations of the button's accessibility label (the
+    island has no other words; History's ↻ has its label in all three
+    languages); and any analytics event. ActivityKit keeps
+    everything on the phone, so `PRIVACY.md` does not change. Android has no
+    equivalent, so the two apps differ here.
+    The widget extension is a new target in `App.xcodeproj`, `CupActivity`
+    (`cloud.williamchong.pocketdicecup.CupActivity`), added by hand to
+    `project.pbxproj` and embedded in the app; its version numbers are set
+    apart from the app's and have to be raised with them.
+    Checks: a Swift test that a quick roll stays within each kind's faces
+    and that the pool label and the faces come out as in the rows above;
+    vitest for `quick` in the history's parsing; and in the iPhone 17
+    simulator, which has the island, that a roll shows up in the island and
+    on the Lock Screen, that a tap opens the app, that ↻ rerolls without
+    opening it, and that the quick rolls are in History once back.
+    Status: built as a prototype. The Swift tests pass (the row's text, a
+    quick roll reaching every face of each kind and no other, the kept
+    quick rolls), and so do the vitest ones for quick rolls in History. In
+    the iPhone 17 simulator (iOS 27) the app builds with the extension
+    embedded, and an activity started from a hosted test, then quick-rolled
+    through `QuickRollIntent`, shows `12 · 3 2` and `17` in the compact
+    island over Settings. Not yet checked, as this Xcode has no Simulator
+    window to tap in: a roll from the cup starting it through the page, the
+    expanded island and the Lock Screen, a tap opening the app, ↻ from the
+    island itself, and the quick rolls reaching History; none of it on the
+    iPhone yet.
 
 Languages
 ---------

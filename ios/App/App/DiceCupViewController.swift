@@ -13,6 +13,7 @@ class DiceCupViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(CupMotionPlugin())
         bridge?.registerPluginInstance(CupStorePlugin())
         bridge?.registerPluginInstance(CupAnalyticsPlugin())
+        bridge?.registerPluginInstance(CupActivityPlugin())
         coverUntilReady()
     }
 

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { addRoll, loadHistory, MAX_HISTORY, parseHistory, rollBreakdown, rollTotal, saveHistory } from '../app/utils/rollHistory'
+import { addQuickRolls, addRoll, loadHistory, MAX_HISTORY, parseHistory, rollBreakdown, rollTotal, saveHistory } from '../app/utils/rollHistory'
 
 describe('rollTotal', () => {
   it('adds up the dice', () => {
@@ -93,5 +93,31 @@ describe('saved history', () => {
     vi.stubGlobal('localStorage', { getItem: blocked, setItem: blocked })
     expect(() => saveHistory(addRoll([], [1], ['d6'], 0))).not.toThrow()
     expect(loadHistory()).toEqual([])
+  })
+})
+
+describe('addQuickRolls', () => {
+  const cup = addRoll(addRoll([], [1], ['d6'], 1000), [6, 2], ['d6', 'd6'], 4000)
+
+  it('marks them quick and places them by time', () => {
+    const history = addQuickRolls(cup, [{ values: [17], kinds: ['d20'], time: 5000 }, { values: [3], kinds: ['d6'], time: 2000 }])
+    expect(history.map(roll => [roll.time, roll.quick])).toEqual([[5000, true], [4000, undefined], [2000, true], [1000, undefined]])
+  })
+
+  it('skips malformed rolls', () => {
+    expect(addQuickRolls(cup, [{ values: [], time: 5000 }, null, { values: [2], kinds: ['d7'], time: 5000 }])).toBe(cup)
+  })
+
+  it(`keeps only the last ${MAX_HISTORY} rolls`, () => {
+    const many = Array.from({ length: MAX_HISTORY }, (_, index) => ({ values: [1], kinds: ['d6'], time: 10_000 + index }))
+    const history = addQuickRolls(cup, many)
+    expect(history).toHaveLength(MAX_HISTORY)
+    expect(history.every(roll => roll.quick)).toBe(true)
+  })
+
+  it('reads quick back from saved JSON', () => {
+    const history = addQuickRolls([], [{ values: [4], kinds: ['d6'], time: 1000 }])
+    expect(parseHistory(JSON.stringify(history))).toEqual(history)
+    expect(parseHistory(JSON.stringify([{ values: [4], time: 1000, quick: 'yes' }]))).toEqual([])
   })
 })

@@ -12,6 +12,8 @@ export interface Roll {
   kinds?: DieKind[]
   /** When the dice settled, in milliseconds since the epoch. */
   time: number
+  /** Drawn by the Dynamic Island's quick roll from a random number, not read from settled dice. */
+  quick?: true
 }
 
 export function rollTotal(values: readonly number[]): number {
@@ -35,10 +37,11 @@ export function rollBreakdown(values: readonly number[], kinds?: readonly DieKin
 
 function isRoll(value: unknown): value is Roll {
   if (typeof value !== 'object' || value === null) return false
-  const { values, time, kinds } = value as Partial<Roll>
+  const { values, time, kinds, quick } = value as Partial<Roll>
   return Array.isArray(values) && values.length > 0
     && values.every(die => Number.isInteger(die) && die >= 1)
     && (kinds === undefined || (Array.isArray(kinds) && kinds.length === values.length && kinds.every(isDieKind)))
+    && (quick === undefined || quick === true)
     // A time outside the Date range would make toISOString throw when shown.
     && typeof time === 'number' && Number.isFinite(new Date(time).getTime())
 }
@@ -58,6 +61,17 @@ export function parseHistory(json: string | null): Roll[] {
 /** The history with `values`, of dice of `kinds`, added as the newest roll, capped at MAX_HISTORY. */
 export function addRoll(history: readonly Roll[], values: readonly number[], kinds: readonly DieKind[], time: number): Roll[] {
   return [{ values: [...values], kinds: [...kinds], time }, ...history].slice(0, MAX_HISTORY)
+}
+
+/**
+ * The history with the island's quick rolls added, marked as quick and placed
+ * by time among the others, skipping any that are malformed, capped at
+ * MAX_HISTORY; `history` itself when there is none to add.
+ */
+export function addQuickRolls<T extends readonly Roll[]>(history: T, rolls: readonly unknown[]): T | Roll[] {
+  const quick = rolls.filter(isRoll).map(roll => ({ values: roll.values, kinds: roll.kinds, time: roll.time, quick: true as const }))
+  if (quick.length === 0) return history
+  return [...quick, ...history].sort((a, b) => b.time - a.time).slice(0, MAX_HISTORY)
 }
 
 /** The saved rolls, newest first; empty if none were saved or storage is unavailable. */

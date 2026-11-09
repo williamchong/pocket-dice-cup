@@ -27,6 +27,14 @@
 		F12EBA5E00000000000000A4 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = F12EBA5E00000000000000A5 /* FirebaseCore */; };
 		F12EBA5E00000000000000C1 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = F12EBA5E00000000000000C2 /* GoogleService-Info.plist */; };
 		F12EBA5E00000000000000B1 /* CupAnalyticsPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F12EBA5E00000000000000B2 /* CupAnalyticsPlugin.swift */; };
+		B0D1E50000000000000000B1 /* CupActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0D1E50000000000000000F1 /* CupActivityAttributes.swift */; };
+		B0D1E50000000000000000B2 /* QuickRollIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0D1E50000000000000000F2 /* QuickRollIntent.swift */; };
+		B0D1E50000000000000000B3 /* CupActivityPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0D1E50000000000000000F3 /* CupActivityPlugin.swift */; };
+		B0D1E50000000000000000B4 /* CupActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0D1E50000000000000000F1 /* CupActivityAttributes.swift */; };
+		B0D1E50000000000000000B5 /* QuickRollIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0D1E50000000000000000F2 /* QuickRollIntent.swift */; };
+		B0D1E50000000000000000B6 /* CupActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0D1E50000000000000000F4 /* CupActivityWidget.swift */; };
+		B0D1E50000000000000000B7 /* CupActivity.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B0D1E50000000000000000F6 /* CupActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B0D1E50000000000000000B8 /* CupActivityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0D1E50000000000000000F7 /* CupActivityTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -37,7 +45,28 @@
 			remoteGlobalIDString = 504EC3031FED79650016851F;
 			remoteInfo = App;
 		};
+		B0D1E50000000000000000A1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 504EC2FC1FED79650016851F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B0D1E50000000000000000C1;
+			remoteInfo = CupActivity;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B0D1E50000000000000000E4 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				B0D1E50000000000000000B7 /* CupActivity.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		1C18A0000000000000000001 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/LaunchScreen.strings"; sourceTree = "<group>"; };
@@ -66,6 +95,13 @@
 		A1C0DE0000000000000000F4 /* AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1C0DE0000000000000000F5 /* Products.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Products.storekit; sourceTree = "<group>"; };
 		F12EBA5E00000000000000B2 /* CupAnalyticsPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CupAnalyticsPlugin.swift; sourceTree = "<group>"; };
+		B0D1E50000000000000000F1 /* CupActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CupActivityAttributes.swift; sourceTree = "<group>"; };
+		B0D1E50000000000000000F2 /* QuickRollIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickRollIntent.swift; sourceTree = "<group>"; };
+		B0D1E50000000000000000F3 /* CupActivityPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CupActivityPlugin.swift; sourceTree = "<group>"; };
+		B0D1E50000000000000000F4 /* CupActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CupActivityWidget.swift; sourceTree = "<group>"; };
+		B0D1E50000000000000000F5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B0D1E50000000000000000F6 /* CupActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CupActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0D1E50000000000000000F7 /* CupActivityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CupActivityTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +122,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B0D1E50000000000000000E2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -96,6 +139,7 @@
 				504EC3061FED79650016851F /* App */,
 				504EC3051FED79650016851F /* Products */,
 				A1C0DE0000000000000000D1 /* AppTests */,
+				B0D1E50000000000000000D1 /* CupActivity */,
 			);
 			sourceTree = "<group>";
 		};
@@ -104,6 +148,7 @@
 			children = (
 				504EC3041FED79650016851F /* App.app */,
 				A1C0DE0000000000000000F4 /* AppTests.xctest */,
+				B0D1E50000000000000000F6 /* CupActivity.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -127,6 +172,9 @@
 				A1C0DE0000000000000000F1 /* CupMotionPlugin.swift */,
 				A1C0DE0000000000000000F2 /* CupStorePlugin.swift */,
 				F12EBA5E00000000000000B2 /* CupAnalyticsPlugin.swift */,
+				B0D1E50000000000000000F3 /* CupActivityPlugin.swift */,
+				B0D1E50000000000000000F1 /* CupActivityAttributes.swift */,
+				B0D1E50000000000000000F2 /* QuickRollIntent.swift */,
 				A1C0DE0000000000000000F5 /* Products.storekit */,
 			);
 			path = App;
@@ -136,8 +184,18 @@
 			isa = PBXGroup;
 			children = (
 				A1C0DE0000000000000000F3 /* CupStorePluginTests.swift */,
+				B0D1E50000000000000000F7 /* CupActivityTests.swift */,
 			);
 			path = AppTests;
+			sourceTree = "<group>";
+		};
+		B0D1E50000000000000000D1 /* CupActivity */ = {
+			isa = PBXGroup;
+			children = (
+				B0D1E50000000000000000F4 /* CupActivityWidget.swift */,
+				B0D1E50000000000000000F5 /* Info.plist */,
+			);
+			path = CupActivity;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -150,10 +208,12 @@
 				504EC3001FED79650016851F /* Sources */,
 				504EC3011FED79650016851F /* Frameworks */,
 				504EC3021FED79650016851F /* Resources */,
+				B0D1E50000000000000000E4 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				B0D1E50000000000000000A2 /* PBXTargetDependency */,
 			);
 			name = App;
 			packageProductDependencies = (
@@ -183,6 +243,23 @@
 			productReference = A1C0DE0000000000000000F4 /* AppTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		B0D1E50000000000000000C1 /* CupActivity */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B0D1E50000000000000000C2 /* Build configuration list for PBXNativeTarget "CupActivity" */;
+			buildPhases = (
+				B0D1E50000000000000000E1 /* Sources */,
+				B0D1E50000000000000000E2 /* Frameworks */,
+				B0D1E50000000000000000E3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CupActivity;
+			productName = CupActivity;
+			productReference = B0D1E50000000000000000F6 /* CupActivity.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -200,6 +277,9 @@
 					A1C0DE0000000000000000C1 = {
 						ProvisioningStyle = Automatic;
 						TestTargetID = 504EC3031FED79650016851F;
+					};
+					B0D1E50000000000000000C1 = {
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -225,6 +305,7 @@
 			targets = (
 				504EC3031FED79650016851F /* App */,
 				A1C0DE0000000000000000C1 /* AppTests */,
+				B0D1E50000000000000000C1 /* CupActivity */,
 			);
 		};
 /* End PBXProject section */
@@ -253,6 +334,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B0D1E50000000000000000E3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -267,6 +355,9 @@
 				A1C0DE0000000000000000B1 /* CupMotionPlugin.swift in Sources */,
 				A1C0DE0000000000000000B2 /* CupStorePlugin.swift in Sources */,
 				F12EBA5E00000000000000B1 /* CupAnalyticsPlugin.swift in Sources */,
+				B0D1E50000000000000000B3 /* CupActivityPlugin.swift in Sources */,
+				B0D1E50000000000000000B1 /* CupActivityAttributes.swift in Sources */,
+				B0D1E50000000000000000B2 /* QuickRollIntent.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -275,6 +366,17 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1C0DE0000000000000000B3 /* CupStorePluginTests.swift in Sources */,
+				B0D1E50000000000000000B8 /* CupActivityTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B0D1E50000000000000000E1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B0D1E50000000000000000B6 /* CupActivityWidget.swift in Sources */,
+				B0D1E50000000000000000B4 /* CupActivityAttributes.swift in Sources */,
+				B0D1E50000000000000000B5 /* QuickRollIntent.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -285,6 +387,11 @@
 			isa = PBXTargetDependency;
 			target = 504EC3031FED79650016851F /* App */;
 			targetProxy = A1C0DE0000000000000000A1 /* PBXContainerItemProxy */;
+		};
+		B0D1E50000000000000000A2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B0D1E50000000000000000C1 /* CupActivity */;
+			targetProxy = B0D1E50000000000000000A1 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -508,6 +615,55 @@
 			};
 			name = Release;
 		};
+		B0D1E50000000000000000C3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Q5YJ6GX784;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CupActivity/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Pocket Dice Cup";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.williamchong.pocketdicecup.CupActivity;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		B0D1E50000000000000000C4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Q5YJ6GX784;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CupActivity/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Pocket Dice Cup";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = cloud.williamchong.pocketdicecup.CupActivity;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -534,6 +690,15 @@
 			buildConfigurations = (
 				A1C0DE0000000000000000C3 /* Debug */,
 				A1C0DE0000000000000000C4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B0D1E50000000000000000C2 /* Build configuration list for PBXNativeTarget "CupActivity" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B0D1E50000000000000000C3 /* Debug */,
+				B0D1E50000000000000000C4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

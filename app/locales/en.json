@@ -36,7 +36,8 @@
     "label": "Roll history",
     "empty": "No rolls yet.",
     "clear": "Clear",
-    "confirmClear": "Clear all?"
+    "confirmClear": "Clear all?",
+    "quick": "Quick roll from the Dynamic Island"
   },
   "skin": {
     "label": "Dice",

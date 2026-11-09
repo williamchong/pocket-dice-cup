@@ -36,7 +36,8 @@
     "label": "掷骰记录",
     "empty": "还没有记录。",
     "clear": "清除",
-    "confirmClear": "全部清除？"
+    "confirmClear": "全部清除？",
+    "quick": "在灵动岛快速掷出"
   },
   "skin": {
     "label": "骰子",

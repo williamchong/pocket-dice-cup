@@ -19,6 +19,13 @@
         class="history__roll"
       >
         <span class="history__total">{{ rollTotal(roll.values) }}</span>
+        <!-- Drawn by the Dynamic Island's quick roll, not read from settled dice. -->
+        <span
+          v-if="roll.quick"
+          class="history__quick"
+          :title="$t('history.quick')"
+          :aria-label="$t('history.quick')"
+        >↻</span>
         <span
           v-if="rollBreakdown(roll.values, roll.kinds)"
           class="history__dice"
@@ -126,6 +133,10 @@ function formatTime(time: number): string {
   font-size: 1.25rem;
   font-weight: 700;
   text-align: right;
+}
+
+.history__quick {
+  opacity: 0.6;
 }
 
 .history__dice {
