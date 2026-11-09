@@ -634,8 +634,8 @@ Phases
     Layout. A plain tap anywhere opens the app (no `widgetURL` is needed for
     that, so no URL scheme), and a long press expands the island:
 
-        [17] ⚃ ⚁                         23
-        d20+2d6 · Quick roll · 8:14 PM   ( ↻ )
+        [17] ⚃ ⚁                              23
+        (d20+2d6) (Quick roll · 8:14 PM)      ( ↻ )
 
     The band beside the camera holds the dice and the total, as one row of
     small pool and faces under it left the island looking empty on the
@@ -646,8 +646,16 @@ Phases
     roll each die is replaced by a scale and fade, the same for every kind,
     and the total's digits roll over. Under them, the pool in notation,
     "Quick roll" for one, and the clock time of the roll rather than a
-    relative one, whose ticking seconds distracted; then ↻ as a capsule with
-    a 44 pt target. Nothing spins while the roll is drawn, as the island
+    relative one, whose ticking seconds distracted; then ↻. All three are
+    capsules with a 44 pt target, so each reads as something to tap: the
+    pool opens the app on the dice sheet (`pocketdicecup://pool`), the time
+    on History (`pocketdicecup://history`), and ↻ rolls in place. Anywhere
+    else opens the cup. The scheme is registered in both apps, and
+    `useCupLinks` opens the sheet from the link the app was launched with
+    (`App.getLaunchUrl`) or brought back by (`appUrlOpen`), closing the
+    about page first. Android has no island to send them yet, but takes the
+    same links, so a later home-screen widget or notification there can use
+    them. Nothing spins while the roll is drawn, as the island
     only redraws from the data the app sends. The compact island shows the
     dice small and the total, and the minimal one the total; neither may
     hold a button. The Lock Screen banner is the expanded island, larger,
@@ -708,7 +716,11 @@ Phases
     starts it, and ↻ in the expanded island rolls again without opening the
     app, which is where the layout above came from. Not yet checked on the
     iPhone: the Lock Screen banner, a tap opening the app, the quick rolls
-    reaching History, a change of pool, and a mixed pool's tiles.
+    reaching History, a change of pool, and a mixed pool's tiles. The links:
+    in the Android emulator (Pixel 7a), `adb shell am start -d
+    pocketdicecup://history` launches the app on History, and
+    `pocketdicecup://pool` while it is open brings up the dice sheet. Not
+    yet checked: a tap on the island's capsules on the iPhone.
 
 Languages
 ---------

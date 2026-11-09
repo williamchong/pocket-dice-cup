@@ -143,32 +143,51 @@ struct DieChip: View {
 }
 
 /**
- * The pool and when it was rolled, then the ↻ button. A quick roll is
- * said in words here rather than with a second ↻, which read as another button.
+ * The pool, which opens the dice, and when it was rolled, which opens
+ * History, then the ↻ button, all as capsules so that each reads as
+ * something to tap. A quick roll is said in words with the time rather than
+ * with a second ↻, which read as another button.
  */
 struct PoolAndReroll: View {
     let state: CupActivityAttributes.ContentState
 
     var body: some View {
-        HStack {
-            // One Text, so VoiceOver reads a line rather than each dot. The
-            // clock time rather than a relative one, whose ticking seconds distract.
-            Text("\(Text(DiceRow.poolLabel(state.kinds)).bold())\(state.quick ? " · Quick roll" : "") · \(state.time, style: .time)")
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-            Spacer(minLength: 8)
+        HStack(spacing: 8) {
+            Link(destination: CupLink.pool) {
+                Text(DiceRow.poolLabel(state.kinds)).bold().capsule()
+            }
+            .accessibilityHint("Opens the dice")
+            Link(destination: CupLink.history) {
+                // The clock time rather than a relative one, whose ticking seconds distract.
+                Text("\(state.quick ? "Quick roll · " : "")\(state.time, style: .time)").capsule()
+            }
+            .accessibilityHint("Opens History")
+            Spacer(minLength: 0)
             Button(intent: QuickRollIntent()) {
-                Image(systemName: "arrow.clockwise")
-                    .font(.body.bold())
-                    .padding(.horizontal, 18)
-                    .frame(minHeight: 44)
-                    .background(Capsule().fill(.white.opacity(0.18)))
-                    .contentShape(Capsule())
+                Image(systemName: "arrow.clockwise").font(.body.bold()).capsule(padding: 18)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Quick roll")
         }
+        .font(.footnote)
+    }
+}
+
+/** The links that open the app on a sheet, read by app/utils/cupLink.ts; keep the scheme in step with it. */
+enum CupLink {
+    static let pool = URL(string: "pocketdicecup://pool")!
+    static let history = URL(string: "pocketdicecup://history")!
+}
+
+extension View {
+    /** A quiet capsule at least 44 pt tall, the least a finger can be sure of hitting. */
+    func capsule(padding: CGFloat = 12) -> some View {
+        lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .padding(.horizontal, padding)
+            .frame(minHeight: 44)
+            .background(Capsule().fill(.white.opacity(0.18)))
+            .contentShape(Capsule())
     }
 }
 

@@ -399,7 +399,7 @@ const history = shallowRef(loadHistory())
 // The roll stays in the Dynamic Island after leaving the iPhone app; null elsewhere.
 const lastRoll = deviceLastRoll()
 /** The sheet open above the controls, if any. */
-type Sheet = 'history' | 'pool' | 'skin'
+type Sheet = CupLinkSheet | 'skin'
 const openSheet = ref<Sheet | null>(null)
 function toggle(sheet: Sheet) {
   openSheet.value = openSheet.value === sheet ? null : sheet
@@ -409,6 +409,13 @@ const aboutOpen = computed(() => route.name === 'index-about')
 watch(aboutOpen, (now) => {
   if (now) openSheet.value = null
 }, { immediate: true })
+// A tap on the pool or the time in the Dynamic Island opens the dice or History.
+useCupLinks((sheet) => {
+  // Not over dice still rolling, which the sheet would hide (as below).
+  if (rolling.value) return
+  if (aboutOpen.value) backToCup()
+  openSheet.value = sheet
+})
 // Android's back gesture closes the about page or the open sheet before it leaves the app.
 useBackButton(() => {
   if (aboutOpen.value) {
