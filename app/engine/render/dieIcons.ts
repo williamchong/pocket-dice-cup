@@ -57,8 +57,16 @@ export interface DieIconRequest {
  * a clear background, as PNG data URLs in the same order. It has a WebGL
  * context of its own for as long as it takes, so the cup's renderer is left
  * alone; setting it up is most of the cost, so ask for every picture at once.
+ *
+ * Each die's shaders are compiled with compileAsync before it is drawn,
+ * which leaves the page free meanwhile where WebGL can compile off its thread
+ * (KHR_parallel_shader_compile, in Safari and Chrome), and each picture is
+ * drawn in a task of its own: drawn all in one, compiling as each die was
+ * first drawn, both pickers' pictures held the page for 2.3 s at a fresh
+ * install in the iPhone 17 simulator, the glass skin's 0.8 s of it. Each die
+ * is freed once drawn, as a d6 alone paints a dozen face canvases.
  */
-export function renderDieIcons(sizePx: number, dice: readonly DieIconRequest[]): string[] {
+export async function renderDieIcons(sizePx: number, dice: readonly DieIconRequest[]): Promise<string[]> {
   const renderer = new WebGLRenderer({ alpha: true, antialias: true })
   let environment: WebGLRenderTarget | undefined
   try {
@@ -73,7 +81,11 @@ export function renderDieIcons(sizePx: number, dice: readonly DieIconRequest[]):
     scene.add(lamp)
     const camera = new PerspectiveCamera(FIELD_OF_VIEW, 1)
 
-    return dice.map(({ skin, kind }) => {
+    const icons: string[] = []
+    for (const [index, { skin, kind }] of dice.entries()) {
+      // A task each, as drawing every picture in one held the page for 0.65 s
+      // just as the cup appeared; compileAsync gives way only for new shaders.
+      if (index > 0) await new Promise(resolve => setTimeout(resolve))
       const look = createDieLook(kind, skin)
       const die = new Mesh(look.geometry, look.materials)
       const { x, y, z, w } = showcaseRotation(kind)
@@ -89,13 +101,14 @@ export function renderDieIcons(sizePx: number, dice: readonly DieIconRequest[]):
       camera.far = distance + size.z
       camera.updateProjectionMatrix()
       scene.add(die)
+      await renderer.compileAsync(scene, camera)
       renderer.render(scene, camera)
       // Read in the same task as the render, before the browser clears the canvas.
-      const icon = renderer.domElement.toDataURL('image/png')
+      icons.push(renderer.domElement.toDataURL('image/png'))
       scene.remove(die)
       disposeLook(look)
-      return icon
-    })
+    }
+    return icons
   }
   finally {
     environment?.dispose()

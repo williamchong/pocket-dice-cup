@@ -135,7 +135,7 @@ const COUNTS = { dice: MAX_DICE, history: MAX_HISTORY }
 
 // Each kind in the chosen finish, and the first skin of each finish for Style,
 // in a fixed order so a picture drawn late keeps its place. The cup draws them
-// all for its pickers once the dice are ready; opened by its own address, the
+// all for its pickers just after its first frame; opened by its own address, the
 // page asks for that same batch first, so it is drawn in one go rather than two.
 drawPickerIcons(props.skin)
 const dieIcons = useDieIcons(() => props.skin)

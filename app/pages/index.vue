@@ -452,10 +452,13 @@ watch(result, (values) => {
   // Which dice, on what: never the numbers they came up with.
   analytics.track('roll_completed', { dice: formatPool(pool.value), skin: skin.value.id, table: table.value.id })
 })
-// The pickers' pictures hold the page for a moment as they are drawn,
-// unnoticed as the splash fades out.
+// The pickers' pictures are drawn before anyone opens a picker, but after the
+// cup's first frame (requested before this, so it runs first in the same
+// frame), whose shaders would otherwise wait behind theirs to compile while
+// the loading screen stays up: 2.3 s at a fresh install in the iPhone 17
+// simulator, before the shader cache has them.
 watch(ready, (now) => {
-  if (now) drawPickerIcons(skin.value)
+  if (now) requestAnimationFrame(() => setTimeout(() => drawPickerIcons(skin.value)))
 })
 // The loading screen is the static page's (app/spa-loading-template.html),
 // so its animation runs on unbroken from before any script. It fades out once

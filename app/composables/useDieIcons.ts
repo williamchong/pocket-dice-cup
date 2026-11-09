@@ -13,18 +13,30 @@ const requested = new Set<string>()
 const keyOf = (skin: DieSkinId, kind: DieKind) => `${skin}/${kind}`
 
 /**
- * Draws those of `dice` that are not drawn yet, all in one WebGL context. It
- * holds the page for a moment, so the cup calls it while idle, before anyone
- * opens a picker.
+ * The drawing under way, which the next waits for: drawn side by side, each
+ * would hold a WebGL context and compile the same shaders again.
+ */
+let drawing = Promise.resolve()
+
+/**
+ * Draws those of `dice` that are not drawn yet, all in one WebGL context,
+ * over several tasks so the page is not held for long.
  */
 function draw(dice: readonly DieIconRequest[]): void {
-  const wanted = dice.filter(({ skin, kind }) => !requested.has(keyOf(skin.id, kind)))
+  const wanted: DieIconRequest[] = []
+  for (const die of dice) {
+    const key = keyOf(die.skin.id, die.kind)
+    if (requested.has(key)) continue
+    requested.add(key)
+    wanted.push(die)
+  }
   if (wanted.length === 0) return
-  for (const { skin, kind } of wanted) requested.add(keyOf(skin.id, kind))
-  // Imported here so three.js stays out of the initial bundle.
-  import('~/engine/render/dieIcons')
-    .then(({ renderDieIcons }) => {
-      renderDieIcons(ICON_PIXELS, wanted).forEach((url, i) => icons.set(keyOf(wanted[i]!.skin.id, wanted[i]!.kind), url))
+  drawing = drawing
+    // Imported here so three.js stays out of the initial bundle.
+    .then(() => import('~/engine/render/dieIcons'))
+    .then(async ({ renderDieIcons }) => {
+      const urls = await renderDieIcons(ICON_PIXELS, wanted)
+      wanted.forEach(({ skin, kind }, i) => icons.set(keyOf(skin.id, kind), urls[i]!))
     })
     .catch((error) => {
       console.error(error)
@@ -41,8 +53,8 @@ export function drawDieIcons(skin: DieSkin): void {
 
 /**
  * Draws both pickers' pictures, every kind in `skin` and a d6 in each skin,
- * in one go: the translucent skins' pictures take a second pass each, too
- * long to leave until the Style sheet is opening.
+ * in one go: compiling the skins' shaders takes too long to leave until the
+ * Style sheet is opening.
  */
 export function drawPickerIcons(skin: DieSkin): void {
   draw([...kindsIn(skin), ...skinPicker()])
