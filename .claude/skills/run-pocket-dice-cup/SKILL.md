@@ -91,6 +91,7 @@ Base URL is the first argument (default `http://localhost:3000/`).
 | `ss [name]` | screenshot |
 | `eval <js>` | evaluates in the page and prints JSON |
 | `errors` | console errors and page exceptions since the last `errors`/`open` |
+| `resize <w> <h>` | changes the viewport, as a folding phone does: the iPhone Duo's outer screen is `466 678`, its inner one `669 951`; a fold animates for 350 ms |
 | `wait <ms>`, `help`, `quit` | |
 
 A failed or unknown command prints `<name> failed: …` and the driver

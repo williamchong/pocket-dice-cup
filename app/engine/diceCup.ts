@@ -1,4 +1,4 @@
-import { boxForViewport, toScreen, type ScreenCircle } from './box'
+import { boxForViewport, toScreen, type BoxSize, type ScreenCircle } from './box'
 import { MAX_DICE, type DicePool } from './core/pool'
 import type { CupState } from './core/stateMachine'
 import { ClackSound, type SoundTuning } from './feedback/clackSound'
@@ -6,6 +6,7 @@ import { CupFeedback, type FeedbackStats, type HapticTuning } from './feedback/c
 import { deviceHaptics } from './feedback/haptics'
 import type { MotionSource } from './input/motionSource'
 import type { TraceRecorder } from './input/motionTrace'
+import { FOLD_MS, foldFrame, foldShift, isFold } from './fold'
 import type { Vec3 } from './math'
 import type { Rapier, Surface } from './physics/world'
 import { DiceScene } from './render/scene'
@@ -46,6 +47,8 @@ export interface CupDebugInfo extends FeedbackStats {
   /** What reads the sensor; see MotionSource.name. */
   sensorName: string
   sound: string
+  /** The last few viewport sizes, oldest first, to see how a phone's unfold reaches the page. */
+  sizes: string
 }
 
 export interface DiceCupOptions extends CupOptions {
@@ -53,6 +56,13 @@ export interface DiceCupOptions extends CupOptions {
   skin: DieSkin
   /** What the cup is lined with at the start. */
   table: Table
+  /**
+   * Called when the phone is folded or unfolded, with how far the old
+   * screen's centre lies from the new one's, in CSS pixels, so the page can
+   * bring its buttons over from where they were as the felt grows. Not
+   * called with reduced motion, when the felt changes at once too.
+   */
+  onFold?: (shift: { x: number, y: number }) => void
 }
 
 /** A frame longer than this is treated as a pause (a hidden tab), not as time to catch up on. */
@@ -92,6 +102,12 @@ export class DiceCup {
   /** When the marks under the dice that did not roll over began to fade in. */
   private marksShownAt = -Infinity
   private readonly resizeObserver: ResizeObserver
+  /** A fold under way: the box it started from and the one it ends at, and when its first frame came. */
+  private fold: { from: BoxSize, to: BoxSize, elapsedMs: number } | null = null
+  /** The cup as the walls and the tray last stood, part way through a fold or not, for a fold to start from. */
+  private drawnBox: BoxSize | null = null
+  /** For debugInfo.sizes. */
+  private sizes: string[] = []
 
   private constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -101,6 +117,7 @@ export class DiceCup {
     private readonly feedback: CupFeedback,
     private readonly onChange: (snapshot: CupSnapshot) => void,
     private readonly recorder: TraceRecorder | null,
+    private readonly onFold: DiceCupOptions['onFold'],
   ) {
     this.resizeObserver = new ResizeObserver(() => this.resize())
     this.resizeObserver.observe(canvas)
@@ -115,7 +132,7 @@ export class DiceCup {
     rapier: Rapier,
     source: MotionSource,
     onChange: (snapshot: CupSnapshot) => void,
-    { skin, table, ...options }: DiceCupOptions,
+    { skin, table, onFold, ...options }: DiceCupOptions,
     recorder: TraceRecorder | null = null,
   ): DiceCup {
     // A canvas that is not laid out yet has no size; the first resize corrects the box.
@@ -125,7 +142,7 @@ export class DiceCup {
       scene.setPool(simulation.physics.pool)
       const feedback = new CupFeedback(createSound(), deviceHaptics())
       feedback.setSurfaces(table.sound, table.sharpness)
-      return new DiceCup(canvas, source, simulation, scene, feedback, onChange, recorder)
+      return new DiceCup(canvas, source, simulation, scene, feedback, onChange, recorder, onFold)
     }
     catch (error) {
       // WebGL can be unavailable; do not leave the WASM world behind.
@@ -143,6 +160,7 @@ export class DiceCup {
       sensorActive: this.source.active,
       sensorName: this.source.name,
       sound: this.feedback.soundState,
+      sizes: this.sizes.join(' → '),
       ...this.feedback.stats,
     }
   }
@@ -296,12 +314,37 @@ export class DiceCup {
     const { clientWidth, clientHeight } = this.canvas
     if (clientWidth === 0 || clientHeight === 0) return
     if (clientWidth === this.width && clientHeight === this.height) return
+    const from = { width: this.width, height: this.height }
     this.width = clientWidth
     this.height = clientHeight
+    this.sizes = [...this.sizes, `${clientWidth}×${clientHeight}`].slice(-4)
     this.stale = true
     const box = boxForViewport(clientWidth, clientHeight)
-    this.simulation.physics.resize(box)
     this.scene.setBox(box, clientWidth, clientHeight)
+    const folding = isFold(from, { width: clientWidth, height: clientHeight })
+    // The dice keep their place against the right-hand wall, and the felt
+    // grows or shrinks from the left, walls and all, over the next frames,
+    // from where it stands if a fold is still under way.
+    if (folding) this.simulation.physics.shiftDice(foldShift(boxForViewport(from.width, from.height), box))
+    this.fold = { from: folding ? this.drawnBox! : box, to: box, elapsedMs: 0 }
+    const animate = folding && !prefersReducedMotion()
+    if (animate) this.onFold?.({ x: (clientWidth - from.width) / 2, y: (clientHeight - from.height) / 2 })
+    this.stepFold(animate ? 0 : 1)
+    if (animate) this.wake()
+  }
+
+  /** Moves the walls, and the tray drawn round them, `t` of the way through the fold. */
+  private stepFold(t: number): void {
+    const fold = this.fold!
+    const { box, offsetX } = foldFrame(fold.from, fold.to, t)
+    this.simulation.physics.resize(box, offsetX)
+    this.scene.setTray(box, offsetX)
+    this.drawnBox = box
+    this.stale = true
+    if (t < 1) return
+    this.fold = null
+    // The dice have moved on screen, for the result card to keep off.
+    this.notifyChange()
   }
 
   private readonly tick = (timeMs: number): void => {
@@ -314,6 +357,10 @@ export class DiceCup {
     this.lastTimeMs = timeMs
 
     const { simulation, scene } = this
+    if (this.fold) {
+      this.fold.elapsedMs += dt * 1000
+      this.stepFold(this.fold.elapsedMs / FOLD_MS)
+    }
     // Before the first reading the source holds a placeholder, not a measurement.
     if (this.source.active) this.recorder?.push(this.source.acceleration, timeMs)
     const started = performance.now()

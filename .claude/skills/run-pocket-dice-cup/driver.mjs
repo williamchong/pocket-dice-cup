@@ -162,6 +162,14 @@ const commands = {
   async wait(ms) {
     await page.waitForTimeout(num(ms, 1000))
   },
+  /** resize <width> <height> - changes the viewport (CSS px), as a phone folded or unfolded does, e.g. the iPhone Duo's 466 678 and 669 951. */
+  async resize(args) {
+    const [width, height] = args.split(/\s+/)
+    viewport.width = num(width)
+    viewport.height = num(height)
+    await page.setViewportSize(viewport)
+    console.log(`resized to ${viewport.width}×${viewport.height}`)
+  },
   /** ss [name] - screenshot to $SHOTS_DIR. */
   async ss(name) {
     const file = join(shots, `${name || String(++shotCount).padStart(2, '0')}.png`)

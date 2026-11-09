@@ -173,6 +173,9 @@ export class PhysicsWorld {
   private wakeAcceleration: Vec3 | null = null
   private _impacts: Impact[] = []
 
+  /** How far right of x = 0 the walls are centred; non-zero only while a fold moves them (see resize). */
+  private offsetX = 0
+
   constructor(private readonly rapier: Rapier, private box: BoxSize) {
     this.world = new rapier.World({ x: 0, y: 0, z: 0 })
     this.world.timestep = FIXED_DT
@@ -486,19 +489,35 @@ export class PhysicsWorld {
     return this.dice[index]!.shape
   }
 
-  resize(box: BoxSize): void {
+  /**
+   * Rebuilds the walls round `box`, centred `offsetX` to the right of x = 0,
+   * which a fold uses to keep the right-hand wall still while the cup grows
+   * or shrinks (see fold.ts).
+   */
+  resize(box: BoxSize, offsetX = 0): void {
     this.box = box
+    this.offsetX = offsetX
     for (const wall of this.walls) this.world.removeCollider(wall, false)
     this.buildWalls()
-    // The viewport can shrink under the dice (a browser toolbar), so pull any
-    // that are now outside back in, as far as a die lying against a wall.
+    // The viewport can shrink under the dice (a browser toolbar, a phone
+    // folded), so pull any that are now outside back in, as far as a die
+    // lying against a wall. A fold does this a little each frame, so the
+    // wall carries the dice along rather than moving them in one jump.
     for (const { body: die, shape } of this.dice) {
       const limitX = box.width / 2 - shape.inradius
       const limitY = box.height / 2 - shape.inradius
       const p = die.translation()
-      const x = Math.max(-limitX, Math.min(limitX, p.x))
+      const x = offsetX + Math.max(-limitX, Math.min(limitX, p.x - offsetX))
       const y = Math.max(-limitY, Math.min(limitY, p.y))
       if (x !== p.x || y !== p.y) die.setTranslation({ x, y, z: p.z }, true)
+    }
+  }
+
+  /** Moves every die `dx` cm along x, as it lies, without waking it; see foldShift. */
+  shiftDice(dx: number): void {
+    for (const { body } of this.dice) {
+      const p = body.translation()
+      body.setTranslation({ x: p.x + dx, y: p.y, z: p.z }, false)
     }
   }
 
@@ -536,7 +555,7 @@ export class PhysicsWorld {
     const { ColliderDesc, CoefficientCombineRule } = this.rapier
     this.walls = slabs.map(({ half, centre, side, rotation }) => {
       const desc = ColliderDesc.cuboid(half.x, half.y, half.z)
-        .setTranslation(centre.x, centre.y, centre.z)
+        .setTranslation(centre.x + this.offsetX, centre.y, centre.z)
         .setFriction(FRICTION)
         .setRestitution(side ? SIDE_WALL_RESTITUTION : RESTITUTION)
       if (rotation) desc.setRotation(rotation)

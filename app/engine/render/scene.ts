@@ -103,7 +103,7 @@ const UNIT_SCALE = new Vector3(1, 1, 1)
  * sweeping the profile of a wall, from the floor up to the glass, around a
  * rounded rectangle, with normals facing into the cup.
  */
-function trayGeometry({ width, height, depth }: BoxSize): BufferGeometry {
+function trayGeometry({ width, height, depth }: BoxSize, offsetX: number): BufferGeometry {
   // Up the wall: how far in from it, how high, and the inward and upward
   // parts of the normal. The first point is where the floor ends.
   const profile: { inset: number, z: number, inward: number, up: number }[] = []
@@ -120,7 +120,7 @@ function trayGeometry({ width, height, depth }: BoxSize): BufferGeometry {
   for (const [quarter, sx, sy] of [[0, 1, 1], [1, -1, 1], [2, -1, -1], [3, 1, -1]] as const) {
     for (let i = 0; i <= CORNER_SEGMENTS; i++) {
       const angle = (quarter + i / CORNER_SEGMENTS) * Math.PI / 2
-      ring.push({ cx: sx * (width / 2 - ROUNDING), cy: sy * (height / 2 - ROUNDING), ox: Math.cos(angle), oy: Math.sin(angle) })
+      ring.push({ cx: offsetX + sx * (width / 2 - ROUNDING), cy: sy * (height / 2 - ROUNDING), ox: Math.cos(angle), oy: Math.sin(angle) })
     }
   }
 
@@ -140,7 +140,7 @@ function trayGeometry({ width, height, depth }: BoxSize): BufferGeometry {
     }
   }
   const centre = positions.length / 3
-  addVertex(0, 0, 0, 0, 0, 1)
+  addVertex(offsetX, 0, 0, 0, 0, 1)
 
   const geometry = new BufferGeometry()
   const felt: number[] = []
@@ -469,14 +469,12 @@ export class DiceScene {
     this.floor.map!.repeat.set(1 / side, 1 / side)
   }
 
-  /** Fits the cup's opening to a viewport of the given size in CSS pixels. */
+  /** Fits the view to a cup whose opening fills a viewport of the given size in CSS pixels; setTray draws the cup itself. */
   setBox(box: BoxSize, widthPx: number, heightPx: number): void {
     this.renderer.setSize(widthPx, heightPx, false)
     const buffer = this.renderer.getDrawingBufferSize(new Vector2())
     this.halo.setSize(buffer.x, buffer.y)
 
-    this.tray.geometry.dispose()
-    this.tray.geometry = trayGeometry(box)
     this.box = box
     this.fitFloor()
 
@@ -504,6 +502,17 @@ export class DiceScene {
     // three.js only rebuilds the shadow projection when the cone angle
     // changes, and the angle is the same for every table size.
     this.lamp.shadow.camera.updateProjectionMatrix()
+  }
+
+  /**
+   * Draws the tray round `box`, centred `offsetX` to the right of the cup's
+   * centre, while a fold grows or shrinks it in a view set by setBox. The
+   * floor's pattern is laid by the centimetre from the cup's centre, so it
+   * stays still under the moving walls.
+   */
+  setTray(box: BoxSize, offsetX: number): void {
+    this.tray.geometry.dispose()
+    this.tray.geometry = trayGeometry(box, offsetX)
   }
 
   setDieTransform(index: number, position: Vec3, rotation: Quat): void {

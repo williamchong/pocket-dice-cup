@@ -721,6 +721,88 @@ Phases
     pocketdicecup://history` launches the app on History, and
     `pocketdicecup://pool` while it is open brings up the dice sheet. Not
     yet checked: a tap on the island's capsules on the iPhone.
+11. **Folding phones.** On an iPhone Duo, or an Android book-style
+    foldable, unfolding the phone should look like opening the cup: the
+    dice stay where they lie on the glass, and the felt grows out to the
+    left. Opened like a book, the half held in the hand stays put and the
+    cover swings left, so the outer screen lies over the right-hand part of
+    the inner one. Before this, the box stayed centred on the viewport, so
+    on a resize every die kept its distance from the centre, not from the
+    wall it lay against. A die by the outer screen's right wall jumped to
+    the middle of the inner one. Folding moved the dice past the new left
+    wall straight onto it (`PhysicsWorld.resize`), so they piled up in a
+    corner. That was seen in Chromium at the Duo's sizes, where a 6 ended
+    up hidden under another die and the pile covered the help button.
+    Telling a fold from other resizes. The app is locked to portrait, so on
+    a phone only a fold changes the width; a browser toolbar changes the
+    height by a tenth or so. A single resize that changes the width by more
+    than a quarter counts as a fold. Dragging a desktop window comes in
+    many small steps, none of which counts, so it is handled as before.
+    The right wall stays put. The dice are moved across by half the change
+    in width, `(newWidth − oldWidth) / 2`, which keeps each die's distance
+    from the right wall. Each die keeps its rotation and its speed. The
+    Duo's two screens are not the same height (678 and 951 CSS px in the
+    simulator), and how they line up is not known, so the box stays centred
+    top to bottom until it can be measured on a phone.
+    Growing and shrinking. Unfolded or folded, the walls and the tray drawn
+    round them move together, frame by frame, over 350 ms with an ease-out:
+    the right-hand wall stays still and the others move from the old size
+    to the new, the left-hand one most. Unfolding, the walls only move away
+    from the dice, so nothing touches a die lying still. Folding, a die in
+    the way of the left-hand wall is moved in front of it each frame, as
+    `PhysicsWorld.resize` already pulled in a die left outside a smaller
+    cup, so it is carried a few millimetres at a time rather than moved
+    across in one jump. It is woken, as before, so dice carried into each
+    other are pushed apart rather than left overlapping. Carried slowly
+    they slide and do not turn over, so the result keeps its faces. The camera
+    is set for the whole new viewport at once, so the dice keep their size
+    and `toScreen` stays right. Outside the tray, while it grows, the page
+    shows black. The dice's places on screen are sent to the page again when
+    the fold ends.
+    The UI. The buttons and the result card are laid out by CSS and would
+    jump to the new centre. Each is moved back to where it was over the old
+    screen, by half the change in width and, the buttons hanging from the
+    bottom and the card from the top, half the change in height either way,
+    and eased to its place over the same 350 ms (`element.animate`, on the
+    same curve as the felt). With reduced motion the dice are still moved
+    to keep their place against the right wall, but the tray and the UI
+    change at once.
+    Code. `engine/fold.ts` holds the fold test, the shift and the cup at time
+    t, as plain functions with no DOM, so they are tested in Node.
+    `PhysicsWorld.resize` takes the walls' offset to the right, and
+    `shiftDice(dx)` moves the dice without waking them. `DiceScene.setTray(box,
+    offsetX)` draws the tray off-centre, with the floor's pattern laid from
+    the cup's centre so it stays still under the moving walls, while
+    `setBox` sets the camera and lamp for the viewport. Its geometry is
+    rebuilt each frame of a fold, about 20 times. A fold that comes while
+    another is under way starts from where the walls stand. The `onFold`
+    option of `DiceCup` tells the page how far the old screen's centre lies
+    from the new one's, in CSS pixels, and is not called with reduced
+    motion. In `?debug` the
+    overlay's `sizes` row shows the last four viewport sizes, since only a
+    real phone shows in how many steps iOS hands the new size to the WebView.
+    Checks: vitest for `fold.ts` (the Duo's change of screen is a fold
+    either way, while a toolbar, a step of a dragged window and the first
+    layout are not; the right-hand wall stays still through the fold), and
+    against the real Rapier: four d6 unfolded from 466×678 to 669×951 keep
+    their distance from the right wall and their faces, and three d6 slid
+    against the left wall of the open phone are carried inside the folded
+    cup with their faces unchanged. The `run-pocket-dice-cup` driver has a
+    `resize <w> <h>` command. In Chromium, a 4d6 result on the outer screen
+    size unfolded and folded again keeps every die against the right wall
+    and the same faces, with no errors, and with the fold slowed to 3 s for
+    screenshots, the felt is seen growing from the right with the buttons
+    and the card sliding along, and the left wall carrying the dice as it
+    closes. The iPhone Duo simulator can only show the outer screen: it
+    cannot be unfolded from the command line, and powering its screens off
+    with `simctl io … screenConfig` crash-loops SpringBoard. Android
+    foldables get the same code through the WebView's resize, since
+    `configChanges` keeps the activity alive across the change.
+    Status: built, checked in Chromium at the Duo's two sizes. Not yet
+    checked on a real Duo: which side the hinge is on, how the screens line
+    up top to bottom, whether iOS letterboxes a portrait-only app on the
+    inner screen or fills it, and in how many steps the WebView is resized
+    during an unfold. Not yet checked on an Android foldable.
 
 Languages
 ---------

@@ -236,6 +236,7 @@ import type { ComponentPublicInstance } from 'vue'
 import { formatPool, type DicePool } from '~/engine/core/pool'
 import { isRolling } from '~/engine/core/stateMachine'
 import type { SoundTuning, VoiceName } from '~/engine/feedback/clackSound'
+import { FOLD_EASING, FOLD_MS } from '~/engine/fold'
 import { DEFAULT_HAPTIC_TUNING, type HapticTuning } from '~/engine/feedback/cupFeedback'
 import type { Surface } from '~/engine/physics/world'
 import { DEFAULT_SKIN_ID, findSkin, type DieSkin } from '~/engine/render/skins'
@@ -277,7 +278,7 @@ const canvas = useTemplateRef('canvas')
 // Shaking tips the phone far enough for the browser to rotate the page; the
 // cup stays put in the phone's own frame instead.
 const counterRotationStyle = useCounterRotation()
-const { ready, failed, state, result, slid, shaken, layingFlat, hidden, dice, pool, sensing, permission, start, toss, settle, setPool, setSkin, setTable, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value, table: table.value })
+const { ready, failed, state, result, slid, shaken, layingFlat, hidden, dice, pool, sensing, permission, start, toss, settle, setPool, setSkin, setTable, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value, table: table.value, onFold: slideFromFold })
 const rolling = computed(() => isRolling(state.value))
 // Kept across visits, so the hint to shake goes for good after one shake.
 const everShaken = ref(loadShaken())
@@ -394,6 +395,21 @@ watch(result, () => {
   const places = [top, low]
   cardTop.value = places[placeCard(dice.value, places)] === low ? low.top : null
 }, { flush: 'post' })
+
+/**
+ * The buttons and the result card come over from where they were on the
+ * screen before a fold, with the felt: the old screen lies over the
+ * right-hand part of the new one, centred top to bottom (see fold.ts). The
+ * buttons hang from the bottom and the card from the top, so they start
+ * `shift.y` away in opposite directions. With reduced motion there is no
+ * fold to follow: the felt changes at once.
+ */
+function slideFromFold(shift: { x: number, y: number }) {
+  const slides: [HTMLElement | null | undefined, number][] = [[footer.value, -shift.y], [card.value?.$el, shift.y]]
+  for (const [element, y] of slides) {
+    element?.animate([{ transform: `translate(${shift.x}px, ${y}px)` }, { transform: 'none' }], { duration: FOLD_MS, easing: FOLD_EASING })
+  }
+}
 
 const history = shallowRef(loadHistory())
 // The roll stays in the Dynamic Island after leaving the iPhone app; null elsewhere.
@@ -628,6 +644,7 @@ if (debug) {
       `impacts/s ${format(info.impactsPerSecond)}`,
       `peak hit  ${format(info.peakStrength)}`,
       `sound     ${info.sound}`,
+      `sizes     ${info.sizes}`,
     ].join('\n')
   }, 100)
   onBeforeUnmount(() => clearInterval(timer))
