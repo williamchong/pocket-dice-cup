@@ -17,8 +17,9 @@ platform :ios do
       metadata_path: "fastlane/metadata",
       app_rating_config_path: "fastlane/age_rating.json",
       skip_binary_upload: true,
-      # Screenshots are added by hand until there is a script to take them.
-      skip_screenshots: true,
+      # Made by `node fastlane/screenshots.mjs`; each upload replaces the last.
+      screenshots_path: "fastlane/screenshots",
+      overwrite_screenshots: true,
       submit_for_review: false,
       # The listing is checked by reading the diff, not by an HTML preview.
       force: true,

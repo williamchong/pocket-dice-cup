@@ -125,8 +125,15 @@ FASTLANE_USER=<apple-id> fastlane privacy    # App Privacy, logs in with the App
 The `.p8` is an App Store Connect API key with the App Manager role, which
 `.gitignore` keeps out of git; `APP_STORE_CONNECT_API_KEY_PATH` can name a
 key in [fastlane's JSON form](https://docs.fastlane.tools/app-store-connect-api/#using-fastlane-api-key-json-file)
-instead. Screenshots and the reviewer's contact details are set in
-App Store Connect by hand.
+instead. The reviewer's contact details are set in App Store Connect by
+hand.
+
+The screenshots in `fastlane/screenshots/`, which `fastlane metadata`
+uploads, are taken by `node fastlane/screenshots.mjs` from the running dev
+server, with the skill's Playwright (see `.claude/skills/run-pocket-dice-cup`),
+each scene under a headline in its language. The Lock Screen's roll only
+the iPhone app shows, so it is framed from a screenshot of the iPhone 17
+Pro Max simulator saved as `fastlane/screenshots-raw/lockscreen.png`.
 
 ## Android app
 

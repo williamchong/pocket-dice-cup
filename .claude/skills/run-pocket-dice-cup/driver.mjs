@@ -21,8 +21,11 @@ const browser = await chromium.launch({
   // A real GPU is not needed: SwiftShader's WebGL is enough for three.js.
   args: ['--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required'],
 })
-const viewport = { width: 390, height: 844 }
-const context = await browser.newContext({ viewport, deviceScaleFactor: 2, hasTouch: true, locale: process.env.LOCALE ?? 'en-US' })
+// VIEWPORT=440x956 SCALE=3 renders at the 6.9" iPhone's 1320×2868 px, the
+// size the App Store asks screenshots in.
+const [width, height] = (process.env.VIEWPORT ?? '390x844').split('x').map(Number)
+const viewport = { width, height }
+const context = await browser.newContext({ viewport, deviceScaleFactor: Number(process.env.SCALE ?? 2), hasTouch: true, locale: process.env.LOCALE ?? 'en-US' })
 const page = await context.newPage()
 const errors = []
 page.on('console', msg => msg.type() === 'error' && errors.push(msg.text()))
