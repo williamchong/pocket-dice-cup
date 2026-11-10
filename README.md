@@ -115,13 +115,17 @@ keywords in each language under `metadata/`, the age rating in
 With [fastlane](https://fastlane.tools) installed (`brew install fastlane`):
 
 ```sh
-APP_STORE_CONNECT_API_KEY_PATH=~/path/to/key.json fastlane metadata   # listing and age rating
-FASTLANE_USER=<apple-id> fastlane privacy                             # App Privacy, logs in with the Apple ID
+APP_STORE_CONNECT_API_KEY_KEY_ID=<key-id> \
+APP_STORE_CONNECT_API_KEY_ISSUER_ID=<issuer-id> \
+APP_STORE_CONNECT_API_KEY_KEY_FILEPATH=fastlane/AuthKey_<key-id>.p8 \
+  fastlane metadata                          # listing and age rating
+FASTLANE_USER=<apple-id> fastlane privacy    # App Privacy, logs in with the Apple ID
 ```
 
-The key file is an App Store Connect API key in
-[fastlane's JSON form](https://docs.fastlane.tools/app-store-connect-api/#using-fastlane-api-key-json-file),
-kept out of git. Screenshots and the reviewer's contact details are set in
+The `.p8` is an App Store Connect API key with the App Manager role, which
+`.gitignore` keeps out of git; `APP_STORE_CONNECT_API_KEY_PATH` can name a
+key in [fastlane's JSON form](https://docs.fastlane.tools/app-store-connect-api/#using-fastlane-api-key-json-file)
+instead. Screenshots and the reviewer's contact details are set in
 App Store Connect by hand.
 
 ## Android app
