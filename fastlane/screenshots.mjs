@@ -97,8 +97,6 @@ const scenes = [
     query: 'dice=2d6+d20&skin=emerald',
     rolls: 6,
     sheet: 'history',
-    // The card can land over the sheet, whose first row already shows the roll.
-    hideResult: true,
     text: {
       'en-US': ['Settle who rolled what', 'Your last 50 rolls, and the dice stay put as the phone goes round'],
       'zh-Hans': ['谁掷了几点，一查便知', '保留最近 50 次，传手机时骰子也不动'],
@@ -136,15 +134,23 @@ async function capture(context, scene) {
     : () => page.mouse.click(phone.width / 2, phone.height / 3)
   for (let i = 0; i < (scene.rolls ?? 1); i++) {
     // A die that only slid shows a ring: rolled again, unless the ring is the point.
+    // About 1 tap roll in 6 leaves a die that only slid, so 60 tries almost never runs out.
     for (let tries = 1; (await settle(page, trigger)) !== Boolean(scene.slid); tries++) {
-      if (tries >= 30) throw new Error(`${scene.name}: no roll in 30 came out as wanted`)
+      if (tries >= 60) throw new Error(`${scene.name}: no roll in 60 came out as wanted`)
     }
   }
-  if (scene.hideResult) await page.addStyleTag({ content: '[role=status].result { display: none !important }' })
   if (scene.sheet) {
+    // The card is placed clear of the dice, which can put it over the sheet;
+    // the sheet is what the shot is of, and History's first row repeats the roll.
+    await page.addStyleTag({ content: '[role=status].result { display: none !important }' })
     await page.locator('.cup__controls button').nth(sheets.indexOf(scene.sheet)).click()
-    // The sheet draws its dice icons after it opens.
-    await page.waitForTimeout(1800)
+    // The sheets draw their dice icons after opening, showing colour swatches
+    // (Style) or no picture (the pool) until then; History has none.
+    await page.waitForFunction(() => document.querySelectorAll('.skins__swatch').length === 0
+      && document.querySelectorAll('.stepper').length === document.querySelectorAll('.stepper__die').length
+      && [...document.querySelectorAll('.skins__die, .stepper__die')].every(img => img.complete), null, { timeout: 60_000 })
+    // The sheet itself, which reduced motion opens at once, and one more frame.
+    await page.waitForTimeout(500)
   }
   const shot = await page.screenshot({ type: 'jpeg', quality: 95 })
   await page.close()
@@ -173,7 +179,9 @@ async function frame(context, image, text, { font, cjk }) {
 }
 
 const framer = await browser.newContext({ viewport: canvas, deviceScaleFactor: 1 })
-for (const [locale, style] of Object.entries(locales)) {
+// LOCALES=zh-Hant,en-US redoes only those, as a full run takes minutes.
+const only = process.env.LOCALES?.split(',')
+for (const [locale, style] of Object.entries(locales).filter(([locale]) => !only || only.includes(locale))) {
   // Written aside and swapped in whole, so a failed run leaves the last full set for deliver.
   const dir = join(out, locale)
   const next = `${dir}.next`
