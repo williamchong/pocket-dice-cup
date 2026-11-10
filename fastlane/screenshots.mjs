@@ -182,9 +182,10 @@ const framer = await browser.newContext({ viewport: canvas, deviceScaleFactor: 1
 // LOCALES=zh-Hant,en-US redoes only those, as a full run takes minutes.
 const only = process.env.LOCALES?.split(',')
 for (const [locale, style] of Object.entries(locales).filter(([locale]) => !only || only.includes(locale))) {
-  // Written aside and swapped in whole, so a failed run leaves the last full set for deliver.
+  // Written aside and swapped in whole, so a failed run leaves the last full set for deliver,
+  // outside screenshots/, where deliver would take the folder for a language.
   const dir = join(out, locale)
-  const next = `${dir}.next`
+  const next = join(here, '.screenshots-next', locale)
   rmSync(next, { recursive: true, force: true })
   mkdirSync(next, { recursive: true })
   for (const [i, scene] of scenes.entries()) {
