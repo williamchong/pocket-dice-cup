@@ -617,7 +617,13 @@ Phases
    `google-services.json` do not exist yet and every call does nothing
    without them, or in debug builds; the iPhone's frame time as `gtag.js`
    loads on the web, which may overlap the engine's start; and whether
-   Xcode needs anything more for the iOS privacy manifest at submission.
+   App Store Connect takes the upload without a privacy warning. The app
+   carries its own `PrivacyInfo.xcprivacy`, as the roll handed from the
+   Dynamic Island waits in `UserDefaults`, an API Apple requires a reason
+   for (CA92.1, the app's own data), and an upload without one is refused
+   with ITMS-91053; it declares no tracking and no collected data, which
+   Firebase's own manifest declares for the events it sends. The 1.0 (1)
+   Release build for a device builds with the file in the bundle.
 10. **Last roll in the Dynamic Island.** After a roll the iPhone app starts
     a Live Activity, so the roll is still there after leaving the app for a
     score sheet or the rules: in the Dynamic Island, and as a banner on the

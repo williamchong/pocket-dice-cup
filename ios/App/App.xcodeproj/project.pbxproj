@@ -26,6 +26,7 @@
 		F12EBA5E00000000000000A1 /* FirebaseAnalyticsCore in Frameworks */ = {isa = PBXBuildFile; productRef = F12EBA5E00000000000000A2 /* FirebaseAnalyticsCore */; };
 		F12EBA5E00000000000000A4 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = F12EBA5E00000000000000A5 /* FirebaseCore */; };
 		F12EBA5E00000000000000C1 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = F12EBA5E00000000000000C2 /* GoogleService-Info.plist */; };
+		B4C1A0000000000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B4C1A0000000000000000002 /* PrivacyInfo.xcprivacy */; };
 		F12EBA5E00000000000000B1 /* CupAnalyticsPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F12EBA5E00000000000000B2 /* CupAnalyticsPlugin.swift */; };
 		B0D1E50000000000000000B1 /* CupActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0D1E50000000000000000F1 /* CupActivityAttributes.swift */; };
 		B0D1E50000000000000000B2 /* QuickRollIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0D1E50000000000000000F2 /* QuickRollIntent.swift */; };
@@ -84,6 +85,7 @@
 		504EC30E1FED79650016851F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		504EC3111FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		F12EBA5E00000000000000C2 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		B4C1A0000000000000000002 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		504EC3131FED79650016851F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
 		792F2FB8ADD50A78C3CF99C4 /* DiceCupViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DiceCupViewController.swift; sourceTree = "<group>"; };
@@ -165,6 +167,7 @@
 				1C18A0000000000000000007 /* InfoPlist.strings */,
 				504EC3131FED79650016851F /* Info.plist */,
 				F12EBA5E00000000000000C2 /* GoogleService-Info.plist */,
+				B4C1A0000000000000000002 /* PrivacyInfo.xcprivacy */,
 				2FAD9762203C412B000D30F8 /* config.xml */,
 				50B271D01FEDC1A000F3C39B /* public */,
 				792F2FB8ADD50A78C3CF99C4 /* DiceCupViewController.swift */,
@@ -323,6 +326,7 @@
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
 				F12EBA5E00000000000000C1 /* GoogleService-Info.plist in Resources */,
+				B4C1A0000000000000000001 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
