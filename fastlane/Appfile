@@ -1,2 +1,5 @@
 app_identifier("cloud.williamchong.pocketdicecup")
 team_id("Q5YJ6GX784")
+# The Apple ID used by the privacy lane is on several App Store Connect
+# teams, and the app is on this one.
+itc_team_id("129772946")
