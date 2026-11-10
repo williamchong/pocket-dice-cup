@@ -1,0 +1,15 @@
+Pocket Dice Cup turns your phone into a dice cup for board games, tabletop RPGs and dice games. The dice are real 3D physics inside the phone: they rattle against the screen's edges as you shake it, with a clack and a tap of vibration on every hit, and come to rest when you lay it down. The result is read from the faces the dice land on, never from a random number.
+
+SHAKE TO ROLL
+Shake the phone like a cup: a hard shake rolls the dice hard, a gentle one barely turns them. Lay it flat, screen up, or hold it still, to read the total. Settle drops the dice at once, and a tap rolls again.
+
+ANY DICE YOU NEED
+Mix up to 12 dice, from d4 to d20. The result shows the total and each die, and a faint ring marks a die that only slid and never rolled over, so you know to shake harder for a fair roll.
+
+KEEP THE ROLL
+The dice stay where they landed while the phone is passed round the table. After a roll, the result stays in the Dynamic Island and on the Lock Screen, so it is still there when you switch to a score sheet or the rules. History keeps your last 50 rolls.
+
+PICK YOUR STYLE
+Thirteen finishes of dice, in glossy resin, translucent and metal, rolled on green felt or a battle mat. The dice roll the same in every finish and on every table.
+
+Pocket Dice Cup is free software under the GNU GPL.

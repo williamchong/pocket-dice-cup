@@ -1,0 +1,32 @@
+# The App Store listing is kept here as text so a change to it is reviewed
+# and kept in git like the code. The listing goes up with an App Store
+# Connect API key, whose .json file (key_id, issuer_id, key) stays out of
+# git and is named by APP_STORE_CONNECT_API_KEY_PATH.
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Send the name, description, keywords, URLs, categories, age rating and review notes to App Store Connect"
+  lane :metadata do
+    deliver(
+      metadata_path: "fastlane/metadata",
+      app_rating_config_path: "fastlane/age_rating.json",
+      skip_binary_upload: true,
+      # Screenshots are added by hand until there is a script to take them.
+      skip_screenshots: true,
+      submit_for_review: false,
+      # The listing is checked by reading the diff, not by an HTML preview.
+      force: true,
+      run_precheck_before_submit: false
+    )
+  end
+
+  # fastlane's App Privacy action cannot use an API key: it logs in with the
+  # Apple ID in FASTLANE_USER, with its two-factor prompt, instead.
+  desc "Send the App Privacy answers, the same data the privacy manifest and PRIVACY.md list"
+  lane :privacy do
+    upload_app_privacy_details_to_app_store(
+      json_path: "fastlane/app_privacy_details.json"
+    )
+  end
+end

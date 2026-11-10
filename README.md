@@ -109,6 +109,21 @@ in and run. With a free Apple ID the app stops opening after 7 days, and
 running it again from Xcode renews it. Haptics only play on a real device,
 not in the simulator.
 
+The App Store listing is kept in `fastlane/`: the name, description and
+keywords in each language under `metadata/`, the age rating in
+`age_rating.json` and the App Privacy answers in `app_privacy_details.json`.
+With [fastlane](https://fastlane.tools) installed (`brew install fastlane`):
+
+```sh
+APP_STORE_CONNECT_API_KEY_PATH=~/path/to/key.json fastlane metadata   # listing and age rating
+FASTLANE_USER=<apple-id> fastlane privacy                             # App Privacy, logs in with the Apple ID
+```
+
+The key file is an App Store Connect API key in
+[fastlane's JSON form](https://docs.fastlane.tools/app-store-connect-api/#using-fastlane-api-key-json-file),
+kept out of git. Screenshots and the reviewer's contact details are set in
+App Store Connect by hand.
+
 ## Android app
 
 The Android app is the same web build in a Capacitor shell, with a small
