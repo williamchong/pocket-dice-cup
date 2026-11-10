@@ -621,8 +621,13 @@ Phases
    carries its own `PrivacyInfo.xcprivacy`, as the roll handed from the
    Dynamic Island waits in `UserDefaults`, an API Apple requires a reason
    for (CA92.1, the app's own data), and an upload without one is refused
-   with ITMS-91053; it declares no tracking and no collected data, which
-   Firebase's own manifest declares for the events it sends. The 1.0 (1)
+   with ITMS-91053. It also lists what Google Analytics collects, as the
+   privacy policy does: the rolls and the app's use, the installation's
+   random identifier, the location Google derives from the IP address and
+   whether Pro was bought, none linked to the user or used for tracking,
+   all for analytics. Firebase's Analytics and AppMeasurement frameworks
+   ship no manifest of their own to declare these, unlike its core
+   libraries, so the app has to. The 1.0 (1)
    Release build for a device builds with the file in the bundle.
 10. **Last roll in the Dynamic Island.** After a roll the iPhone app starts
     a Live Activity, so the roll is still there after leaving the app for a
