@@ -9,6 +9,7 @@ import { mkdirSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { createInterface } from 'node:readline'
+import { restSamples, sendMotion, shakeSamples } from './motion.mjs'
 
 const playwrightDir = process.env.PLAYWRIGHT_DIR ?? join(homedir(), '.cache/pocket-dice-driver')
 const { chromium } = createRequire(join(playwrightDir, 'package.json'))('playwright-core')
@@ -43,35 +44,6 @@ function num(arg, fallback) {
 
 function hide(selector) {
   return page.addStyleTag({ content: `${selector} { display: none !important }` })
-}
-
-/** Sends `samples` ([ms, x, y, z], W3C sign: screen-up is z = +9.81) as devicemotion events at their own pace. */
-async function sendMotion(samples) {
-  await page.evaluate(async (samples) => {
-    const start = performance.now()
-    for (const [t, x, y, z] of samples) {
-      const wait = start + t - performance.now()
-      if (wait > 0) await new Promise(r => setTimeout(r, wait))
-      window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: { x, y, z }, interval: 16 }))
-    }
-  }, samples)
-}
-
-/** `ms` of the phone lying still, screen-up. */
-function restSamples(ms, from = 0) {
-  const out = []
-  for (let t = 0; t <= ms; t += 16) out.push([from + t, 0, 0, 9.81])
-  return out
-}
-
-/** A side-to-side shake of `ms`, then `restMs` lying screen-up so the dice settle. */
-function shakeSamples(ms, restMs) {
-  const out = []
-  for (let t = 0; t <= ms; t += 16) {
-    const phase = (t / 1000) * 2 * Math.PI * 4 // 4 Hz, about a hand's pace
-    out.push([t, 25 * Math.sin(phase), 8 * Math.cos(phase * 1.3), 9.81 + 6 * Math.sin(phase * 0.7)])
-  }
-  return out.concat(restSamples(restMs, ms + 16))
 }
 
 async function debugText() {
@@ -131,14 +103,14 @@ const commands = {
     const [ms, restMs] = args.split(/\s+/)
     const shakeMs = num(ms, 1500)
     const stillMs = num(restMs, 3000)
-    await sendMotion(shakeSamples(shakeMs, stillMs))
+    await sendMotion(page, shakeSamples(shakeMs, stillMs))
     console.log(`shook ${shakeMs} ms, then lay still ${stillMs} ms`)
   },
   /** replay <trace.json> - replays a recorded iPhone trace (tests/fixtures/traces), then 3 s screen-up. */
   async replay(file) {
     const trace = JSON.parse(readFileSync(resolve(file), 'utf8'))
     const last = trace.samples.at(-1)[0]
-    await sendMotion(trace.samples.concat(restSamples(3000, last + 16)))
+    await sendMotion(page, trace.samples.concat(restSamples(3000, last + 16)))
     console.log(`replayed ${trace.samples.length} samples: ${trace.note}`)
   },
   /** wait-result [seconds] - waits for the result card and prints it. */

@@ -9,17 +9,19 @@
 // ($PLAYWRIGHT_DIR, default ~/.cache/pocket-dice-driver), as it is not a
 // project dependency.
 import { createRequire } from 'node:module'
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { sendMotion, shakeSamples } from '../.claude/skills/run-pocket-dice-cup/motion.mjs'
 
 const playwrightDir = process.env.PLAYWRIGHT_DIR ?? join(homedir(), '.cache/pocket-dice-driver')
 const { chromium } = createRequire(join(playwrightDir, 'package.json'))('playwright-core')
 const base = process.argv[2] ?? 'http://localhost:3000/'
-const out = join(dirname(fileURLToPath(import.meta.url)), 'screenshots')
+const here = dirname(fileURLToPath(import.meta.url))
+const out = join(here, 'screenshots')
 // Outside screenshots/, where deliver would take a folder for a language.
-const rawDir = join(dirname(fileURLToPath(import.meta.url)), 'screenshots-raw')
+const rawDir = join(here, 'screenshots-raw')
 
 // The 6.9" iPhone in points; at 3× it is the 1320×2868 the store asks for.
 const phone = { width: 440, height: 956 }
@@ -29,14 +31,14 @@ const canvas = { width: 1320, height: 2868 }
 // Font names are single-quoted, as they go inside a double-quoted style attribute.
 const locales = {
   'en-US': { app: 'en-US', font: "-apple-system, 'Helvetica Neue', sans-serif" },
-  'zh-Hans': { app: 'zh-CN', font: "'PingFang SC', sans-serif" },
-  'zh-Hant': { app: 'zh-HK', font: "'PingFang HK', 'PingFang TC', sans-serif" },
+  'zh-Hans': { app: 'zh-CN', font: "'PingFang SC', sans-serif", cjk: true },
+  'zh-Hant': { app: 'zh-HK', font: "'PingFang HK', 'PingFang TC', sans-serif", cjk: true },
 }
 
 // Each scene shows what one thing the app does gets someone at the table.
 // `shake` rolls with a shake and lays the phone down, as on a real phone,
-// `slid` rolls until a die only slid and wears its ring, `open` opens the
-// cup's nth button (the pool, History, Style), and `raw` frames a screenshot
+// `slid` rolls until a die only slid and wears its ring, `sheet` opens the
+// pool, History or Style sheet over the cup, and `raw` frames a screenshot
 // from the iOS simulator instead, for what only the iPhone app shows.
 const scenes = [
   {
@@ -73,7 +75,7 @@ const scenes = [
     query: 'dice=d4+d8+d12+d20&skin=gold&table=battlemat',
     // Opened before any roll, as the result card would sit over the sheet.
     rolls: 0,
-    open: 0,
+    sheet: 'pool',
     text: {
       'en-US': ['Every die your game calls for', 'd4 to d20, up to 12 at once, for tabletop RPGs and board games'],
       'zh-Hans': ['游戏要什么骰子都有', 'd4 到 d20，一次最多 12 颗，跑团、桌游都适用'],
@@ -83,7 +85,7 @@ const scenes = [
   {
     name: 'style',
     query: 'dice=2d6&skin=cherry',
-    open: 2,
+    sheet: 'style',
     text: {
       'en-US': ['Dice that suit your table', '13 finishes from ivory to gold, on green felt or a battle mat'],
       'zh-Hans': ['挑一副喜欢的骰子', '13 种骰子款式，绿色绒布或战斗地图任选'],
@@ -94,7 +96,7 @@ const scenes = [
     name: 'history',
     query: 'dice=2d6+d20&skin=emerald',
     rolls: 6,
-    open: 1,
+    sheet: 'history',
     // The card can land over the sheet, whose first row already shows the roll.
     hideResult: true,
     text: {
@@ -107,72 +109,54 @@ const scenes = [
 
 const browser = await chromium.launch({ args: ['--enable-unsafe-swiftshader'] })
 
-/** Taps the felt and waits for the dice to settle; true when a die only slid and wears its ring. */
-async function roll(page) {
-  await page.mouse.click(phone.width / 2, phone.height / 3)
-  await page.waitForTimeout(500)
-  const card = page.locator('[role=status].result')
-  await card.waitFor({ timeout: 30_000 })
-  return await card.locator('.sr-only').count() > 0
+// The cup's buttons, in order.
+const sheets = ['pool', 'history', 'style']
+const resultCard = page => page.locator('[role=status].result')
+
+/** Rolls with `trigger` and waits for the dice to settle; true when a die only slid and wears its ring. */
+async function settle(page, trigger) {
+  const rolling = trigger()
+  // The card goes once the dice move; waited for, so the last roll's card is not read as this one's.
+  await resultCard(page).waitFor({ state: 'hidden', timeout: 30_000 })
+  await rolling
+  await resultCard(page).waitFor({ timeout: 30_000 })
+  return await resultCard(page).locator('.sr-only').count() > 0
 }
 
-/**
- * A side-to-side shake as devicemotion readings, W3C sign, as the skill's
- * driver sends, then 3 s lying screen-up so the dice settle.
- */
-function shake(page, ms) {
-  return page.evaluate(async (ms) => {
-    const start = performance.now()
-    for (let t = 0; t <= ms + 3000; t += 16) {
-      const wait = start + t - performance.now()
-      if (wait > 0) await new Promise(r => setTimeout(r, wait))
-      const phase = (t / 1000) * 2 * Math.PI * 4
-      const accelerationIncludingGravity = t > ms
-        ? { x: 0, y: 0, z: 9.81 }
-        : { x: 25 * Math.sin(phase), y: 8 * Math.cos(phase * 1.3), z: 9.81 + 6 * Math.sin(phase * 0.7) }
-      window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity, interval: 16 }))
-    }
-  }, ms)
-}
-
-/** One scene of the app, as a PNG at 3×. */
+/** One scene of the app, as a JPEG at 3×, which the framing scales down anyway. */
 async function capture(context, scene) {
   const page = await context.newPage()
   // Without ?debug the dice start at random, as a real roll does.
   await page.goto(`${base}?${scene.query}`)
   await page.locator('.cup__controls').waitFor({ timeout: 60_000 })
+  // The dev server's DevTools pill would show in the shot.
   await page.addStyleTag({ content: '#nuxt-devtools-container, nuxt-devtools-inspect-panel { display: none !important }' })
-  if (scene.shake) {
-    for (let tries = 0; ; tries++) {
-      await shake(page, 1800)
-      const card = page.locator('[role=status].result')
-      await card.waitFor({ timeout: 30_000 })
-      if (await card.locator('.sr-only').count() === 0) break
-      if (tries > 10) throw new Error('shake: every shake left a die that only slid')
-    }
-  }
-  else for (let i = 0; i < (scene.rolls ?? 1); i++) {
+  const trigger = scene.shake
+    ? () => sendMotion(page, shakeSamples(1800, 3000))
+    : () => page.mouse.click(phone.width / 2, phone.height / 3)
+  for (let i = 0; i < (scene.rolls ?? 1); i++) {
     // A die that only slid shows a ring: rolled again, unless the ring is the point.
-    for (let tries = 0; (await roll(page)) !== Boolean(scene.slid); tries++) {
-      if (tries > 30) throw new Error(`${scene.name}: no roll came out as wanted`)
+    for (let tries = 1; (await settle(page, trigger)) !== Boolean(scene.slid); tries++) {
+      if (tries >= 30) throw new Error(`${scene.name}: no roll in 30 came out as wanted`)
     }
   }
   if (scene.hideResult) await page.addStyleTag({ content: '[role=status].result { display: none !important }' })
-  if (scene.open !== undefined) {
-    // The cup's buttons in order: the pool, History, Style.
-    await page.locator('.cup__controls button').nth(scene.open).click()
-    // The sheet slides up; taken once it has stopped.
+  if (scene.sheet) {
+    await page.locator('.cup__controls button').nth(sheets.indexOf(scene.sheet)).click()
+    // The sheet draws its dice icons after it opens.
     await page.waitForTimeout(1800)
   }
-  const png = await page.screenshot()
+  const shot = await page.screenshot({ type: 'jpeg', quality: 95 })
   await page.close()
-  return png
+  return shot
 }
 
 /** The screenshot under its headline, on the felt's green. */
-async function frame(context, png, [headline, subline], font) {
+async function frame(context, image, text, { font, cjk }) {
+  // Chinese breaks at punctuation only (keep-all below), so the spaces around numbers ("12 颗") must not break either.
+  const [headline, subline] = cjk ? text.map(t => t.replaceAll(' ', '\u00A0')) : text
   const page = await context.newPage()
-  const shot = `data:image/png;base64,${png.toString('base64')}`
+  const shot = `data:image/${image[0] === 0xFF ? 'jpeg' : 'png'};base64,${image.toString('base64')}`
   await page.setContent(`<!doctype html><html><body style="margin:0">
     <div style="width:${canvas.width}px;height:${canvas.height}px;box-sizing:border-box;padding-top:170px;
       background:radial-gradient(120% 70% at 50% 0%, #1f7a4a 0%, #0f4a2c 55%, #08281a 100%);
@@ -189,34 +173,37 @@ async function frame(context, png, [headline, subline], font) {
 }
 
 const framer = await browser.newContext({ viewport: canvas, deviceScaleFactor: 1 })
-for (const [locale, { app, font }] of Object.entries(locales)) {
+for (const [locale, style] of Object.entries(locales)) {
+  // Written aside and swapped in whole, so a failed run leaves the last full set for deliver.
   const dir = join(out, locale)
-  rmSync(dir, { recursive: true, force: true })
-  mkdirSync(dir, { recursive: true })
+  const next = `${dir}.next`
+  rmSync(next, { recursive: true, force: true })
+  mkdirSync(next, { recursive: true })
   for (const [i, scene] of scenes.entries()) {
-    let png
+    let image
     if (scene.raw) {
       // Taken by hand in the iPhone 17 Pro Max simulator, which is 1320×2868:
       // `xcrun simctl io booted screenshot fastlane/screenshots-raw/<name>.png`.
       const raw = join(rawDir, scene.raw)
       if (!existsSync(raw)) {
-        console.log(`skipped ${scene.name}: no ${raw}`)
+        console.warn(`skipped ${scene.name}: no ${raw}`)
         continue
       }
-      png = readFileSync(raw)
+      image = readFileSync(raw)
     }
     else {
       // A fresh profile per scene, so History holds only that scene's rolls.
-      const context = await browser.newContext({ viewport: phone, deviceScaleFactor: 3, hasTouch: true, locale: app })
-      png = await capture(context, scene)
+      // Reduced motion shows the ring and the card at once, rather than caught mid-fade.
+      const context = await browser.newContext({ viewport: phone, deviceScaleFactor: 3, hasTouch: true, locale: style.app, reducedMotion: 'reduce' })
+      image = await capture(context, scene)
       await context.close()
     }
     // JPEG, as the store takes it and PNGs of the felt are 2 MB each in git.
-    const file = join(dir, `${i + 1}_${scene.name}.jpg`)
-    // Chinese breaks at punctuation only, so the spaces around numbers ("12 颗") must not break either.
-    const text = locale.startsWith('zh') ? scene.text[locale].map(t => t.replaceAll(' ', '\u00A0')) : scene.text[locale]
-    writeFileSync(file, await frame(framer, png, text, font))
-    console.log(file)
+    const file = join(next, `${i + 1}_${scene.name}.jpg`)
+    writeFileSync(file, await frame(framer, image, scene.text[locale], style))
+    console.log(join(dir, `${i + 1}_${scene.name}.jpg`))
   }
+  rmSync(dir, { recursive: true, force: true })
+  renameSync(next, dir)
 }
 await browser.close()
