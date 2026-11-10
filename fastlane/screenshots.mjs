@@ -22,6 +22,9 @@ const here = dirname(fileURLToPath(import.meta.url))
 const out = join(here, 'screenshots')
 // Outside screenshots/, where deliver would take a folder for a language.
 const rawDir = join(here, 'screenshots-raw')
+// Each language's shots are written here first and swapped in whole, so a
+// failed run leaves deliver the last full set; also outside screenshots/.
+const stagingDir = join(here, '.screenshots-next')
 
 // The 6.9" iPhone in points; at 3× it is the 1320×2868 the store asks for.
 const phone = { width: 440, height: 956 }
@@ -73,7 +76,7 @@ const scenes = [
   {
     name: 'dice',
     query: 'dice=d4+d8+d12+d20&skin=gold&table=battlemat',
-    // Opened before any roll, as the result card would sit over the sheet.
+    // No roll: the dice lie where the app starts them, and the sheet is what the shot is of.
     rolls: 0,
     sheet: 'pool',
     text: {
@@ -105,8 +108,14 @@ const scenes = [
   },
 ]
 
+// LOCALES=zh-Hant,en-US redoes only those, as a full run takes minutes.
+const only = process.env.LOCALES?.split(',').map(name => name.trim()) ?? Object.keys(locales)
+const unknown = only.filter(name => !(name in locales))
+if (unknown.length) throw new Error(`unknown LOCALES ${unknown.join(', ')}; known: ${Object.keys(locales).join(', ')}`)
+
 const browser = await chromium.launch({ args: ['--enable-unsafe-swiftshader'] })
 
+const maxTries = 60
 // The cup's buttons, in order.
 const sheets = ['pool', 'history', 'style']
 const resultCard = page => page.locator('[role=status].result')
@@ -134,22 +143,28 @@ async function capture(context, scene) {
     : () => page.mouse.click(phone.width / 2, phone.height / 3)
   for (let i = 0; i < (scene.rolls ?? 1); i++) {
     // A die that only slid shows a ring: rolled again, unless the ring is the point.
-    // About 1 tap roll in 6 leaves a die that only slid, so 60 tries almost never runs out.
-    for (let tries = 1; (await settle(page, trigger)) !== Boolean(scene.slid); tries++) {
-      if (tries >= 60) throw new Error(`${scene.name}: no roll in 60 came out as wanted`)
+    // A tap leaves a die on the face it started on 15–18% of the time (docs/plan.md),
+    // and only some of those slid without tipping, so the ringed shot can take dozens
+    // of rolls; how many is logged, to tell whether the limit is right.
+    let tries = 1
+    while ((await settle(page, trigger)) !== Boolean(scene.slid)) {
+      if (++tries > maxTries) throw new Error(`${scene.name}: no roll in ${maxTries} came out as wanted`)
     }
+    if (tries > 1) console.log(`${scene.name}: ${tries} rolls`)
   }
   if (scene.sheet) {
     // The card is placed clear of the dice, which can put it over the sheet;
     // the sheet is what the shot is of, and History's first row repeats the roll.
     await page.addStyleTag({ content: '[role=status].result { display: none !important }' })
     await page.locator('.cup__controls button').nth(sheets.indexOf(scene.sheet)).click()
+    // Waited for first, as the icon check below is already true while no sheet is mounted.
+    await page.locator('.cup__sheet').waitFor()
     // The sheets draw their dice icons after opening, showing colour swatches
     // (Style) or no picture (the pool) until then; History has none.
     await page.waitForFunction(() => document.querySelectorAll('.skins__swatch').length === 0
       && document.querySelectorAll('.stepper').length === document.querySelectorAll('.stepper__die').length
       && [...document.querySelectorAll('.skins__die, .stepper__die')].every(img => img.complete), null, { timeout: 60_000 })
-    // The sheet itself, which reduced motion opens at once, and one more frame.
+    // A loaded image is not yet painted, and History has no images to wait for at all.
     await page.waitForTimeout(500)
   }
   const shot = await page.screenshot({ type: 'jpeg', quality: 95 })
@@ -179,24 +194,20 @@ async function frame(context, image, text, { font, cjk }) {
 }
 
 const framer = await browser.newContext({ viewport: canvas, deviceScaleFactor: 1 })
-// LOCALES=zh-Hant,en-US redoes only those, as a full run takes minutes.
-const only = process.env.LOCALES?.split(',')
-for (const [locale, style] of Object.entries(locales).filter(([locale]) => !only || only.includes(locale))) {
-  // Written aside and swapped in whole, so a failed run leaves the last full set for deliver,
-  // outside screenshots/, where deliver would take the folder for a language.
+for (const locale of only) {
+  const style = locales[locale]
   const dir = join(out, locale)
-  const next = join(here, '.screenshots-next', locale)
+  const next = join(stagingDir, locale)
   rmSync(next, { recursive: true, force: true })
   mkdirSync(next, { recursive: true })
   for (const [i, scene] of scenes.entries()) {
     let image
     if (scene.raw) {
-      // Taken by hand in the iPhone 17 Pro Max simulator, which is 1320×2868:
-      // `xcrun simctl io booted screenshot fastlane/screenshots-raw/<name>.png`.
       const raw = join(rawDir, scene.raw)
+      // Stopped rather than skipped, as the swap below would drop the shot from the store.
       if (!existsSync(raw)) {
-        console.warn(`skipped ${scene.name}: no ${raw}`)
-        continue
+        throw new Error(`no ${raw}: take it in the iPhone 17 Pro Max simulator (1320×2868) with `
+          + `\`xcrun simctl io booted screenshot ${raw}\``)
       }
       image = readFileSync(raw)
     }
