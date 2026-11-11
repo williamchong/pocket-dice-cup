@@ -26,3 +26,26 @@ struct QuickRollIntent: LiveActivityIntent {
         return .result()
     }
 }
+
+/**
+ * The ✕ button beside ↻: ends the activity, island and Lock Screen banner
+ * alike, for someone done rolling who would otherwise wait for the app's
+ * four-hour cleanup or iOS's eight, or have to find the Lock Screen's swipe.
+ * The next roll from the cup starts a new one, as after that swipe. In this
+ * file so it is compiled into both targets with ↻'s intent, for the same reason.
+ */
+@available(iOS 17.0, *)
+struct EndCupActivityIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Close"
+    static let description = IntentDescription("Removes the last roll from the Dynamic Island and the Lock Screen.")
+    static let isDiscoverable = false
+
+    init() {}
+
+    func perform() async throws -> some IntentResult {
+        for activity in Activity<CupActivityAttributes>.activities {
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
+        return .result()
+    }
+}

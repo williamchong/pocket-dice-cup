@@ -18,6 +18,7 @@ public class CupActivityPlugin: CAPPlugin, CAPBridgedPlugin {
 
     override public func load() {
         NotificationCenter.default.addObserver(self, selector: #selector(endIfIdle), name: UIApplication.didBecomeActiveNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(endOnQuit), name: UIApplication.willTerminateNotification, object: nil)
     }
 
     /**
@@ -63,6 +64,28 @@ public class CupActivityPlugin: CAPPlugin, CAPBridgedPlugin {
         Task { @MainActor in
             call.resolve(["rolls": QuickRollStore.take()])
         }
+    }
+
+    /**
+     * Ends the activity when the app is quit while still running, as quitting
+     * reads as being done with the cup. iOS does not say so once the app is
+     * suspended in the background, the usual case, so a quit from there leaves
+     * the activity to ✕, the Lock Screen's swipe or the timeouts. The app has
+     * about five seconds before it is killed. The end runs in a detached task,
+     * as a plain one here would inherit the main actor that the semaphore is
+     * holding, and is waited for at most one second, so a slow end cannot use
+     * up the five.
+     */
+    @objc private func endOnQuit() {
+        guard #available(iOS 17.0, *) else { return }
+        let done = DispatchSemaphore(value: 0)
+        Task.detached {
+            for activity in Activity<CupActivityAttributes>.activities {
+                await activity.end(nil, dismissalPolicy: .immediate)
+            }
+            done.signal()
+        }
+        _ = done.wait(timeout: .now() + 1)
     }
 
     /** Ends an activity left from a roll long ago, as the app comes to the front. */

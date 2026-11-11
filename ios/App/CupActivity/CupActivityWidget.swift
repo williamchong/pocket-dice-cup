@@ -19,7 +19,8 @@ private let largeTotal = Font.system(size: 40, weight: .bold, design: .rounded)
 /**
  * The last roll in the Dynamic Island and on the Lock Screen. A tap anywhere
  * opens the app, which is what a Live Activity does with no URL of its own;
- * only the ↻ button, in the expanded island and on the Lock Screen, rolls.
+ * only the ↻ button, in the expanded island and on the Lock Screen, rolls,
+ * and ✕ beside it closes the activity.
  */
 struct CupActivityWidget: Widget {
     var body: some WidgetConfiguration {
@@ -144,9 +145,10 @@ struct DieChip: View {
 
 /**
  * The pool, which opens the dice, and when it was rolled, which opens
- * History, then the ↻ button, all as capsules so that each reads as
- * something to tap. A quick roll is said in words with the time rather than
- * with a second ↻, which read as another button.
+ * History, then the ↻ button and ✕, which ends the activity, all as
+ * capsules so that each reads as something to tap. A quick roll is said in
+ * words with the time rather than with a second ↻, which read as another
+ * button.
  */
 struct PoolAndReroll: View {
     let state: CupActivityAttributes.ContentState
@@ -168,6 +170,12 @@ struct PoolAndReroll: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Quick roll")
+            Button(intent: EndCupActivityIntent()) {
+                Image(systemName: "xmark").font(.body.bold()).capsule(padding: 16)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Close")
+            .accessibilityHint("Removes the roll from the Dynamic Island and the Lock Screen")
         }
         .font(.footnote)
     }

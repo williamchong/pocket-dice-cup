@@ -648,7 +648,7 @@ Phases
     that, so no URL scheme), and a long press expands the island:
 
         [17] ⚃ ⚁                              23
-        (d20+2d6) (Quick roll · 8:14 PM)      ( ↻ )
+        (d20+2d6) (Quick roll · 8:14 PM)  ( ↻ ) ( ✕ )
 
     The band beside the camera holds the dice and the total, as one row of
     small pool and faces under it left the island looking empty on the
@@ -703,6 +703,14 @@ Phases
       dimmer; it is ended when the app next comes to the front four hours
       or more after the last roll, and otherwise by iOS after 8 hours, as
       nothing can end it on a timer while the app is not running.
+    - For 1.0.1, ✕ beside ↻ ends it (`EndCupActivityIntent`, beside
+      `QuickRollIntent`), as the Lock Screen's swipe was the only other
+      way and one an island user may never find; the next roll from the
+      cup starts a new one. Swiping the app away ends it too, but only when
+      iOS tells the app (`willTerminateNotification`), which it does not
+      once the app is suspended in the background, the usual case.
+      Not yet checked: either on the iPhone, and whether the row still fits
+      a long pool and "Quick roll" on the Lock Screen with the fourth capsule.
     Out of scope for the prototype: a setting to turn it off, and whether it
     is part of Pro; translations of the button's accessibility label (the
     island has no other words; History's ↻ has its label in all three
