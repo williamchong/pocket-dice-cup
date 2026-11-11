@@ -619,7 +619,9 @@ Phases
    loads on the web, which may overlap the engine's start. App Store
    Connect took the 1.0 (1) upload, which processed as valid, with only
    Xcode's notes that Google's two frameworks ship without dSYMs, and the
-   version went to review on 2026-11-11. The app
+   version went to review on 2026-11-11. It was withdrawn the same day for
+   1.0.1 (2), with the island's ✕, which went to review in its place as
+   the first release, under the version renamed 1.0.1. The app
    carries its own `PrivacyInfo.xcprivacy`, as the roll handed from the
    Dynamic Island waits in `UserDefaults`, an API Apple requires a reason
    for (CA92.1, the app's own data), and an upload without one is refused
