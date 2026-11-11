@@ -546,6 +546,13 @@ Phases
    a smaller note under the section; the head's description keeps the longer
    introduction. Checked in Chromium at iPhone size, in English and
    traditional Chinese, on the felt and the battle mat.
+   While the dice roll, shaking or settling, the buttons along the bottom
+   fade to 35%: no one presses them mid-shake, and the dice tumble behind
+   them. Settle stays solid, as the one button wanted then, and the rest
+   stay tappable, since a roll lasts as long as the phone is held. They
+   come back when the result shows. Checked in Chromium at iPhone size on
+   the felt and the battle mat, where the smoked glass at 35% can still be
+   read. Not yet checked on the iPhone.
 7. **PWA polish.** Offline, installable, fullscreen, rendering paused while the
    phone is face-down.
    Status: screen-down, the dice still roll and are heard and felt, but are

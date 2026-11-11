@@ -76,7 +76,14 @@
         :loading="layingFlat"
         @click="settle"
       />
-      <div class="cup__controls">
+      <!-- Faded while the dice roll, as no one presses them mid-shake and the
+           dice tumble behind them; Settle, above, stays solid, as the one
+           button wanted then. Still tappable: a roll lasts as long as the
+           phone is held, and they must stay within reach all that time. -->
+      <div
+        class="cup__controls"
+        :class="{ 'cup__controls--faded': rolling }"
+      >
         <!-- In the default slot, not `label`, which would truncate: a long
              mix of dice wraps onto a second line. -->
         <UButton
@@ -805,6 +812,22 @@ if (debug) {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+/* On each button, not the row: opacity on the row would cut the buttons'
+   backdrop off from the dice behind, and their blur would go. */
+.cup__controls > * {
+  transition: opacity 0.3s ease-out;
+}
+
+.cup__controls--faded > * {
+  opacity: 0.35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cup__controls > * {
+    transition: none;
+  }
 }
 
 .cup__result {
