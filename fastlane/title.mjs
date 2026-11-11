@@ -69,7 +69,8 @@ async function compose(size, shot, words, style) {
       <img src="data:image/jpeg;base64,${shot.toString('base64')}" style="width:${cupWidth}px;height:${half.height}px;display:block">
     </div></body></html>`)
   await page.evaluate(() => document.fonts.ready)
-  const image = await page.screenshot({ type: 'jpeg', quality: 92 })
+  // PNG, as App Store Connect takes no other format for the header, and a JPEG fails its processing.
+  const image = await page.screenshot({ type: 'png' })
   await page.close()
   return image
 }
@@ -80,7 +81,7 @@ for (const locale of chosenLocales()) {
   for (const size of sizes) {
     const viewport = { width: Math.round(size.width * cupShare / scale), height: size.height / scale }
     const shot = await capture(viewport, style.app)
-    const file = join(out, locale, `${size.width}x${size.height}.jpg`)
+    const file = join(out, locale, `${size.width}x${size.height}.png`)
     writeFileSync(file, await compose(size, shot, text[locale], style))
     console.log(file)
   }

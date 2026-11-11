@@ -134,10 +134,10 @@ server, with the skill's Playwright (see `.claude/skills/run-pocket-dice-cup`),
 each scene under a headline in its language. The Lock Screen's roll only
 the iPhone app shows, so it is framed from a screenshot of the iPhone 17
 Pro Max simulator saved as `fastlane/screenshots-raw/lockscreen.png`.
-The product page's title asset, the wide banner in `fastlane/title/`, comes
-from `node fastlane/title.mjs` the same way, in both sizes App Store Connect
-takes; deliver does not upload it, so it goes in by hand under the
-version's Title.
+The product page's title asset, the wide banner, comes from
+`node fastlane/title.mjs` the same way, in both sizes App Store Connect
+takes, into `fastlane/title/`. It has to be PNG, about 8 MB each, so it is
+made when needed rather than kept in git, and deliver does not upload it.
 
 ## Android app
 

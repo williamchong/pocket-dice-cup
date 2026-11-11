@@ -30,3 +30,4 @@ fastlane/README.md
 *.p8
 AuthKey_*.json
 fastlane/.screenshots-next/
+fastlane/title/
