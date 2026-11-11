@@ -616,8 +616,10 @@ Phases
    actually reaching GA, as `GoogleService-Info.plist` and
    `google-services.json` do not exist yet and every call does nothing
    without them, or in debug builds; the iPhone's frame time as `gtag.js`
-   loads on the web, which may overlap the engine's start; and whether
-   App Store Connect takes the upload without a privacy warning. The app
+   loads on the web, which may overlap the engine's start. App Store
+   Connect took the 1.0 (1) upload, which processed as valid, with only
+   Xcode's notes that Google's two frameworks ship without dSYMs, and the
+   version went to review on 2026-11-11. The app
    carries its own `PrivacyInfo.xcprivacy`, as the roll handed from the
    Dynamic Island waits in `UserDefaults`, an API Apple requires a reason
    for (CA92.1, the app's own data), and an upload without one is refused
