@@ -48,6 +48,11 @@ export class NativeBackend implements HapticsBackend {
  * browser on iOS, which is WebKit, and desktops. The apps have their own plugin.
  */
 export function deviceHaptics(): HapticsBackend | null {
-  if (Capacitor.isNativePlatform()) return new NativeBackend()
-  return typeof navigator.vibrate === 'function' ? new VibrateBackend() : null
+  if (!canVibrate()) return null
+  return Capacitor.isNativePlatform() ? new NativeBackend() : new VibrateBackend()
+}
+
+/** Whether deviceHaptics has a vibration to play, so a switch for it is only offered where it does something. */
+export function canVibrate(): boolean {
+  return Capacitor.isNativePlatform() || typeof navigator.vibrate === 'function'
 }

@@ -103,6 +103,8 @@ export class CupFeedback {
   readonly tuning: HapticTuning = structuredClone(DEFAULT_HAPTIC_TUNING)
   /** Silences the clacks but not the vibration, which is felt rather than heard and disturbs no one nearby. */
   muted = false
+  /** Stills the vibration but not the clacks, for a hand that would rather not feel the dice. */
+  vibrationOff = false
 
   constructor(private readonly sound: ImpactSound | null, private readonly haptics: HapticsBackend | null) {}
 
@@ -176,6 +178,7 @@ export class CupFeedback {
   }
 
   private pulse(strength: number, surface: Surface): void {
+    if (this.vibrationOff) return
     const { minIntensity, sharpness } = this.tuning
     this.haptics?.playTransient(minIntensity + (1 - minIntensity) * strength, sharpness[surface])
   }

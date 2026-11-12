@@ -26,12 +26,26 @@ export function rollTotal(values: readonly number[]): number {
  * total.
  */
 export function rollBreakdown(values: readonly number[], kinds?: readonly DieKind[]): string | null {
+  if (values.length <= 1 && (kinds?.[0] ?? 'd6') === 'd6') return null
+  return byKind(values, kinds, ' + ')
+}
+
+/**
+ * Each die's value without adding them up, for a result card with the total
+ * turned off: "3 5 1" for d6s, and by kind for any others, as
+ * "d6: 3 5 · d20: 17". A lone d6 is just its value.
+ */
+export function rollFaces(values: readonly number[], kinds?: readonly DieKind[]): string {
+  return byKind(values, kinds, ' ')
+}
+
+function byKind(values: readonly number[], kinds: readonly DieKind[] | undefined, separator: string): string {
   const kindOf = values.map((_, index) => kinds?.[index] ?? 'd6')
-  if (kindOf.every(kind => kind === 'd6')) return values.length > 1 ? values.join(' + ') : null
+  if (kindOf.every(kind => kind === 'd6')) return values.join(separator)
   return DIE_KINDS.flatMap((kind) => {
     const shown = values.filter((_, index) => kindOf[index] === kind)
     // A no-break space keeps the kind on the line of its first value.
-    return shown.length > 0 ? [`${kind}:\u00A0${shown.join(' + ')}`] : []
+    return shown.length > 0 ? [`${kind}:\u00A0${shown.join(separator)}`] : []
   }).join(' · ')
 }
 

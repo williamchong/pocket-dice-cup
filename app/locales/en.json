@@ -43,6 +43,9 @@
   "options": {
     "label": "Options",
     "sound": "Sound",
+    "vibration": "Vibration",
+    "total": "Show total",
+    "totalNote": "Turn off for games that read each die, such as liar's dice.",
     "island": "Dynamic Island",
     "islandNote": "Keeps the last roll in the Dynamic Island and on the Lock Screen."
   },

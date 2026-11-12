@@ -23,7 +23,7 @@ export interface UseDiceCupOptions extends DiceCupOptions {
  * needs. The engine itself is never made reactive: Vue's proxies would wrap
  * three.js and Rapier objects that are read thousands of times a frame.
  */
-export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>>, { recordTrace = false, muted: startMuted = false, ...options }: UseDiceCupOptions) {
+export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>>, { recordTrace = false, muted: startMuted = false, vibrationOff: startVibrationOff = false, ...options }: UseDiceCupOptions) {
   const ready = ref(false)
   /** The engine could not start, for example because WebGL is unavailable. */
   const failed = ref(false)
@@ -56,6 +56,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
   let unmounted = false
   // Kept here as well, as the switch can be flipped while the engine is still loading.
   let muted = startMuted
+  let vibrationOff = startVibrationOff
 
   onMounted(async () => {
     // Only Safari on iOS waits for a tap, and only until access is given;
@@ -84,7 +85,7 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
         dice.value = snapshot.dice
         sensing.value = snapshot.sensing
         screenAwake?.setWanted(!snapshot.dormant)
-      }, { ...options, muted }, recorder)
+      }, { ...options, muted, vibrationOff }, recorder)
       pool.value = cup.pool
       // Capacitor's WebView lets audio start without a tap; a browser leaves
       // it waiting for the first one.
@@ -173,6 +174,12 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     cup?.setMuted(next)
   }
 
+  /** Stills the vibration or lets it be felt; before the engine is ready, the `vibrationOff` option says. */
+  function setVibrationOff(next: boolean) {
+    vibrationOff = next
+    cup?.setVibrationOff(next)
+  }
+
   /** Rolls from a click or tap, with or without a motion sensor. */
   function toss() {
     void cup?.unlockSound()
@@ -184,5 +191,5 @@ export function useDiceCup(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>
     cup?.settle()
   }
 
-  return { ready, failed, state, result, slid, shaken, layingFlat, hidden, dice, pool, sensing, permission, start, toss, settle, setPool, setSkin, setTable, setMuted, debugInfo, exportTrace, hapticTuning, soundTuning, testHit }
+  return { ready, failed, state, result, slid, shaken, layingFlat, hidden, dice, pool, sensing, permission, start, toss, settle, setPool, setSkin, setTable, setMuted, setVibrationOff, debugInfo, exportTrace, hapticTuning, soundTuning, testHit }
 }

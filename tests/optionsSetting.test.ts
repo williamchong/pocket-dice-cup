@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { loadIslandOn, loadSoundOn, saveIslandOn, saveSoundOn } from '../app/utils/optionsSetting'
+import { loadIslandOn, loadSoundOn, loadTotalOn, loadVibrationOn, saveIslandOn, saveSoundOn, saveTotalOn, saveVibrationOn } from '../app/utils/optionsSetting'
 
 describe('saved options', () => {
   afterEach(() => {
@@ -21,6 +21,13 @@ describe('saved options', () => {
     saveSoundOn(true)
     expect(loadSoundOn()).toBe(true)
     expect(loadIslandOn()).toBe(false)
+    expect(loadVibrationOn()).toBe(true)
+    expect(loadTotalOn()).toBe(true)
+    saveVibrationOn(false)
+    saveTotalOn(false)
+    expect(loadVibrationOn()).toBe(false)
+    expect(loadTotalOn()).toBe(false)
+    expect(loadSoundOn()).toBe(true)
   })
 
   it('are on when storage throws', () => {

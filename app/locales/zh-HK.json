@@ -43,6 +43,9 @@
   "options": {
     "label": "選項",
     "sound": "聲音",
+    "vibration": "震動",
+    "total": "顯示總和",
+    "totalNote": "玩大話骰等不計總和的遊戲時可關閉。",
     "island": "動態島",
     "islandNote": "在動態島和鎖定畫面顯示最近一次擲骰。"
   },

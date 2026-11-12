@@ -88,6 +88,7 @@
              mix of dice wraps onto a second line. -->
         <UButton
           class="min-h-11 rounded-[1.375rem] py-1.5"
+          :title="$t('pool.label')"
           :aria-pressed="openSheet === 'pool'"
           @click="toggle('pool')"
         >
@@ -96,6 +97,7 @@
         <UButton
           class="min-h-11 min-w-11 justify-center"
           icon="i-lucide-history"
+          :title="$t('cup.history')"
           :aria-label="$t('cup.history')"
           :aria-pressed="openSheet === 'history'"
           @click="toggle('history')"
@@ -103,6 +105,7 @@
         <UButton
           class="min-h-11 min-w-11 justify-center"
           icon="i-lucide-palette"
+          :title="$t('cup.style')"
           :aria-label="$t('cup.style')"
           :aria-pressed="openSheet === 'skin'"
           @click="toggle('skin')"
@@ -110,6 +113,7 @@
         <UButton
           class="min-h-11 min-w-11 justify-center"
           icon="i-lucide-settings"
+          :title="$t('cup.options')"
           :aria-label="$t('cup.options')"
           :aria-pressed="openSheet === 'options'"
           @click="toggle('options')"
@@ -119,6 +123,7 @@
           class="min-h-11 min-w-11 justify-center"
           to="/about"
           icon="i-lucide-circle-help"
+          :title="$t('about.label')"
           :aria-label="$t('about.label')"
         />
       </div>
@@ -163,8 +168,11 @@
       <OptionsSheet
         v-else-if="openSheet === 'options'"
         v-model:sound-on="soundOn"
+        v-model:vibration-on="vibrationOn"
+        v-model:total-on="totalOn"
         v-model:island-on="islandOn"
         class="cup__sheet"
+        :vibration-supported="vibrationSupported"
         :island-supported="islandSupported"
         @close="openSheet = null"
       />
@@ -179,6 +187,7 @@
       :values="result"
       :kinds="pool"
       :slid="slid"
+      :show-total="totalOn"
     />
 
     <!-- The about page (index/about.vue), over the cup, drawing its dice in
@@ -262,6 +271,7 @@ import { isRolling } from '~/engine/core/stateMachine'
 import type { SoundTuning, VoiceName } from '~/engine/feedback/clackSound'
 import { FOLD_EASING, FOLD_MS } from '~/engine/fold'
 import { DEFAULT_HAPTIC_TUNING, type HapticTuning } from '~/engine/feedback/cupFeedback'
+import { canVibrate } from '~/engine/feedback/haptics'
 import type { Surface } from '~/engine/physics/world'
 import { DEFAULT_SKIN_ID, findSkin, type DieSkin } from '~/engine/render/skins'
 import { DEFAULT_TABLE_ID, findTable, type Table } from '~/engine/tables'
@@ -302,10 +312,14 @@ const canvas = useTemplateRef('canvas')
 // Shaking tips the phone far enough for the browser to rotate the page; the
 // cup stays put in the phone's own frame instead.
 const counterRotationStyle = useCounterRotation()
-// The options sheet's switches, read before the cup starts so it starts muted if muted.
+// The options sheet's switches, read before the cup starts so it starts muted, or with the vibration stilled, as saved.
 const soundOn = ref(loadSoundOn())
+const vibrationOn = ref(loadVibrationOn())
+const totalOn = ref(loadTotalOn())
+// The Vibration switch shows only where there is a vibration to still.
+const vibrationSupported = canVibrate()
 const islandOn = ref(loadIslandOn())
-const { ready, failed, state, result, slid, shaken, layingFlat, hidden, dice, pool, sensing, permission, start, toss, settle, setPool, setSkin, setTable, setMuted, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value, table: table.value, onFold: slideFromFold, muted: !soundOn.value })
+const { ready, failed, state, result, slid, shaken, layingFlat, hidden, dice, pool, sensing, permission, start, toss, settle, setPool, setSkin, setTable, setMuted, setVibrationOff, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value, table: table.value, onFold: slideFromFold, muted: !soundOn.value, vibrationOff: !vibrationOn.value })
 const rolling = computed(() => isRolling(state.value))
 // Kept across visits, so the hint to shake goes for good after one shake.
 const everShaken = ref(loadShaken())
@@ -453,6 +467,13 @@ watch(soundOn, (on) => {
   // Inside the tap that turned it on, so the sound can start: one hit, heard and felt, says it is back.
   if (on) void testHit('floor')
 })
+watch(vibrationOn, (on) => {
+  setVibrationOff(!on)
+  saveVibrationOn(on)
+  // One hit, felt (and heard, if the sound is on), says it is back.
+  if (on) void testHit('floor')
+})
+watch(totalOn, saveTotalOn)
 // Off takes the roll away at once, rather than leaving it until the next one.
 watch(islandOn, (on) => {
   saveIslandOn(on)

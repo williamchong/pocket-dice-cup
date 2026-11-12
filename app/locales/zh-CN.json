@@ -43,6 +43,9 @@
   "options": {
     "label": "选项",
     "sound": "声音",
+    "vibration": "振动",
+    "total": "显示总和",
+    "totalNote": "玩吹牛骰等不计总和的游戏时可关闭。",
     "island": "灵动岛",
     "islandNote": "在灵动岛和锁定屏幕上显示最近一次掷骰。"
   },

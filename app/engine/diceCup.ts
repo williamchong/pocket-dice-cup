@@ -65,6 +65,8 @@ export interface DiceCupOptions extends CupOptions {
   onFold?: (shift: { x: number, y: number }) => void
   /** Whether the clacks start silenced; see setMuted. */
   muted?: boolean
+  /** Whether the vibration starts stilled; see setVibrationOff. */
+  vibrationOff?: boolean
 }
 
 /** A frame longer than this is treated as a pause (a hidden tab), not as time to catch up on. */
@@ -134,7 +136,7 @@ export class DiceCup {
     rapier: Rapier,
     source: MotionSource,
     onChange: (snapshot: CupSnapshot) => void,
-    { skin, table, onFold, muted = false, ...options }: DiceCupOptions,
+    { skin, table, onFold, muted = false, vibrationOff = false, ...options }: DiceCupOptions,
     recorder: TraceRecorder | null = null,
   ): DiceCup {
     // A canvas that is not laid out yet has no size; the first resize corrects the box.
@@ -145,6 +147,7 @@ export class DiceCup {
       const feedback = new CupFeedback(createSound(), deviceHaptics())
       feedback.setSurfaces(table.sound, table.sharpness)
       feedback.muted = muted
+      feedback.vibrationOff = vibrationOff
       return new DiceCup(canvas, source, simulation, scene, feedback, onChange, recorder, onFold)
     }
     catch (error) {
@@ -186,6 +189,11 @@ export class DiceCup {
   /** Silences the clacks, or lets them be heard again, at any time; see CupFeedback.muted. */
   setMuted(muted: boolean): void {
     this.feedback.muted = muted
+  }
+
+  /** Stills the vibration, or lets it be felt again, at any time; see CupFeedback.vibrationOff. */
+  setVibrationOff(off: boolean): void {
+    this.feedback.vibrationOff = off
   }
 
   /** In a browser, has to run inside a tap or click: browsers only start audio from one. */

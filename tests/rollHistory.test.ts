@@ -1,10 +1,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { addQuickRolls, addRoll, loadHistory, MAX_HISTORY, parseHistory, rollBreakdown, rollTotal, saveHistory } from '../app/utils/rollHistory'
+import { addQuickRolls, addRoll, loadHistory, MAX_HISTORY, parseHistory, rollBreakdown, rollFaces, rollTotal, saveHistory } from '../app/utils/rollHistory'
 
 describe('rollTotal', () => {
   it('adds up the dice', () => {
     expect(rollTotal([4])).toBe(4)
     expect(rollTotal([3, 5, 1])).toBe(9)
+  })
+})
+
+describe('rollFaces', () => {
+  it('lists each die without adding them up, by kind when there is more than the d6', () => {
+    expect(rollFaces([3, 5, 1])).toBe('3 5 1')
+    expect(rollFaces([4], ['d6'])).toBe('4')
+    expect(rollFaces([3, 5, 17], ['d6', 'd6', 'd20'])).toBe('d6:\u00A03 5 · d20:\u00A017')
   })
 })
 

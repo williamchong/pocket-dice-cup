@@ -3,6 +3,7 @@
     <UButton
       icon="i-lucide-minus"
       class="size-11"
+      :title="$t('pool.fewer', { kind })"
       :aria-label="$t('pool.fewer', { kind })"
       :disabled="disabled || count <= min"
       @click="emit('change', count - 1)"
@@ -23,6 +24,7 @@
     <UButton
       icon="i-lucide-plus"
       class="size-11"
+      :title="$t('pool.more', { kind })"
       :aria-label="$t('pool.more', { kind })"
       :disabled="disabled || count >= max"
       @click="emit('change', count + 1)"
@@ -36,6 +38,7 @@
       color="neutral"
       class="size-11"
       :class="{ invisible: !clearable }"
+      :title="$t('pool.clear', { kind })"
       :aria-label="$t('pool.clear', { kind })"
       :disabled="disabled || !clearable"
       @click="emit('change', 0)"

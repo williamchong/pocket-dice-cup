@@ -8,6 +8,19 @@
       :label="$t('options.sound')"
       @update:model-value="emit('update:soundOn', $event)"
     />
+    <!-- Only where there is a vibration to still: not in any browser on iOS, or on a desktop. -->
+    <USwitch
+      v-if="vibrationSupported"
+      :model-value="vibrationOn"
+      :label="$t('options.vibration')"
+      @update:model-value="emit('update:vibrationOn', $event)"
+    />
+    <USwitch
+      :model-value="totalOn"
+      :label="$t('options.total')"
+      :description="$t('options.totalNote')"
+      @update:model-value="emit('update:totalOn', $event)"
+    />
     <!-- Only where there is an island to keep the roll in: the iPhone app on iOS 17 or later. -->
     <USwitch
       v-if="islandSupported"
@@ -29,11 +42,20 @@
 <script setup lang="ts">
 defineProps<{
   soundOn: boolean
+  vibrationOn: boolean
+  totalOn: boolean
   islandOn: boolean
+  vibrationSupported: boolean
   islandSupported: boolean
 }>()
 
-const emit = defineEmits<{ 'update:soundOn': [on: boolean], 'update:islandOn': [on: boolean], 'close': [] }>()
+const emit = defineEmits<{
+  'update:soundOn': [on: boolean]
+  'update:vibrationOn': [on: boolean]
+  'update:totalOn': [on: boolean]
+  'update:islandOn': [on: boolean]
+  'close': []
+}>()
 </script>
 
 <style scoped>

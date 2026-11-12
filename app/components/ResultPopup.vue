@@ -3,11 +3,18 @@
     class="result"
     role="status"
   >
-    <span class="result__total">{{ rollTotal(values) }}</span>
+    <template v-if="showTotal">
+      <span class="result__total">{{ rollTotal(values) }}</span>
+      <span
+        v-if="rollBreakdown(values, kinds)"
+        class="result__dice"
+      >{{ rollBreakdown(values, kinds) }}</span>
+    </template>
+    <!-- With the total off, the dice's values take its place, as the line to read. -->
     <span
-      v-if="rollBreakdown(values, kinds)"
-      class="result__dice"
-    >{{ rollBreakdown(values, kinds) }}</span>
+      v-else
+      class="result__faces"
+    >{{ rollFaces(values, kinds) }}</span>
     <!-- Shown by rings on the felt under the dice; said only to screen readers. -->
     <span
       v-if="slid"
@@ -24,6 +31,8 @@ defineProps<{
   kinds: readonly DieKind[]
   /** How many of the dice slid without turning over, which a gentle shake can leave. */
   slid: number
+  /** Whether to add the dice up; off for games that read each die, such as liar's dice. */
+  showTotal: boolean
 }>()
 </script>
 
@@ -44,6 +53,15 @@ defineProps<{
   font-size: 2.75rem;
   font-weight: 700;
   line-height: 1;
+}
+
+.result__faces {
+  max-width: 16rem;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  word-spacing: 0.25em;
 }
 
 .result__dice {

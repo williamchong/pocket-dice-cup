@@ -729,6 +729,18 @@ Phases
     the browser (the Sound switch, saved, and the row of five buttons with
     "2d6 + 1d20" fitting 375 and 390 wide) and by building in Xcode; not yet
     checked: the island switch on the iPhone.
+    The sheet also has a Vibration switch, the other half of Sound: it
+    stills the dice but keeps the clacks, and shows only where there is a
+    vibration to still (the apps, and browsers with `navigator.vibrate`).
+    A Show total switch leaves the result card listing each die, as
+    "3 1 4", for games such as liar's dice that read each die rather than
+    the sum; History and the island still add them up. Both are kept
+    across launches. History and Style in the bottom row became icons (a
+    clock turning back and a palette), so only the dice pool keeps a label,
+    and every icon button there and in the dice sheet has a tooltip as well
+    as its screen-reader label. Checked in the browser (both switches,
+    saved, and the card in 繁中); not yet checked: the Vibration switch on
+    the iPhone and an Android phone.
     Out of scope for the prototype: whether it is part of Pro; translations of the button's accessibility label (the
     island has no other words; History's ↻ has its label in all three
     languages); and any analytics event. ActivityKit keeps
