@@ -1,3 +1,41 @@
-Pocket Dice Cup is a dice cup: shake the iPhone to roll the dice, then lay it flat, screen up, or hold it still, and the total shows at the top. Tapping the table also rolls the dice, and the Settle button drops them at once. The dice button at the bottom picks which dice to roll.
+1. Screen recording
 
-There are no accounts, so no sign-in is needed. This version sells nothing. Haptics play on a real iPhone only. After a roll, the result is shown as a Live Activity in the Dynamic Island and on the Lock Screen.
+A recording on an iPhone running the latest iOS, starting from launch, is attached. It shows shaking to roll, laying the phone flat to read the total, Settle, tapping to roll, picking dice, History, Style, and the Dynamic Island and Lock Screen. There are no accounts, no user-generated content and nothing to buy, so there is no login, account deletion, reporting or paid content to show.
+
+2. Purpose and audience
+
+Pocket Dice Cup is a dice cup for board games, tabletop role-playing games and dice games. It is for players who have lost their dice, need more than they own, or cannot throw real dice where they are, such as on a train, in bed or with only one hand free.
+
+Why this app, and how it differs from existing dice apps. Most dice apps pick a random number and then play an animation to match, or roll when a shake is detected, so the phone is only a button. Players feel that, and many do not trust it. Pocket Dice Cup treats the phone itself as the cup:
+- The dice are real 3D physics inside the phone. Every frame, the phone's full accelerometer reading becomes the dice's gravity, so they slide, tumble and hit the screen's edges exactly as the phone is moved, in any direction, including side to side. A hard shake rolls them hard; a gentle one barely turns them.
+- The result is read from the faces the dice land on, never from a random number. Each die's fairness is checked by automated statistical tests over thousands of rolls.
+- Laying the phone down, screen up, settles the dice, as putting a cup down on the table would. There is no roll button to press.
+- Every hit has its own sound and haptic tap, scaled to its force and matched to the table, felt in the hand like dice in a cup.
+- A die that only slid and never rolled over is marked with a faint ring, so the table knows to shake again for a fair roll.
+- The roll stays put while the phone is passed round the table, and stays in the Dynamic Island and on the Lock Screen while the player switches to a score sheet or the rules.
+- No ads, no accounts, and the numbers rolled never leave the phone. The app is open source, so anyone can check how a roll is made.
+The value is the feel of shaking a real cup, with a result everyone at the table can trust.
+
+3. Setting up and using the main features
+
+No setup, login or sample files are needed.
+- Shake the iPhone to roll. Lay it flat, screen up, or hold it still, and the total shows at the top. Tapping the table also rolls, and the Settle button drops the dice at once.
+- The dice button at the bottom picks up to 12 dice, from d4 to d20.
+- The History button lists the last 50 rolls.
+- The Style button picks the dice's finish and the table.
+- After a roll, the result stays in the Dynamic Island and on the Lock Screen as a Live Activity; its ↻ rolls again and its ✕ closes it. The island cannot run physics, so its ↻ is a plain random roll, labelled "Quick roll".
+- The question mark button opens the about page, with the switch for usage statistics.
+Haptics play on a real iPhone only.
+
+4. External services
+
+- Google Analytics for Firebase, for anonymous usage statistics: that a roll finished and with which dice, finish and table, never the numbers rolled. It can be switched off on the about page, and the app works the same without it. No advertising identifiers are used.
+Nothing else: the dice and physics run on the device, with no server, AI, authentication or payment service.
+
+5. Regional differences
+
+The app works the same in every region. Its text is shown in English, Simplified Chinese or Traditional Chinese, following the phone's language; nothing else changes by region.
+
+6. Regulated industries and third-party material
+
+Not a regulated industry, no protected third-party material, and no betting, prizes or real money. The code, the dice's looks and the sounds are the developer's own work, and the code is published as free software under the GNU GPL; the text uses the system font.
