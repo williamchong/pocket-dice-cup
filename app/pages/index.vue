@@ -94,14 +94,16 @@
           {{ formatPool(pool) }}
         </UButton>
         <UButton
-          class="min-h-11 py-1.5"
-          :label="$t('cup.history')"
+          class="min-h-11 min-w-11 justify-center"
+          icon="i-lucide-history"
+          :aria-label="$t('cup.history')"
           :aria-pressed="openSheet === 'history'"
           @click="toggle('history')"
         />
         <UButton
-          class="min-h-11 py-1.5"
-          :label="$t('cup.style')"
+          class="min-h-11 min-w-11 justify-center"
+          icon="i-lucide-palette"
+          :aria-label="$t('cup.style')"
           :aria-pressed="openSheet === 'skin'"
           @click="toggle('skin')"
         />
