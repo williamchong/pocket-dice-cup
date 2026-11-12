@@ -47,6 +47,20 @@ describe('CupFeedback', () => {
     expect(sound.played[0]![1]).toBeCloseTo(impactStrength(100))
   })
 
+  it('muted, still vibrates but plays no sound, from a roll or a test hit', () => {
+    const sound = new FakeSound()
+    const haptics = new FakeHaptics()
+    const feedback = new CupFeedback(sound, haptics)
+    feedback.muted = true
+    feedback.play([hit(200, 'floor')], 0)
+    feedback.testHit('wall')
+    expect(sound.played).toEqual([])
+    expect(haptics.pulses).toHaveLength(2)
+    feedback.muted = false
+    feedback.testHit('wall')
+    expect(sound.played).toHaveLength(1)
+  })
+
   it('vibrates once a frame, for all its impacts together, and no closer together than a motor can play', () => {
     const haptics = new FakeHaptics()
     const feedback = new CupFeedback(null, haptics)

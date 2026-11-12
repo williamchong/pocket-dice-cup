@@ -10,12 +10,18 @@ export interface LastRollBackend {
   show(kinds: readonly DieKind[], values: readonly number[] | null, time: number): void
   /** The quick rolls made from the island since the last call, unchecked, oldest first. */
   takeQuickRolls(): Promise<unknown[]>
+  /** Whether this phone can show the roll at all, for the options sheet to offer turning it off. */
+  supported(): Promise<boolean>
+  /** Takes the roll away at once, as when it is turned off. */
+  end(): void
 }
 
 /** The Live Activity plugin in the iOS app (ios/App/App/CupActivityPlugin.swift). */
 interface CupActivityPlugin {
   show(options: { kinds: DieKind[], values: number[] | null, time: number }): Promise<void>
   takeQuickRolls(): Promise<{ rolls: unknown[] }>
+  supported(): Promise<{ supported: boolean }>
+  end(): Promise<void>
 }
 
 const CupActivity = registerPlugin<CupActivityPlugin>('CupActivity')
@@ -33,6 +39,20 @@ class NativeLastRollBackend implements LastRollBackend {
     catch {
       return []
     }
+  }
+
+  async supported(): Promise<boolean> {
+    try {
+      return (await CupActivity.supported()).supported
+    }
+    catch {
+      // An app built before the method, which cannot end the activity either.
+      return false
+    }
+  }
+
+  end(): void {
+    CupActivity.end().catch(() => {})
   }
 }
 

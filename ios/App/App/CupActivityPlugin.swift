@@ -14,6 +14,8 @@ public class CupActivityPlugin: CAPPlugin, CAPBridgedPlugin {
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "show", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "takeQuickRolls", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "supported", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "end", returnType: CAPPluginReturnPromise),
     ]
 
     override public func load() {
@@ -63,6 +65,31 @@ public class CupActivityPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func takeQuickRolls(_ call: CAPPluginCall) {
         Task { @MainActor in
             call.resolve(["rolls": QuickRollStore.take()])
+        }
+    }
+
+    /**
+     * Whether this iPhone can show the activity at all, for the options sheet
+     * to offer the switch: iOS 17 or later. Live Activities turned off in
+     * Settings still count, as the switch is the app's own and the system's
+     * may be turned back on.
+     */
+    @objc func supported(_ call: CAPPluginCall) {
+        if #available(iOS 17.0, *) {
+            call.resolve(["supported": true])
+        } else {
+            call.resolve(["supported": false])
+        }
+    }
+
+    /** Ends the activity at once, as the options sheet's switch is turned off. */
+    @objc func end(_ call: CAPPluginCall) {
+        guard #available(iOS 17.0, *) else { return call.resolve() }
+        Task { @MainActor in
+            for activity in Activity<CupActivityAttributes>.activities {
+                await activity.end(nil, dismissalPolicy: .immediate)
+            }
+            call.resolve()
         }
     }
 

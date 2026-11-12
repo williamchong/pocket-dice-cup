@@ -63,6 +63,8 @@ export interface DiceCupOptions extends CupOptions {
    * called with reduced motion, when the felt changes at once too.
    */
   onFold?: (shift: { x: number, y: number }) => void
+  /** Whether the clacks start silenced; see setMuted. */
+  muted?: boolean
 }
 
 /** A frame longer than this is treated as a pause (a hidden tab), not as time to catch up on. */
@@ -132,7 +134,7 @@ export class DiceCup {
     rapier: Rapier,
     source: MotionSource,
     onChange: (snapshot: CupSnapshot) => void,
-    { skin, table, onFold, ...options }: DiceCupOptions,
+    { skin, table, onFold, muted = false, ...options }: DiceCupOptions,
     recorder: TraceRecorder | null = null,
   ): DiceCup {
     // A canvas that is not laid out yet has no size; the first resize corrects the box.
@@ -142,6 +144,7 @@ export class DiceCup {
       scene.setPool(simulation.physics.pool)
       const feedback = new CupFeedback(createSound(), deviceHaptics())
       feedback.setSurfaces(table.sound, table.sharpness)
+      feedback.muted = muted
       return new DiceCup(canvas, source, simulation, scene, feedback, onChange, recorder, onFold)
     }
     catch (error) {
@@ -178,6 +181,11 @@ export class DiceCup {
   /** Plays a full-strength hit on `surface`, to hear and feel the tuning without a shake. */
   testHit(surface: Surface): void {
     this.feedback.testHit(surface)
+  }
+
+  /** Silences the clacks, or lets them be heard again, at any time; see CupFeedback.muted. */
+  setMuted(muted: boolean): void {
+    this.feedback.muted = muted
   }
 
   /** In a browser, has to run inside a tap or click: browsers only start audio from one. */

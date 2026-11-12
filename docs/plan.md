@@ -720,8 +720,16 @@ Phases
       once the app is suspended in the background, the usual case.
       Not yet checked: either on the iPhone, and whether the row still fits
       a long pool and "Quick roll" on the Lock Screen with the fourth capsule.
-    Out of scope for the prototype: a setting to turn it off, and whether it
-    is part of Pro; translations of the button's accessibility label (the
+    A switch in the Options sheet (the gear in the bottom row, beside a
+    Sound switch that mutes the clacks but keeps the vibration) turns it
+    off: no roll or change of pool reaches it, and the one showing is ended
+    at once (`CupActivity.end`). The switch shows only where
+    `CupActivity.supported` says iOS 17 or later; an app built before the
+    method answers no, as it could not end the activity either. Checked in
+    the browser (the Sound switch, saved, and the row of five buttons with
+    "2d6 + 1d20" fitting 375 and 390 wide) and by building in Xcode; not yet
+    checked: the island switch on the iPhone.
+    Out of scope for the prototype: whether it is part of Pro; translations of the button's accessibility label (the
     island has no other words; History's ↻ has its label in all three
     languages); and any analytics event. ActivityKit keeps
     everything on the phone, so `PRIVACY.md` does not change. Android has no

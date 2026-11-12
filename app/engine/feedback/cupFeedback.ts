@@ -101,6 +101,8 @@ export class CupFeedback {
   private recent: { timeMs: number, strength: number }[] = []
   /** Changed live from the debug overlay, to tune the feel on a phone. */
   readonly tuning: HapticTuning = structuredClone(DEFAULT_HAPTIC_TUNING)
+  /** Silences the clacks but not the vibration, which is felt rather than heard and disturbs no one nearby. */
+  muted = false
 
   constructor(private readonly sound: ImpactSound | null, private readonly haptics: HapticsBackend | null) {}
 
@@ -136,7 +138,7 @@ export class CupFeedback {
     for (const { speed, surface } of impacts) {
       const strength = impactStrength(speed)
       if (strength === 0) continue
-      this.sound?.play(surface, strength)
+      this.clack(surface, strength)
       this.recent.push({ timeMs, strength })
       const felt = this.felt(speed, surface)
       feltSpeed += felt
@@ -160,8 +162,12 @@ export class CupFeedback {
 
   /** Plays a full-strength hit on `surface`, to hear and feel the tuning without a shake. */
   testHit(surface: Surface): void {
-    this.sound?.play(surface, 1)
+    this.clack(surface, 1)
     this.pulse(impactStrength(this.felt(LOUD_SPEED, surface), this.tuning.fullFeelSpeed), surface)
+  }
+
+  private clack(surface: Surface, strength: number): void {
+    if (!this.muted) this.sound?.play(surface, strength)
   }
 
   /** How much of a hit's speed reaches the hand. */

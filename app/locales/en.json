@@ -12,7 +12,8 @@
     "denied": "Motion access was refused, so tap to shake. To shake the phone instead, open the page again and allow motion access.",
     "unsupported": "This browser has no motion sensor, so click, tap or press space to shake.",
     "slid": "1 die didn’t roll over | {n} dice didn’t roll over",
-    "hidden": "The screen is facing down, so the dice are not drawn. Tap to show them."
+    "hidden": "The screen is facing down, so the dice are not drawn. Tap to show them.",
+    "options": "Options"
   },
   "sheet": {
     "done": "Done"
@@ -38,6 +39,12 @@
     "clear": "Clear",
     "confirmClear": "Clear all?",
     "quick": "Quick roll from the Dynamic Island"
+  },
+  "options": {
+    "label": "Options",
+    "sound": "Sound",
+    "island": "Dynamic Island",
+    "islandNote": "Keeps the last roll in the Dynamic Island and on the Lock Screen."
   },
   "skin": {
     "label": "Dice",

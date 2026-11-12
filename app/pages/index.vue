@@ -105,6 +105,13 @@
           :aria-pressed="openSheet === 'skin'"
           @click="toggle('skin')"
         />
+        <UButton
+          class="min-h-11 min-w-11 justify-center"
+          icon="i-lucide-settings"
+          :aria-label="$t('cup.options')"
+          :aria-pressed="openSheet === 'options'"
+          @click="toggle('options')"
+        />
         <!-- A link rather than a button, so search engines follow it to the about page. -->
         <UButton
           class="min-h-11 min-w-11 justify-center"
@@ -149,6 +156,14 @@
         :restore="restoreAndKeep"
         @change="changeSkin"
         @change-table="changeTable"
+        @close="openSheet = null"
+      />
+      <OptionsSheet
+        v-else-if="openSheet === 'options'"
+        v-model:sound-on="soundOn"
+        v-model:island-on="islandOn"
+        class="cup__sheet"
+        :island-supported="islandSupported"
         @close="openSheet = null"
       />
     </Transition>
@@ -285,7 +300,10 @@ const canvas = useTemplateRef('canvas')
 // Shaking tips the phone far enough for the browser to rotate the page; the
 // cup stays put in the phone's own frame instead.
 const counterRotationStyle = useCounterRotation()
-const { ready, failed, state, result, slid, shaken, layingFlat, hidden, dice, pool, sensing, permission, start, toss, settle, setPool, setSkin, setTable, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value, table: table.value, onFold: slideFromFold })
+// The options sheet's switches, read before the cup starts so it starts muted if muted.
+const soundOn = ref(loadSoundOn())
+const islandOn = ref(loadIslandOn())
+const { ready, failed, state, result, slid, shaken, layingFlat, hidden, dice, pool, sensing, permission, start, toss, settle, setPool, setSkin, setTable, setMuted, debugInfo, exportTrace, hapticTuning, soundTuning, testHit } = useDiceCup(canvas, { randomStart: !debug, recordTrace: debug, pool: startPool, skin: skin.value, table: table.value, onFold: slideFromFold, muted: !soundOn.value })
 const rolling = computed(() => isRolling(state.value))
 // Kept across visits, so the hint to shake goes for good after one shake.
 const everShaken = ref(loadShaken())
@@ -308,7 +326,7 @@ function changePool(next: DicePool) {
   savePool(pool.value)
   // Not a watch on the pool, which is set once at launch too, and would blank
   // a roll still showing in the island from before the app was closed.
-  lastRoll?.show(pool.value, null, Date.now())
+  if (islandOn.value) lastRoll?.show(pool.value, null, Date.now())
 }
 
 // A Pro skin or table chosen without Pro is tried on: shown in the cup while
@@ -421,8 +439,25 @@ function slideFromFold(shift: { x: number, y: number }) {
 const history = shallowRef(loadHistory())
 // The roll stays in the Dynamic Island after leaving the iPhone app; null elsewhere.
 const lastRoll = deviceLastRoll()
+// The island's switch shows only where there is one; an iPhone app built
+// before the switch answers no, as it could not end the activity either.
+const islandSupported = ref(false)
+onMounted(async () => {
+  islandSupported.value = await lastRoll?.supported() ?? false
+})
+watch(soundOn, (on) => {
+  setMuted(!on)
+  saveSoundOn(on)
+  // Inside the tap that turned it on, so the sound can start: one hit, heard and felt, says it is back.
+  if (on) void testHit('floor')
+})
+// Off takes the roll away at once, rather than leaving it until the next one.
+watch(islandOn, (on) => {
+  saveIslandOn(on)
+  if (!on) lastRoll?.end()
+})
 /** The sheet open above the controls, if any. */
-type Sheet = CupLinkSheet | 'skin'
+type Sheet = CupLinkSheet | 'skin' | 'options'
 const openSheet = ref<Sheet | null>(null)
 function toggle(sheet: Sheet) {
   openSheet.value = openSheet.value === sheet ? null : sheet
@@ -455,7 +490,7 @@ watch(result, (values) => {
   const time = Date.now()
   history.value = addRoll(history.value, values, pool.value, time)
   saveHistory(history.value)
-  lastRoll?.show(pool.value, values, time)
+  if (islandOn.value) lastRoll?.show(pool.value, values, time)
   // Which dice, on what: never the numbers they came up with.
   analytics.track('roll_completed', { dice: formatPool(pool.value), skin: skin.value.id, table: table.value.id })
 })
@@ -727,7 +762,9 @@ if (debug) {
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  padding: 1rem 2rem;
+  /* 1rem at the sides, not more, and 0.5rem between the buttons below: five
+     buttons with a mixed pool such as 2d6 + 1d20 just fit a 375-wide phone. */
+  padding: 1rem;
   /* Taps around the buttons still reach the canvas and shake the cup. */
   pointer-events: none;
 }
@@ -811,7 +848,7 @@ if (debug) {
 .cup__controls {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 /* On each button, not the row: opacity on the row would cut the buttons'
