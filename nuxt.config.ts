@@ -92,6 +92,13 @@ export default defineNuxtConfig({
         { property: 'og:type', content: 'website' },
         { property: 'og:title', content: 'Pocket Dice Cup' },
         { property: 'og:description', content: DESCRIPTION },
+        // Safari on iPhone and iPad shows Apple's Smart App Banner over the
+        // page, offering the App Store app, which can vibrate on every hit
+        // where the browser cannot, or opening it if it is already installed.
+        // It has to be in the page as served: Safari ignores the tag if a
+        // script adds it later. The native shells bundle this page too, but
+        // the banner never shows inside an app's web view.
+        { name: 'apple-itunes-app', content: 'app-id=6833091482' },
       ],
       // From the base URL rather than relative, so they also resolve from
       // the about page's address, a folder deeper.
